@@ -1,5 +1,6 @@
-package docSharing.email;
+package docSharing.service;
 
+import docSharing.email.EmailSender;
 import lombok.AllArgsConstructor;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -11,7 +12,7 @@ import javax.mail.internet.MimeMessage;
 
 @Service
 @AllArgsConstructor
-public class EmailService implements EmailSender{
+public class EmailService implements EmailSender {
     private final JavaMailSender mailSender;
 
     @Override
@@ -29,5 +30,9 @@ public class EmailService implements EmailSender{
         } catch (MessagingException e) {
             throw new IllegalStateException("failed to send email");
         }
+    }
+
+    public void reactivateLink(String link){
+        // link
     }
 }
