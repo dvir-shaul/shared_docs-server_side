@@ -1,12 +1,18 @@
 package docSharing.service;
+
 import docSharing.Entities.User;
+import docSharing.Utils.Activation;
+import docSharing.email.EmailSender;
 import docSharing.repository.UserRepository;
+import docSharing.service.token.ConfirmationToken;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
 @Service
+@AllArgsConstructor
 public class AuthService {
 
     @Autowired
