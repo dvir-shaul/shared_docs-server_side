@@ -15,7 +15,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
+import javax.security.auth.login.AccountNotFoundException;
 import java.util.Date;
 
 @Controller
@@ -83,11 +85,12 @@ public class AuthController {
             authService.login(email, password);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (AccountNotFoundException e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
 
         // if correct -> call auth service with parameters -> login function
         return ResponseEntity.status(200).body("this is the token");
-
     }
 
     /**
@@ -96,7 +99,8 @@ public class AuthController {
      * If the link is expired, resend a new link to the user with a new token.
      * @param link
      */
-    public void activate(String link) {
+    @RequestMapping(value = "activate", method = RequestMethod.POST, consumes = "application/json")
+    public void activate(@RequestParam String link) {
         // parse link to token
         Claims claim = ConfirmationToken.decodeJWT(link);
 
