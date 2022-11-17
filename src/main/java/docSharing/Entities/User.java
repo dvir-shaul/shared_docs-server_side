@@ -8,7 +8,7 @@ import java.util.Objects;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private int id;
+    private Integer id;
     private String name;
     @Column(unique = true)
     private String email;
@@ -16,14 +16,15 @@ public class User {
     private Boolean isActivated;
 
 
-    private User(){}
+    private User() {
+        this.isActivated = false;
+    }
 
     public static User createUser(String email, String password,String name){
         User user = new User();
         user.setName(name);
         user.setPassword(password);
         user.setEmail(email);
-        user.isActivated = false;
         return user;
     }
 
@@ -39,7 +40,7 @@ public class User {
         this.id = id;
     }
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
