@@ -30,7 +30,6 @@ public class UserController {
     }
 
     @RequestMapping(method = RequestMethod.GET)
-
     public ResponseEntity<User> getUserById(@RequestParam int id){
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }

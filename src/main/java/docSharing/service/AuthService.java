@@ -12,40 +12,62 @@ public class AuthService {
     @Autowired
     private UserRepository userRepository;
 
-    public void register(String email, String password, String name){
-
-        // check if this email already exisits in the database
-        // Boolean doesUserEmailExist = userRepository.findByEmail(email).isPresent();
-
-        // create new user with the email, password, name
-//         userRepository.save(user.get());
-        // send activation email
-
-        // check if activated ?
-        // if activated -> user already exists
-
-        // if inactivated -> resend email -> send activation email
-
-        // if correct -> send data to user repo
-
+    /**
+     * register function method is used to register users to the  app with given inputs
+     *
+     * @param email - mail of user
+     * @param password - password of user
+     * @param name - name of user
+     */
+    public Boolean register(String email, String password, String name){
+        //validate
+        Optional<User> checkedUser = userRepository.findByEmail(email);
+        if(! checkedUser.isPresent()){
+            User user = userRepository.save(User.createUser(email, password, name));
+//            Activation.sendActivationEmail(user);
+            return true;
+        } else if (! checkedUser.get().getActivated() && validate(email,password,name)) {
+//          Activation.sendActivationEmail(checkedUser.get());
+            return true;
+        }
+        // throw execption Error Code: 1062. Duplicate entry 'dvir@gmail.com' for key 'user.UK_ob8kqyqqgmefl0aco34akdtpe'
+        System.out.println("User already exists with activated value");
+        return false;
     }
 
-    public void login(String email, String password){
-        // Optional<User> user = userRepository.findByEmail(email);
-        // check if email == email etc...
-        // generate token
-        // return token
+    /**
+     * login to app and check if inputs was correct according to database
+     * @param email - mail of user
+     * @param password - password
+     * @return token for user to be unique on app
+     */
+    public String login(String email, String password){
+        Optional<User> user = userRepository.findByEmail(email);
+        if (user.isPresent() && user.get().getEmail().equals(email) && user.get().getPassword().equals(password)){
+            // generate token
+             return "token";
+        }
+        return "not token";
     }
 
-    public void activate(Long id){
-        // check if this email already exisits in the database
-        // Optional<User> user = userRepository.findById(id);
-        // userRepository.setIsActivated(true, id);
-
+    /**
+     * activate function meant to change the user column isActivated from originated value false to true.
+     * Repository go to the unique row that has user email and changed that value.
+     * Method used after a user clicks on the link he got on email.
+     * @param email - user email
+     */
+    private void activate(String email){
+        userRepository.updateIsActivated(true,email);
     }
 
-    private void validate(String email, String password, String name){
-
-        // validate the data if needed
+    private Boolean validate(String email, String password, String name){
+        Optional<User> user = userRepository.findByEmail(email);
+        if (user.isPresent() &&
+                user.get().getEmail().equals(email) &&
+                user.get().getPassword().equals(password) &&
+                user.get().getName().equals(name)) {
+            return true;
+        }
+            return false;
     }
 }
