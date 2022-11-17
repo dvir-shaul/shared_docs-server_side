@@ -14,8 +14,11 @@ public enum ExceptionMessage {
     TOO_SHORT_STRING("This field can not be as short as inserted"),
     CREATE_TABLE("Couldn't create the table properly."),
     NO_PRIMARY_KEY_FOUND("No primary key found."),
+    ACCOUNT_EXISTS("This user email already exists: "),
     NOT_MATCH("Error: email or password does not match"),
     NO_ACCOUNT_IN_DATABASE("Could not locate this email in the database."),
+    UNAUTHORIZED("You are unauthorized to create such a action"),
+    FOLDER_EXISTS("This folder ID does not exist in the database: "),
     VALIDATION_FAILED("Could not approve the given information: ");
 
     private final String message;

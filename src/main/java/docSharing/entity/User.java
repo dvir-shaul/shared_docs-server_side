@@ -8,13 +8,12 @@ import java.util.Objects;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Integer id;
+    private Long id;
     private String name;
     @Column(unique = true)
     private String email;
     private String password;
     private Boolean isActivated;
-
 
     private User() {
         this.isActivated = false;
@@ -36,11 +35,11 @@ public class User {
         isActivated = activated;
     }
 
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 
@@ -83,11 +82,11 @@ public class User {
 
     @Override
     public int hashCode() {
-        int result = id;
+        Long result = id;
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (email != null ? email.hashCode() : 0);
         result = 31 * result + (password != null ? password.hashCode() : 0);
-        return result;
+        return Math.toIntExact(result);
     }
 
     @Override

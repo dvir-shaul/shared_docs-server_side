@@ -5,7 +5,7 @@ import docSharing.utils.Regex;
 import docSharing.utils.Validations;
 import docSharing.service.AuthService;
 import docSharing.service.EmailService;
-import docSharing.service.token.ConfirmationToken;
+import docSharing.utils.ConfirmationToken;
 import io.jsonwebtoken.Claims;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +53,7 @@ public class AuthController {
 //            Validations.validate(Regex.NAME.getRegex(), name);
             authService.register(email, password, name);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
 
         // if correct -> call auth service with parameters -> register function

@@ -1,4 +1,4 @@
-package docSharing.service.token;
+package docSharing.utils;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
