@@ -2,7 +2,7 @@ package docSharing.service;
 
 import docSharing.Entities.User;
 import docSharing.Utils.Activation;
-import docSharing.email.EmailSender;
+import docSharing.Utils.Activation;
 import docSharing.repository.UserRepository;
 import docSharing.service.token.ConfirmationToken;
 import lombok.AllArgsConstructor;
