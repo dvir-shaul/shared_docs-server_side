@@ -20,7 +20,7 @@ public class User {
         this.isActivated = false;
     }
 
-    public static User createUser(String name, String password, String email) {
+    public static User createUser(String email, String password,String name){
         User user = new User();
         user.setName(name);
         user.setPassword(password);
