@@ -1,7 +1,7 @@
 package docSharing.service;
 
 public interface ChangesService {
-    void create();
-    void rename();
-    void delete();
+//    String create(Long id);
+//    void rename();
+//    void delete();
 }

@@ -18,17 +18,6 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-
-    @RequestMapping(method = RequestMethod.POST)
-    public ResponseEntity<String> createUser(@RequestBody User user){
-        try {
-            return new ResponseEntity<>(userService.addUser(user).toString(), HttpStatus.OK);
-        } catch (SQLDataException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Email already exists", e);
-        }
-    }
-
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<User> getUserById(@RequestParam int id){
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);

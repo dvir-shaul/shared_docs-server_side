@@ -13,10 +13,4 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
-    public User addUser(User user) throws SQLDataException {
-        if(userRepository.findByEmail(user.getEmail())!=null){
-            throw new SQLDataException(String.format("Email %s exists in users table", user.getEmail()));
-        }
-        return userRepository.save(user);
-    }
 }

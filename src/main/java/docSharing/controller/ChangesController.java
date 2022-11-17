@@ -1,7 +1,10 @@
 package docSharing.controller;
 
+import org.springframework.http.ResponseEntity;
+
 public interface ChangesController {
-    void create();
-    void rename();
-    void delete();
+//    ResponseEntity<String> create(String token);
+//
+//    void rename();
+//    void delete();
 }
