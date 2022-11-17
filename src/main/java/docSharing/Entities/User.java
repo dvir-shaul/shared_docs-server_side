@@ -13,7 +13,28 @@ public class User {
     @Column(unique = true)
     private String email;
     private String password;
+    private Boolean isActivated;
 
+
+    private User(){
+        this.isActivated = false;
+    }
+
+    public static User createUser(String name, String password, String email){
+        User user = new User();
+        user.setName(name);
+        user.setPassword(password);
+        user.setEmail(email);
+        return user;
+    }
+
+    public Boolean getActivated() {
+        return isActivated;
+    }
+
+    public void setActivated(Boolean activated) {
+        isActivated = activated;
+    }
 
     public void setId(int id) {
         this.id = id;
