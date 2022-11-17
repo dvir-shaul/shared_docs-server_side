@@ -1,8 +1,8 @@
 package docSharing.controller;
 
-import docSharing.Utils.Activation;
 import docSharing.entity.User;
 import docSharing.service.UserService;
+import docSharing.utils.Activation;
 import docSharing.utils.Validations;
 import docSharing.utils.Regex;
 import docSharing.service.AuthService;
@@ -63,7 +63,7 @@ public class AuthController {
             Validations.validate(Regex.PASSWORD.getRegex(), password);
 //            Validations.validate(Regex.NAME.getRegex(), name);
             User emailUser = authService.register(email, password, name);
-            String token = ConfirmationToken.createJWT(Integer.toString(emailUser.getId()), "docs-app", "activation email", 300000);
+            String token = ConfirmationToken.createJWT(Long.toString(emailUser.getId()), "docs-app", "activation email", 300000);
             String link = Activation.buildLink(token);
             String mail = Activation.buildEmail(emailUser.getName(), link);
             try {

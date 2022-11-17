@@ -89,8 +89,6 @@ public class EmailService{
         }
     }
 
-
-
     public void reactivateLink(String link){
         // link
     }
