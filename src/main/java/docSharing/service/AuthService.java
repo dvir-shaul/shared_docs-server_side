@@ -3,6 +3,7 @@ package docSharing.service;
 import docSharing.Entities.User;
 import docSharing.Utils.Activation;
 import docSharing.Utils.Activation;
+import docSharing.Utils.ExceptionMessage;
 import docSharing.repository.UserRepository;
 import docSharing.service.token.ConfirmationToken;
 import lombok.AllArgsConstructor;
@@ -36,9 +37,7 @@ public class AuthService {
 //          Activation.sendActivationEmail(checkedUser.get());
             return true;
         }
-        // throw execption Error Code: 1062. Duplicate entry 'dvir@gmail.com' for key 'user.UK_ob8kqyqqgmefl0aco34akdtpe'
-        System.out.println("User already exists with activated value");
-        return false;
+        throw new IllegalArgumentException (ExceptionMessage.DUPLICATED_UNIQUE_FIELD.toString());
     }
 
     /**
@@ -51,9 +50,10 @@ public class AuthService {
         Optional<User> user = userRepository.findByEmail(email);
         if (user.isPresent() && user.get().getEmail().equals(email) && user.get().getPassword().equals(password)){
             // generate token
-             return "token";
+            long timeOut = 5;
+             return ConfirmationToken.createJWT(String.valueOf(user.get().getId()),"docs app","login",timeOut);
         }
-        return "not token";
+        throw new IllegalArgumentException (ExceptionMessage.NOT_MATCH.toString());
     }
 
     /**
@@ -66,6 +66,13 @@ public class AuthService {
         userRepository.updateIsActivated(true,email);
     }
 
+    /**
+     * validate functions check if the data entry was the same as the database have.
+     * @param email - mail of user.
+     * @param password - password of user.
+     * @param name - name of user.
+     * @return true if all values are matched to the database.
+     */
     private Boolean validate(String email, String password, String name){
         Optional<User> user = userRepository.findByEmail(email);
         if (user.isPresent() &&
