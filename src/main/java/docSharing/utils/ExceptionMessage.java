@@ -1,4 +1,4 @@
-package docSharing.Utils;
+package docSharing.utils;
 
 public enum ExceptionMessage {
 
