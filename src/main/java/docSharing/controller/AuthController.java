@@ -1,6 +1,8 @@
 package docSharing.controller;
 
 import docSharing.Entities.User;
+import docSharing.Utils.Regex;
+import docSharing.Utils.Validations;
 import docSharing.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 @Controller
+@RequestMapping(value = "/user/auth")
 public class AuthController {
 
     @Autowired
@@ -28,34 +31,29 @@ public class AuthController {
         }
 
         // validate information
-//        try {
-//            Validations.validate(Regex.EMAIL.getRegex(), email);
-//            Validations.validate(Regex.PASSWORD.getRegex(), password);
+        try {
+            Validations.validate(Regex.EMAIL.getRegex(), email);
+            Validations.validate(Regex.PASSWORD.getRegex(), password);
 //            Validations.validate(Regex.NAME.getRegex(), name);
-//        } catch (IllegalArgumentException e) {
-//            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-//        }
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
 
         // if correct -> call auth service with parameters -> register function
         authService.register(email, password, name);
         return null;
     }
-    public void login(String email, String password){
+
+    public void login(String email, String password) {
         // validate information
         // if correct -> call authService with parameters -> login function
         // return token
     }
 
-    public void activate(){
+    public void activate() {
         // parse link to token
         // check if token is still activated
         // if yes -> call AuthService with activate function
         // if no do that -> resend email
-    }
-
-
-    private void validate(String email, String password, String name){
-        // validate the received data
-        // maybe call a util function to check each parameter?
     }
 }

@@ -10,12 +10,8 @@ import java.sql.SQLDataException;
 @Service
 public class UserService {
 
-    private final UserRepository userRepository;
-
-    public UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
-
+    @Autowired
+    private UserRepository userRepository;
 
     public User addUser(User user) throws SQLDataException {
         if(userRepository.findByEmail(user.getEmail())!=null){

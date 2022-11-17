@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 
-//    @Transactional
+    //        @Transactional
 //    @Modifying
 //    @Query("UPDATE User u " + "SET u.is_activated = ?1 WHERE u.id = ?2")
 //    int setIsActivated(Boolean bool, Long id);
