@@ -14,6 +14,7 @@ public enum ExceptionMessage {
     TOO_SHORT_STRING("This field can not be as short as inserted"),
     CREATE_TABLE("Couldn't create the table properly."),
     NO_PRIMARY_KEY_FOUND("No primary key found."),
+    NOT_MATCH("Error: email or password does not match"),
     VALIDATION_FAILED("Could not approve the given information: ");
 
     private final String message;
@@ -22,7 +23,7 @@ public enum ExceptionMessage {
         this.message = message;
     }
 
-    public String getMessage() {
+    public String toString() {
         return message;
     }
 }
