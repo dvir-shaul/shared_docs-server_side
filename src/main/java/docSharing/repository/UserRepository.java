@@ -5,15 +5,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-
+import javax.transaction.Transactional;
 import java.util.Optional;
-
 @Repository
+@Transactional
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 
-    //        @Transactional
+    @Transactional
     @Modifying
     @Query("UPDATE User u " + "SET u.isActivated = ?1 WHERE u.id = ?2")
-    Boolean updateIsActivated(Boolean bool, Long id);
+    int updateIsActivated(Boolean bool, Integer id);
 }
