@@ -1,14 +1,15 @@
 package docSharing.controller;
 
+import docSharing.Utils.Activation;
 import docSharing.entity.User;
 import docSharing.service.UserService;
-import docSharing.utils.Activation;
 import docSharing.utils.Validations;
 import docSharing.utils.Regex;
 import docSharing.service.AuthService;
 import docSharing.service.EmailService;
 import docSharing.service.token.ConfirmationToken;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +43,7 @@ public class AuthController {
     /**
      * Register function is responsible for creating new users and adding them to the database.
      * Users will use their personal information to create a new account: email, password, name.
+     *
      * @param user
      */
     @RequestMapping(value = "register", method = RequestMethod.POST, consumes = "application/json")
@@ -60,14 +62,15 @@ public class AuthController {
             Validations.validate(Regex.EMAIL.getRegex(), email);
             Validations.validate(Regex.PASSWORD.getRegex(), password);
 //            Validations.validate(Regex.NAME.getRegex(), name);
-           User emailUser= authService.register(email, password, name);
+            User emailUser = authService.register(email, password, name);
             String token = ConfirmationToken.createJWT(Integer.toString(emailUser.getId()), "docs-app", "activation email", 300000);
             String link = Activation.buildLink(token);
             String mail = Activation.buildEmail(emailUser.getName(), link);
             try {
                 emailService.send(emailUser.getEmail(), mail);
             } catch (Exception e) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());            }
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+            }
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
@@ -81,6 +84,7 @@ public class AuthController {
      * This function accepts only 2 parameters: email, password.
      * If the credentials match to the database's information, it will allow the user to use its functionalities.
      * A token will be returned in a successful request.
+     *
      * @param user
      * @return token
      */
@@ -101,7 +105,7 @@ public class AuthController {
             authService.login(email, password);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (AccountNotFoundException e){
+        } catch (AccountNotFoundException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
 
@@ -113,25 +117,28 @@ public class AuthController {
      * Activate function is responsible for activating email links.
      * If the link is not expired, make the user activated in the database.
      * If the link is expired, resend a new link to the user with a new token.
+     *
      * @param token - A link with activation token
+     * @return
      */
     @RequestMapping(value = "activate", method = RequestMethod.GET)
-    public void activate(@RequestParam String token) {
-        String parsedToken= null;
+    public ResponseEntity<String> activate(@RequestParam String token) {
+        String parsedToken = null;
         try {
-            parsedToken = URLDecoder.decode(token, StandardCharsets.UTF_8.toString()).replaceAll(" ",".");
+            parsedToken = URLDecoder.decode(token, StandardCharsets.UTF_8.toString()).replaceAll(" ", ".");
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
         try {
             Claims claim = ConfirmationToken.decodeJWT(parsedToken);
             Boolean isUpToDate = claim.getExpiration().after(new Date());
-            if(isUpToDate) {
+            if (isUpToDate) {
                 authService.activate(Integer.valueOf(claim.getId()));
             }
 
-        }catch(JwtException e){
-            emailService.reactivateLink(token);        }
-
+        } catch (ExpiredJwtException e) {
+            emailService.reactivateLink(token);
+        }
+        return ResponseEntity.status(200).body("account activated successfully!");
     }
 }
