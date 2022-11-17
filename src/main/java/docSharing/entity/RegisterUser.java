@@ -1,4 +1,4 @@
-package docSharing.Entities;
+package docSharing.entity;
 
 public class RegisterUser {
     private final String email;

@@ -1,19 +1,8 @@
-package docSharing.Utils;
+package docSharing.utils;
 
-import docSharing.Entities.User;
-import docSharing.service.token.ConfirmationToken;
+import docSharing.entity.User;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.MailException;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.mail.javamail.MimeMessagePreparator;
 import org.springframework.stereotype.Service;
-
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
-import java.io.InputStream;
 
 @Service
 @AllArgsConstructor

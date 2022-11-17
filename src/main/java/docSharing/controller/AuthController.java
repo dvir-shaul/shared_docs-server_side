@@ -1,8 +1,8 @@
 package docSharing.controller;
 
-import docSharing.Entities.User;
-import docSharing.Utils.Regex;
-import docSharing.Utils.Validations;
+import docSharing.entity.User;
+import docSharing.utils.Regex;
+import docSharing.utils.Validations;
 import docSharing.service.AuthService;
 import docSharing.service.EmailService;
 import docSharing.service.token.ConfirmationToken;
@@ -97,7 +97,7 @@ public class AuthController {
      * Activate function is responsible for activating email links.
      * If the link is not expired, make the user activated in the database.
      * If the link is expired, resend a new link to the user with a new token.
-     * @param link
+     * @param link - A link with activation token
      */
     @RequestMapping(value = "activate", method = RequestMethod.POST, consumes = "application/json")
     public void activate(@RequestParam String link) {

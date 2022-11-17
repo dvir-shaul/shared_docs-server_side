@@ -1,9 +1,7 @@
 package docSharing.service;
 
-import docSharing.Entities.User;
-import docSharing.Utils.Activation;
-import docSharing.Utils.Activation;
-import docSharing.Utils.ExceptionMessage;
+import docSharing.entity.User;
+import docSharing.utils.ExceptionMessage;
 import docSharing.repository.UserRepository;
 import docSharing.service.token.ConfirmationToken;
 import lombok.AllArgsConstructor;
