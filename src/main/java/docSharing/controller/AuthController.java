@@ -4,6 +4,7 @@ import docSharing.Entities.User;
 import docSharing.Utils.Regex;
 import docSharing.Utils.Validations;
 import docSharing.service.AuthService;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,9 +15,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 @Controller
 @RequestMapping(value = "/user/auth")
+@AllArgsConstructor
 public class AuthController {
 
-    @Autowired
     private AuthService authService;
 
     @RequestMapping(value = "register", method = RequestMethod.POST, consumes = "application/json")
@@ -31,13 +32,13 @@ public class AuthController {
         }
 
         // validate information
-        try {
-            Validations.validate(Regex.EMAIL.getRegex(), email);
-            Validations.validate(Regex.PASSWORD.getRegex(), password);
-//            Validations.validate(Regex.NAME.getRegex(), name);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        }
+//        try {
+//            Validations.validate(Regex.EMAIL.getRegex(), email);
+//            Validations.validate(Regex.PASSWORD.getRegex(), password);
+////            Validations.validate(Regex.NAME.getRegex(), name);
+//        } catch (IllegalArgumentException e) {
+//            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+//        }
 
         // if correct -> call auth service with parameters -> register function
         authService.register(email, password, name);
