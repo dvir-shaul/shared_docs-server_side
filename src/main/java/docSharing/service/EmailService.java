@@ -91,20 +91,7 @@ public class EmailService{
 
 
 
-    // @Override
-//    @Async
-//    public void send(String to, String email) {
-//        try {
-//            MimeMessage mimeMessage = mailSender.createMimeMessage();
-//            MimeMessageHelper helper =
-//                    new MimeMessageHelper(mimeMessage, "utf-8");
-//            helper.setText(email, true);
-//            helper.setTo(to);
-//            helper.setSubject("Activate your account");
-//            helper.setFrom("shareddocs.app@gmail.com");
-//            mailSender.send(mimeMessage);
-//        } catch (MessagingException e) {
-//            throw new IllegalStateException("failed to send email");
-//        }
-//    }
+    public void reactivateLink(String link){
+        // link
+    }
 }

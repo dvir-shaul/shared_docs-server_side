@@ -1,6 +1,5 @@
 package docSharing.Utils;
 
-import docSharing.Entities.User;
 import docSharing.service.token.ConfirmationToken;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -92,7 +91,7 @@ public class Activation {
     }
 
     // send activation link
-    public static void sendActivationEmail(User user) {
+    public static void sendActivationEmail() {
         ///...
 
         //sendEmail(user.getEmail(), email);

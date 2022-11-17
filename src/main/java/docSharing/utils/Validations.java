@@ -1,4 +1,4 @@
-package docSharing.Utils;
+package docSharing.utils;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -10,6 +10,6 @@ public class Validations {
         Matcher matcher = pattern.matcher(data);
 
         if (!matcher.matches())
-            throw new IllegalArgumentException(ExceptionMessage.VALIDATION_FAILED.getMessage() + data);
+            throw new IllegalArgumentException(ExceptionMessage.VALIDATION_FAILED.toString() + data);
     }
 }

@@ -1,11 +1,10 @@
 package docSharing.controller;
 
-import docSharing.Entities.User;
-import docSharing.Utils.Activation;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-
+import docSharing.entity.User;
+import docSharing.service.UserService;
+import docSharing.utils.Activation;
+import docSharing.utils.Validations;
+import docSharing.utils.Regex;
 import docSharing.service.AuthService;
 import docSharing.service.EmailService;
 import docSharing.service.token.ConfirmationToken;
@@ -21,17 +20,30 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import javax.security.auth.login.AccountNotFoundException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 
 @Controller
 @RequestMapping(value = "/user/auth")
 @AllArgsConstructor
 public class AuthController {
 
+
     @Autowired
     private AuthService authService;
     @Autowired
     private EmailService emailService;
+    @Autowired
+    private UserService userService;
+
+    /**
+     * Register function is responsible for creating new users and adding them to the database.
+     * Users will use their personal information to create a new account: email, password, name.
+     * @param user
+     */
     @RequestMapping(value = "register", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<String> register(@RequestBody User user) {
         String email = user.getEmail();
@@ -39,40 +51,72 @@ public class AuthController {
         String password = user.getPassword();
 
         // make sure we got all the data from the client
-        if (name == null || email == null || password == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You must include all parameters for such an action: email, name, password");
+        if (name == null || email == null || password == null || user.getId() != null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You must include all and exact parameters for such an action: email, name, password");
         }
 
-        String token = ConfirmationToken.createJWT(Integer.toString(user.getId()), "docs-app", "activation email", 300000);
-        String link = Activation.buildLink(token);
-        String mail = Activation.buildEmail(user.getName(), link);
-        try {
-            emailService.send(user.getEmail(), mail);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
         // validate information
-//        try {
-//            Validations.validate(Regex.EMAIL.getRegex(), email);
-//            Validations.validate(Regex.PASSWORD.getRegex(), password);
-////            Validations.validate(Regex.NAME.getRegex(), name);
-//        } catch (IllegalArgumentException e) {
-//            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-//        }
+        try {
+            Validations.validate(Regex.EMAIL.getRegex(), email);
+            Validations.validate(Regex.PASSWORD.getRegex(), password);
+//            Validations.validate(Regex.NAME.getRegex(), name);
+           User emailUser= authService.register(email, password, name);
+            String token = ConfirmationToken.createJWT(Integer.toString(emailUser.getId()), "docs-app", "activation email", 300000);
+            String link = Activation.buildLink(token);
+            String mail = Activation.buildEmail(emailUser.getName(), link);
+            try {
+                emailService.send(emailUser.getEmail(), mail);
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());            }
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
 
         // if correct -> call auth service with parameters -> register function
-        authService.register(email, password, name);
-        return null;
+        return ResponseEntity.status(200).body("Account has been successfully registered and created!");
     }
 
-    public void login(String email, String password) {
+    /**
+     * Login function is responisble for logging user into the system.
+     * This function accepts only 2 parameters: email, password.
+     * If the credentials match to the database's information, it will allow the user to use its functionalities.
+     * A token will be returned in a successful request.
+     * @param user
+     * @return token
+     */
+    @RequestMapping(value = "login", method = RequestMethod.POST, consumes = "application/json")
+    public ResponseEntity<String> login(@RequestBody User user) {
+        String email = user.getEmail();
+        String password = user.getPassword();
+
+        // make sure we got all the data from the client
+        if (email == null || password == null || user.getId() != null || user.getName() != null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You must include all and exact parameters for such an action: email, name, password");
+        }
+
         // validate information
-        // if correct -> call authService with parameters -> login function
-        // return token
+        try {
+            Validations.validate(Regex.EMAIL.getRegex(), email);
+            Validations.validate(Regex.PASSWORD.getRegex(), password);
+            authService.login(email, password);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (AccountNotFoundException e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
+
+        // if correct -> call auth service with parameters -> login function
+        return ResponseEntity.status(200).body("this is the token");
     }
 
-    @RequestMapping(value="activate", method = RequestMethod.GET)
-    public ResponseEntity<String> activate(@RequestParam String token) {
+    /**
+     * Activate function is responsible for activating email links.
+     * If the link is not expired, make the user activated in the database.
+     * If the link is expired, resend a new link to the user with a new token.
+     * @param token - A link with activation token
+     */
+    @RequestMapping(value = "activate", method = RequestMethod.GET)
+    public void activate(@RequestParam String token) {
         String parsedToken= null;
         try {
             parsedToken = URLDecoder.decode(token, StandardCharsets.UTF_8.toString()).replaceAll(" ",".");
@@ -80,17 +124,14 @@ public class AuthController {
             throw new RuntimeException(e);
         }
         try {
-            Claims c = ConfirmationToken.decodeJWT(parsedToken);
-            authService.activate(Long.parseLong(c.getId()));
+            Claims claim = ConfirmationToken.decodeJWT(parsedToken);
+            Boolean isUpToDate = claim.getExpiration().after(new Date());
+            if(isUpToDate) {
+                authService.activate(Integer.valueOf(claim.getId()));
+            }
 
         }catch(JwtException e){
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("the link is not valid");
-        }
+            emailService.reactivateLink(token);        }
 
-        // parse link to token
-        // check if token is still activated
-        // if yes -> call AuthService with activate function
-        // if no do that -> resend email
-        return null;
     }
 }

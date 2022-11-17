@@ -1,6 +1,6 @@
 package docSharing.controller;
 
-import docSharing.Entities.User;
+import docSharing.entity.User;
 import docSharing.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -30,7 +30,6 @@ public class UserController {
     }
 
     @RequestMapping(method = RequestMethod.GET)
-
     public ResponseEntity<User> getUserById(@RequestParam int id){
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
