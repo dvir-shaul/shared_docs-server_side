@@ -10,16 +10,12 @@ import docSharing.service.EmailService;
 import docSharing.utils.ConfirmationToken;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.JwtException;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import javax.security.auth.login.AccountNotFoundException;
 import java.io.UnsupportedEncodingException;
@@ -80,7 +76,7 @@ public class AuthController {
     }
 
     /**
-     * Login function is responisble for logging user into the system.
+     * Login function is responsible for logging user into the system.
      * This function accepts only 2 parameters: email, password.
      * If the credentials match to the database's information, it will allow the user to use its functionalities.
      * A token will be returned in a successful request.
@@ -121,24 +117,48 @@ public class AuthController {
      * @param token - A link with activation token
      * @return
      */
+//    @RequestMapping(value = "activate", method = RequestMethod.GET)
+//    public ResponseEntity<String> activate(@RequestParam String token) {
+//        String parsedToken = null;
+//        try {
+//            parsedToken = URLDecoder.decode(token, StandardCharsets.UTF_8.toString()).replaceAll(" ", ".");
+//        } catch (UnsupportedEncodingException e) {
+//            throw new RuntimeException(e);
+//        }
+//        try {
+//            Claims claim = ConfirmationToken.decodeJWT(parsedToken);
+//            Boolean isUpToDate = claim.getExpiration().after(new Date());
+//            if (isUpToDate) {
+//                authService.activate(Integer.valueOf(claim.getId()));
+//            }
+//
+//        } catch (ExpiredJwtException e) {
+//            emailService.reactivateLink(token);
+//        }
+//        return ResponseEntity.status(200).body("account activated successfully!");
+//    }
     @RequestMapping(value = "activate", method = RequestMethod.GET)
-    public ResponseEntity<String> activate(@RequestParam String token) {
-        String parsedToken = null;
-        try {
-            parsedToken = URLDecoder.decode(token, StandardCharsets.UTF_8.toString()).replaceAll(" ", ".");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
-        try {
-            Claims claim = ConfirmationToken.decodeJWT(parsedToken);
-            Boolean isUpToDate = claim.getExpiration().after(new Date());
-            if (isUpToDate) {
-                authService.activate(Integer.valueOf(claim.getId()));
-            }
-
-        } catch (ExpiredJwtException e) {
-            emailService.reactivateLink(token);
-        }
-        return ResponseEntity.status(200).body("account activated successfully!");
+    public ResponseEntity<String> activate(@RequestHeader(value = "token") String token) {
+        Long id = Long.valueOf(12);
+        int rowsAffected = authService.activate(id);
+//
+//        String parsedToken = null;
+//        try {
+//            parsedToken = URLDecoder.decode(token, StandardCharsets.UTF_8.toString()).replaceAll(" ", ".");
+//        } catch (UnsupportedEncodingException e) {
+//            throw new RuntimeException(e);
+//        }
+//        try {
+//            Claims claim = ConfirmationToken.decodeJWT(parsedToken);
+//            Boolean isUpToDate = claim.getExpiration().after(new Date());
+//            if (isUpToDate) {
+//            }
+//
+//        } catch (ExpiredJwtException e) {
+//            emailService.reactivateLink(token);
+//        }
+        if (rowsAffected > 0)
+            return ResponseEntity.status(200).body("account activated successfully!");
+        else return ResponseEntity.status(200).body("No entry was updated for this id: " + id);
     }
 }
