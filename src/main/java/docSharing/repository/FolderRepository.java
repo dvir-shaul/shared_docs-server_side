@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import javax.transaction.Transactional;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -22,4 +23,6 @@ public interface FolderRepository extends JpaRepository<Folder, Long> {
     @Modifying
     @Query("UPDATE Folder f " + "SET f.parentFolderId = ?1 WHERE f.id = ?2")
     int updateParentFolderId(Long parentFolderId, Long id);
+
+    List<Folder> findAllByParentFolderId(Long parentFolderId);
 }

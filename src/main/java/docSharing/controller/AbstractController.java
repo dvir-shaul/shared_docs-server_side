@@ -61,8 +61,8 @@ public abstract class AbstractController {
 //        if (folderId == null)
 //            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Can not proceed with this action without passing containing folder id");
 
-        if(userId != item.getUserId())
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ExceptionMessage.UNAUTHORIZED.toString());
+//        if(userId != item.getUserId())
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ExceptionMessage.UNAUTHORIZED.toString());
 
         // send it to create document.
         return ResponseEntity.ok().body(convertFromItemToService(item).create(userId, name, folderId).toString());
@@ -79,13 +79,13 @@ public abstract class AbstractController {
     }
 
     private ResponseEntity<String> delete(GeneralItem item) {
-        Long folderId = item.getId();
+        Long id = item.getId();
 
-        if (folderId == null)
+        if (id == null)
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("I'm sorry. In order for me to delete a document, you need to be more specific about its id... So what is its id?");
 
-        convertFromItemToService(item).delete(folderId);
-        return ResponseEntity.ok().body("A document answering to the id:" + folderId + " has been successfully erased from the database!");
+        convertFromItemToService(item).delete(id);
+        return ResponseEntity.ok().body("A document answering to the id:" + id + " has been successfully erased from the database!");
     }
 
     private ResponseEntity<Object> relocate(GeneralItem item) {
