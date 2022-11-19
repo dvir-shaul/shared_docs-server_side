@@ -22,7 +22,7 @@ public class DocumentController extends AbstractController {
         return validateAndRoute(doc, token, Action.RENAME);
     }
 
-    @RequestMapping(value = "delete", method = RequestMethod.DELETE, consumes = "application/json")
+    @RequestMapping(value = "", method = RequestMethod.DELETE, consumes = "application/json")
     public ResponseEntity<?> delete(@RequestBody Document doc, @RequestHeader(value = "token") String token){
         return validateAndRoute(doc, token, Action.DELETE);
     }
