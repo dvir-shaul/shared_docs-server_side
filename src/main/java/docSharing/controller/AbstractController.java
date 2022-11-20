@@ -1,40 +1,43 @@
 package docSharing.controller;
 
 import docSharing.entity.Document;
+import docSharing.entity.File;
 import docSharing.entity.Folder;
-import docSharing.entity.GeneralItem;
 import docSharing.service.AuthService;
 import docSharing.service.DocumentService;
 import docSharing.service.FolderService;
 import docSharing.service.ServiceInterface;
 import docSharing.utils.Action;
 import docSharing.utils.ExceptionMessage;
+import docSharing.utils.Regex;
+import docSharing.utils.Validations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-public abstract class AbstractController {
+import javax.naming.AuthenticationException;
+
+public class AbstractController {
 
     @Autowired
-    AuthService authService;
+    static AuthService authService;
     @Autowired
-    DocumentService documentService;
+    static DocumentService documentService;
     @Autowired
-    FolderService folderService;
+    static FolderService folderService;
 
-    public ResponseEntity<?> validateAndRoute(GeneralItem item, String token, Action action) {
-
+    public static ResponseEntity<?> validateAndRoute(File item, String token, Action action) {
         Long userId;
         try {
-//            Long userId = authService.validateToken(token);
-            userId = item.getUserId();
+            userId = authService.validateToken(token);
+            item.setId(userId);
         } catch (NullPointerException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ExceptionMessage.UNAUTHORIZED.toString());
         }
 
         switch (action) {
             case CREATE:
-                return create(item, userId);
+                return create(item);
             case DELETE:
                 return delete(item);
             case RELOCATE:
@@ -46,29 +49,21 @@ public abstract class AbstractController {
         }
     }
 
-    private ResponseEntity<String> create(GeneralItem item, Long userId) {
-
-        Long folderId = item.getParentFolderId();
-        String name = item.getName();
-
+    private static ResponseEntity<String> create(File item) {
         // make sure we got all the data from the client
-        if (name == null)
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You must include all and exact parameters for such an action: name");
+        try {
+            Validations.validate(Regex.FILE_NAME.getRegex(), item.getName());
+            Validations.validate(Regex.ID.getRegex(), item.getParentFolderId().toString());
+        } catch (NullPointerException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
 
-        // TODO: create validation for document name: make sure it doesn't have special characters!
-
-        // CONSULT: if a folderId is null, does it mean it has to be in the root folder?
-//        if (folderId == null)
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Can not proceed with this action without passing containing folder id");
-
-//        if(userId != item.getUserId())
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ExceptionMessage.UNAUTHORIZED.toString());
-
-        // send it to create document.
-        return ResponseEntity.ok().body(convertFromItemToService(item).create(userId, name, folderId).toString());
+        return ResponseEntity.ok().body(convertFromItemToService(item).create(item).toString());
     }
 
-    private ResponseEntity<Object> rename(GeneralItem item) {
+    private static ResponseEntity<Object> rename(File item) {
         String name = item.getName();
         Long folderId = item.getId();
 
@@ -78,7 +73,7 @@ public abstract class AbstractController {
         return ResponseEntity.ok().body(String.valueOf(convertFromItemToService(item).rename(folderId, name)));
     }
 
-    private ResponseEntity<String> delete(GeneralItem item) {
+    private static ResponseEntity<String> delete(File item) {
         Long id = item.getId();
 
         if (id == null)
@@ -88,7 +83,7 @@ public abstract class AbstractController {
         return ResponseEntity.ok().body("A document answering to the id:" + id + " has been successfully erased from the database!");
     }
 
-    private ResponseEntity<Object> relocate(GeneralItem item) {
+    private static ResponseEntity<Object> relocate(File item) {
         Long parentFolderId = item.getParentFolderId();
         Long folderId = item.getId();
 
@@ -100,10 +95,11 @@ public abstract class AbstractController {
 
     /**
      * This function gets an item as a parameter and extracts its class in order to return the correct service.
+     *
      * @param item
      * @return
      */
-    private ServiceInterface convertFromItemToService(GeneralItem item) {
+    private static ServiceInterface convertFromItemToService(File item) {
         if (item instanceof Document) return documentService;
         if (item instanceof Folder) return folderService;
         return null;

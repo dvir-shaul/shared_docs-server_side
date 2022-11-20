@@ -5,7 +5,7 @@ import java.time.LocalDate;
 
 @Entity(name = "Folder")
 @Table(name = "folder")
-public class Folder extends GeneralItem {
+public class Folder extends File {
 
     private Folder() {
         super();

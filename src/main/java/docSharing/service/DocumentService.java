@@ -1,7 +1,6 @@
 package docSharing.service;
 
 import docSharing.entity.Document;
-import docSharing.entity.User;
 import docSharing.repository.DocumentRepository;
 import docSharing.utils.ExceptionMessage;
 import org.springframework.beans.factory.annotation.Autowired;
