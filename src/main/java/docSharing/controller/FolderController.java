@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 class FolderController extends AbstractController {
 
     @RequestMapping(value = "create", method = RequestMethod.POST, consumes = "application/json")
-    public ResponseEntity<?> create(@RequestBody Folder folder, @RequestHeader(value = "token") String token) {
+    public ResponseEntity<?> create(@RequestBody Folder folder, @RequestHeader(value = "Authorization") String token) {
         return validateAndRoute(folder, token, Action.CREATE);
     }
 

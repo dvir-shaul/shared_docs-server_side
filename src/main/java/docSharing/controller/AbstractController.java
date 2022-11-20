@@ -26,8 +26,7 @@ public abstract class AbstractController {
 
         Long userId;
         try {
-//            Long userId = authService.validateToken(token);
-            userId = item.getUserId();
+             userId = authService.validateToken(token);
         } catch (NullPointerException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ExceptionMessage.UNAUTHORIZED.toString());
         }
