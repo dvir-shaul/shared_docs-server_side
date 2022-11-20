@@ -1,5 +1,7 @@
 package docSharing.entity;
 
+import docSharing.utils.ExceptionMessage;
+
 import javax.persistence.*;
 import java.time.LocalDate;
 
@@ -39,6 +41,7 @@ public class GeneralItem {
     }
 
     public void setUserId(Long userId) {
+        if(userId == null) throw new IllegalArgumentException(ExceptionMessage.NULL_INPUT.toString());
         this.userId = userId;
     }
 
@@ -55,6 +58,7 @@ public class GeneralItem {
     }
 
     public void setName(String name) {
+        if(name == null) throw new IllegalArgumentException(ExceptionMessage.NULL_INPUT.toString());
         this.name = name;
     }
 

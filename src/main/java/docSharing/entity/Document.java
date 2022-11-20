@@ -1,5 +1,7 @@
 package docSharing.entity;
 
+import docSharing.utils.ExceptionMessage;
+
 import javax.persistence.*;
 
 @Entity(name = "Document")
@@ -35,6 +37,7 @@ public class Document extends GeneralItem {
     }
 
     public void setContent(String content) {
+        if(content==null) throw new IllegalArgumentException(ExceptionMessage.NULL_INPUT.toString());
         this.content = content;
     }
 

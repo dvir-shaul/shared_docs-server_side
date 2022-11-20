@@ -7,6 +7,7 @@ public enum ExceptionMessage {
     TRUNCATE("Couldn't truncate the table properly."),
     ILLEGAL_SQL_QUERY("Sql query is not legal."),
     DUPLICATED_UNIQUE_FIELD("Can not create a duplicate of a unique field: "),
+    NULL_INPUT("cannot set the content of the argument to null"),
     EMPTY_NOTNULL_FIELD("Not null fields must be filled out before creation"),
     FIELDS_OF_OBJECT("Something went wrong when tried to get object's fields..."),
     RUNTIME("Runtime exception"),
