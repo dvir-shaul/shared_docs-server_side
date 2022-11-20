@@ -20,6 +20,15 @@ public class User {
     }
 
     public static User createUser(String email, String password,String name){
+        if(email==null||email.length()==0){
+            throw new IllegalArgumentException("email can not be null or empty");
+        }
+        if(password==null||password.length()==0){
+            throw new IllegalArgumentException("password can not be null or empty");
+        }
+        if(name==null||name.length()==0){
+            throw  new IllegalArgumentException("name can not be null or empty");
+        }
         User user = new User();
         user.setName(name);
         user.setPassword(password);
