@@ -13,23 +13,23 @@ import org.springframework.web.bind.annotation.*;
 public class DocumentController extends AbstractController {
 
     @RequestMapping(value = "create", method = RequestMethod.POST, consumes = "application/json")
-    public ResponseEntity<?> create(@RequestBody Document doc, @RequestHeader(value = "token") String token) {
+    public ResponseEntity<?> create(@RequestBody Document doc, @RequestHeader(value = "Authorization") String token) {
         return validateAndRoute(doc, token, Action.CREATE);
     }
 
     @RequestMapping(value = "rename", method = RequestMethod.PATCH, consumes = "application/json")
-    public ResponseEntity<?> rename(@RequestBody Document doc, @RequestHeader(value = "token") String token){
+    public ResponseEntity<?> rename(@RequestBody Document doc, @RequestHeader(value = "Authorization") String token){
         return validateAndRoute(doc, token, Action.RENAME);
     }
 
     @RequestMapping(value = "", method = RequestMethod.DELETE, consumes = "application/json")
-    public ResponseEntity<?> delete(@RequestBody Document doc, @RequestHeader(value = "token") String token){
+    public ResponseEntity<?> delete(@RequestBody Document doc, @RequestHeader(value = "Authorization") String token){
         return validateAndRoute(doc, token, Action.DELETE);
     }
 
 
     @RequestMapping(value = "relocate", method = RequestMethod.PATCH, consumes = "application/json")
-    public ResponseEntity<?> relocate(@RequestBody Document doc, @RequestHeader(value = "token") String token){
+    public ResponseEntity<?> relocate(@RequestBody Document doc, @RequestHeader(value = "Authorization") String token){
         return validateAndRoute(doc, token, Action.RELOCATE);
     }
 

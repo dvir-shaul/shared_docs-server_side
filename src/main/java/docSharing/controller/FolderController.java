@@ -21,12 +21,12 @@ class FolderController extends AbstractController {
     }
 
     @RequestMapping(value = "rename", method = RequestMethod.PATCH, consumes = "application/json")
-    public ResponseEntity<?> rename(@RequestBody Folder folder, @RequestHeader(value = "token") String token) {
+    public ResponseEntity<?> rename(@RequestBody Folder folder, @RequestHeader(value = "Authorization") String token) {
         return validateAndRoute(folder, token, Action.RENAME);
     }
 
     @RequestMapping(value = "delete", method = RequestMethod.DELETE, consumes = "application/json")
-    public ResponseEntity<?> delete(@RequestBody Folder folder, @RequestHeader(value = "token") String token) {
+    public ResponseEntity<?> delete(@RequestBody Folder folder, @RequestHeader(value = "Authorization") String token) {
         return validateAndRoute(folder, token, Action.DELETE);
     }
 
@@ -37,7 +37,7 @@ class FolderController extends AbstractController {
      * @return
      */
     @RequestMapping(value = "relocate", method = RequestMethod.PATCH, consumes = "application/json")
-    public ResponseEntity<?> relocate(@RequestBody Folder folder, @RequestHeader(value = "token") String token) {
+    public ResponseEntity<?> relocate(@RequestBody Folder folder, @RequestHeader(value = "Authorization") String token) {
         return validateAndRoute(folder, token, Action.RELOCATE);
     }
 }
