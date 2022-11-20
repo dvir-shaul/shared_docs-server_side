@@ -64,7 +64,7 @@ public class AuthController {
             Validations.validate(Regex.PASSWORD.getRegex(), password);
 //            Validations.validate(Regex.NAME.getRegex(), name);
             User emailUser = authService.register(email, password, name);
-            String token = ConfirmationToken.createJWT(Long.toString(emailUser.getId()), "docs-app", "activation email", 1000);
+            String token = ConfirmationToken.createJWT(Long.toString(emailUser.getId()), "docs-app", "activation email", 5*1000*60);
             String link = Activation.buildLink(token);
             String mail = Activation.buildEmail(emailUser.getName(), link);
             try {
@@ -142,13 +142,15 @@ public class AuthController {
             }
 
         } catch (ExpiredJwtException e) {
-            Optional<User> u = userService.findById(Long.valueOf(claims.getId()));
+            String id=e.getClaims().getId();
+            Optional<User> u = userService.findById(Long.valueOf(id));
             User user=null;
             if(u.isPresent()){
                 user=u.get();
+                emailService.reactivateLink(user);
+                return ResponseEntity.status(200).body("the link expired, new activation link has been sent");
             }
-            emailService.reactivateLink(user);
-            return ResponseEntity.status(200).body("the link expired, new activation link has been sent");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("something went wrong");
         }
         return ResponseEntity.status(200).body("account activated successfully!");
     }
