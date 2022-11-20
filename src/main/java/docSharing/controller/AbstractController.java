@@ -1,7 +1,7 @@
 package docSharing.controller;
 
 import docSharing.entity.Document;
-import docSharing.entity.File;
+import docSharing.entity.GeneralItem;
 import docSharing.entity.Folder;
 import docSharing.service.AuthService;
 import docSharing.service.DocumentService;
@@ -14,23 +14,21 @@ import docSharing.utils.Validations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 
-import javax.naming.AuthenticationException;
-
+@Component
 public class AbstractController {
 
     @Autowired
-    static AuthService authService;
+    DocumentService documentService;
     @Autowired
-    static DocumentService documentService;
-    @Autowired
-    static FolderService folderService;
+    FolderService folderService;
 
-    public static ResponseEntity<?> validateAndRoute(File item, String token, Action action) {
+    public ResponseEntity<?> validateAndRoute(GeneralItem item, String token, Action action) {
         Long userId;
         try {
-            userId = authService.validateToken(token);
-            item.setId(userId);
+            userId = AuthService.validateToken(token);
+            item.setUserId(userId);
         } catch (NullPointerException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ExceptionMessage.UNAUTHORIZED.toString());
         }
@@ -49,11 +47,11 @@ public class AbstractController {
         }
     }
 
-    private static ResponseEntity<String> create(File item) {
+    private ResponseEntity<String> create(GeneralItem item) {
         // make sure we got all the data from the client
         try {
             Validations.validate(Regex.FILE_NAME.getRegex(), item.getName());
-            Validations.validate(Regex.ID.getRegex(), item.getParentFolderId().toString());
+//            Validations.validate(Regex.ID.getRegex(), item.getParentFolderId().toString());
         } catch (NullPointerException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (IllegalArgumentException e) {
@@ -63,7 +61,7 @@ public class AbstractController {
         return ResponseEntity.ok().body(convertFromItemToService(item).create(item).toString());
     }
 
-    private static ResponseEntity<Object> rename(File item) {
+    private ResponseEntity<Object> rename(GeneralItem item) {
         String name = item.getName();
         Long folderId = item.getId();
 
@@ -73,7 +71,7 @@ public class AbstractController {
         return ResponseEntity.ok().body(String.valueOf(convertFromItemToService(item).rename(folderId, name)));
     }
 
-    private static ResponseEntity<String> delete(File item) {
+    private ResponseEntity<String> delete(GeneralItem item) {
         Long id = item.getId();
 
         if (id == null)
@@ -83,7 +81,7 @@ public class AbstractController {
         return ResponseEntity.ok().body("A document answering to the id:" + id + " has been successfully erased from the database!");
     }
 
-    private static ResponseEntity<Object> relocate(File item) {
+    private ResponseEntity<Object> relocate(GeneralItem item) {
         Long parentFolderId = item.getParentFolderId();
         Long folderId = item.getId();
 
@@ -99,7 +97,7 @@ public class AbstractController {
      * @param item
      * @return
      */
-    private static ServiceInterface convertFromItemToService(File item) {
+    private ServiceInterface convertFromItemToService(GeneralItem item) {
         if (item instanceof Document) return documentService;
         if (item instanceof Folder) return folderService;
         return null;

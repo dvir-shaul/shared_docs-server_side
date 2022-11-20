@@ -4,6 +4,7 @@ import docSharing.entity.Document;
 import docSharing.entity.Folder;
 import docSharing.utils.Action;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,43 +17,46 @@ import org.springframework.web.bind.annotation.RequestMethod;
 @AllArgsConstructor
 class FileController {
 
+    @Autowired
+    AbstractController ac;
+
     @RequestMapping(value = "folder", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<?> create(@RequestBody Folder folder, @RequestHeader(value = "Authorization") String token) {
-        return AbstractController.validateAndRoute(folder, token, Action.CREATE);
+        return ac.validateAndRoute(folder, token, Action.CREATE);
     }
 
     @RequestMapping(value = "document", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<?> create(@RequestBody Document doc, @RequestHeader(value = "Authorization") String token) {
-        return AbstractController.validateAndRoute(doc, token, Action.CREATE);
+        return ac.validateAndRoute(doc, token, Action.CREATE);
     }
 
     @RequestMapping(value = "folder/rename", method = RequestMethod.PATCH, consumes = "application/json")
     public ResponseEntity<?> rename(@RequestBody Folder folder, @RequestHeader(value = "Authorization") String token) {
-        return AbstractController.validateAndRoute(folder, token, Action.RENAME);
+        return ac.validateAndRoute(folder, token, Action.RENAME);
     }
 
     @RequestMapping(value = "document/rename", method = RequestMethod.PATCH, consumes = "application/json")
     public ResponseEntity<?> rename(@RequestBody Document doc, @RequestHeader(value = "Authorization") String token) {
-        return AbstractController.validateAndRoute(doc, token, Action.RENAME);
+        return ac.validateAndRoute(doc, token, Action.RENAME);
     }
 
     @RequestMapping(value = "folder", method = RequestMethod.DELETE, consumes = "application/json")
     public ResponseEntity<?> delete(@RequestBody Folder folder, @RequestHeader(value = "Authorization") String token) {
-        return AbstractController.validateAndRoute(folder, token, Action.DELETE);
+        return ac.validateAndRoute(folder, token, Action.DELETE);
     }
 
     @RequestMapping(value = "document", method = RequestMethod.DELETE, consumes = "application/json")
     public ResponseEntity<?> delete(@RequestBody Document doc, @RequestHeader(value = "Authorization") String token) {
-        return AbstractController.validateAndRoute(doc, token, Action.DELETE);
+        return ac.validateAndRoute(doc, token, Action.DELETE);
     }
 
     @RequestMapping(value = "folder/relocate", method = RequestMethod.PATCH, consumes = "application/json")
     public ResponseEntity<?> relocate(@RequestBody Folder folder, @RequestHeader(value = "Authorization") String token) {
-        return AbstractController.validateAndRoute(folder, token, Action.RELOCATE);
+        return ac.validateAndRoute(folder, token, Action.RELOCATE);
     }
 
     @RequestMapping(value = "document/relocate", method = RequestMethod.PATCH, consumes = "application/json")
     public ResponseEntity<?> relocate(@RequestBody Document doc, @RequestHeader(value = "Authorization") String token) {
-        return AbstractController.validateAndRoute(doc, token, Action.RELOCATE);
+        return ac.validateAndRoute(doc, token, Action.RELOCATE);
     }
 }

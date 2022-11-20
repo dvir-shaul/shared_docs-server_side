@@ -4,7 +4,7 @@ import javax.persistence.*;
 
 @Entity(name = "Document")
 @Table(name = "document")
-public class Document extends File{
+public class Document extends GeneralItem {
 
     private Boolean isPrivate;
     private String content;

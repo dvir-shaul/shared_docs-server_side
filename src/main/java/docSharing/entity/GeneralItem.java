@@ -4,7 +4,7 @@ import javax.persistence.*;
 import java.time.LocalDate;
 
 @MappedSuperclass
-public class File {
+public class GeneralItem {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
@@ -14,7 +14,7 @@ public class File {
     private Long parentFolderId;
     private String name;
 
-    public File(){
+    public GeneralItem(){
         this.creationDate = LocalDate.now();
     };
 

@@ -1,9 +1,8 @@
 package docSharing.utils;
 
-import docSharing.entity.File;
+import docSharing.entity.GeneralItem;
 import docSharing.service.AuthService;
 
-import javax.naming.AuthenticationException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,7 +23,7 @@ public class Validations {
 //            throw new AuthenticationException(ExceptionMessage.UNAUTHORIZED.toString());
 //    }
 
-    public static Boolean validateAction(AuthService service, File item, String token) {
+    public static Boolean validateAction(AuthService service, GeneralItem item, String token) {
         Long userId;
         try {
             userId = service.validateToken(token);

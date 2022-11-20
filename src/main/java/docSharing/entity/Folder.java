@@ -1,11 +1,10 @@
 package docSharing.entity;
 
 import javax.persistence.*;
-import java.time.LocalDate;
 
 @Entity(name = "Folder")
 @Table(name = "folder")
-public class Folder extends File {
+public class Folder extends GeneralItem {
 
     private Folder() {
         super();
