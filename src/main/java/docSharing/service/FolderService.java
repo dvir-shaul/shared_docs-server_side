@@ -24,19 +24,24 @@ public class FolderService implements ServiceInterface {
             System.out.println(parentFolderId + " is not null?");
             Optional<Folder> doc = folderRepository.findById(parentFolderId);
             if (!doc.isPresent())
-                throw new IllegalArgumentException(ExceptionMessage.FOLDER_EXISTS.toString() + parentFolderId);
+                throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + parentFolderId);
         }
-
         return folderRepository.save(Folder.createFolder(name, parentFolderId, userId)).getId();
     }
 
     public int rename(Long id, String name) {
         // TODO: make sure this folder exists in the db
         System.out.println("I am renaming this folder! " + id);
-        return folderRepository.updateName(name, id);
+        if(folderRepository.findById(id).isPresent()){
+            return folderRepository.updateName(name, id);
+        }
+        throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
     }
 
     public int relocate(Long parentFolderId, Long id) {
+        boolean a = folderRepository.findById(id).isPresent();
+        boolean b = folderRepository.findById(id).isPresent();
+        if(!a || !b) {throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());}
         // TODO: make sure both folders exist in the db
         return folderRepository.updateParentFolderId(parentFolderId, id);
     }
