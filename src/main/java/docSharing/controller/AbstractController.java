@@ -6,6 +6,7 @@ import docSharing.entity.GeneralItem;
 import docSharing.service.AuthService;
 import docSharing.service.DocumentService;
 import docSharing.service.FolderService;
+import docSharing.service.ServiceInterface;
 import docSharing.utils.Action;
 import docSharing.utils.ExceptionMessage;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +27,7 @@ public abstract class AbstractController {
         Long userId;
         try {
 //            Long userId = authService.validateToken(token);
-            userId = Long.valueOf(1);
+            userId = item.getUserId();
         } catch (NullPointerException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ExceptionMessage.UNAUTHORIZED.toString());
         }
@@ -60,11 +61,11 @@ public abstract class AbstractController {
 //        if (folderId == null)
 //            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Can not proceed with this action without passing containing folder id");
 
-        if(userId != item.getUserId())
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ExceptionMessage.UNAUTHORIZED.toString());
+//        if(userId != item.getUserId())
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ExceptionMessage.UNAUTHORIZED.toString());
 
         // send it to create document.
-        return ResponseEntity.ok().body(useCreateFunctionInServiceByItem(item, userId, name, folderId).toString());
+        return ResponseEntity.ok().body(convertFromItemToService(item).create(userId, name, folderId).toString());
     }
 
     private ResponseEntity<Object> rename(GeneralItem item) {
@@ -74,16 +75,17 @@ public abstract class AbstractController {
         if (name == null)
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You must include all and exact parameters for such an action: name");
 
-        return ResponseEntity.ok().body(String.valueOf(folderService.rename(folderId, name)));
+        return ResponseEntity.ok().body(String.valueOf(convertFromItemToService(item).rename(folderId, name)));
     }
 
-    private ResponseEntity<Boolean> delete(GeneralItem item) {
-        Long folderId = item.getId();
+    private ResponseEntity<String> delete(GeneralItem item) {
+        Long id = item.getId();
 
-        if (folderId == null)
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
-        folderService.delete(folderId);
-        return ResponseEntity.ok().body(true);
+        if (id == null)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("I'm sorry. In order for me to delete a document, you need to be more specific about its id... So what is its id?");
+
+        convertFromItemToService(item).delete(id);
+        return ResponseEntity.ok().body("A document answering to the id:" + id + " has been successfully erased from the database!");
     }
 
     private ResponseEntity<Object> relocate(GeneralItem item) {
@@ -93,12 +95,17 @@ public abstract class AbstractController {
         if (folderId == null)
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
 
-        return ResponseEntity.ok().body(folderService.relocate(parentFolderId, folderId));
+        return ResponseEntity.ok().body(convertFromItemToService(item).relocate(parentFolderId, folderId));
     }
 
-    private Long useCreateFunctionInServiceByItem(GeneralItem item, Long userId, String name, Long folderId) {
-        if (item instanceof Document) return documentService.create(userId, name, folderId);
-        if (item instanceof Folder) return folderService.create(userId, name, folderId);
+    /**
+     * This function gets an item as a parameter and extracts its class in order to return the correct service.
+     * @param item
+     * @return
+     */
+    private ServiceInterface convertFromItemToService(GeneralItem item) {
+        if (item instanceof Document) return documentService;
+        if (item instanceof Folder) return folderService;
         return null;
     }
 }

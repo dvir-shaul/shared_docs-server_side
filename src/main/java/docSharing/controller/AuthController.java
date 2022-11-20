@@ -80,7 +80,7 @@ public class AuthController {
     }
 
     /**
-     * Login function is responisble for logging user into the system.
+     * Login function is responsible for logging user into the system.
      * This function accepts only 2 parameters: email, password.
      * If the credentials match to the database's information, it will allow the user to use its functionalities.
      * A token will be returned in a successful request.

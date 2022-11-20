@@ -63,7 +63,7 @@ public class AuthService {
      *
      * @param id - user email
      */
-    public int activate(Integer id) {
+    public int activate(Long id) {
         // check if id exists
         return userRepository.updateIsActivated(true, id);
     }

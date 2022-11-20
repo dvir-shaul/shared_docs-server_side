@@ -3,12 +3,12 @@ package docSharing.entity;
 import javax.persistence.*;
 import java.time.LocalDate;
 
-@Entity
-@Inheritance (strategy = InheritanceType.SINGLE_TABLE)
+@MappedSuperclass
 public class GeneralItem {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
+    @Column(name = "created_on", nullable = false, updatable = false)
     private LocalDate creationDate;
     private Long userId;
     private Long parentFolderId;
@@ -56,5 +56,16 @@ public class GeneralItem {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    @Override
+    public String toString() {
+        return "GeneralItem{" +
+                "id=" + id +
+                ", creationDate=" + creationDate +
+                ", userId=" + userId +
+                ", parentFolderId=" + parentFolderId +
+                ", name='" + name + '\'' +
+                "}\n";
     }
 }

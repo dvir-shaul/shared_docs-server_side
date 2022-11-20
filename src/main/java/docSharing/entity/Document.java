@@ -1,10 +1,8 @@
 package docSharing.entity;
 
 import javax.persistence.*;
-import java.time.LocalDate;
-import java.util.Objects;
 
-@Entity
+@Entity(name = "Document")
 @Table(name = "document")
 public class Document extends GeneralItem{
 
