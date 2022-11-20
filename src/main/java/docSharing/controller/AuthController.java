@@ -76,7 +76,7 @@ public class AuthController {
         }
 
         // if correct -> call auth service with parameters -> register function
-        return ResponseEntity.status(200).body("Account has been successfully registered and created!");
+        return ResponseEntity.status(201).body("Account has been successfully registered and created!");
     }
 
     /**
@@ -99,10 +99,11 @@ public class AuthController {
         }
 
         // validate information
+        String token=null;
         try {
             Validations.validate(Regex.EMAIL.getRegex(), email);
             Validations.validate(Regex.PASSWORD.getRegex(), password);
-            authService.login(email, password);
+            token = authService.login(email, password);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (AccountNotFoundException e) {
@@ -110,7 +111,7 @@ public class AuthController {
         }
 
         // if correct -> call auth service with parameters -> login function
-        return ResponseEntity.status(200).body("this is the token");
+        return ResponseEntity.status(200).body("token: "+ token);
     }
 
     /**
@@ -129,15 +130,20 @@ public class AuthController {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
+        Claims claims = null;
         try {
-            Claims claim = ConfirmationToken.decodeJWT(parsedToken);
-            Boolean isUpToDate = claim.getExpiration().after(new Date());
-            if (isUpToDate) {
-                authService.activate(Integer.valueOf(claim.getId()));
+            claims = ConfirmationToken.decodeJWT(parsedToken);
+            if (claims.getExpiration().after(new Date())) {
+                if (userService.findById(Integer.valueOf(claims.getId())).getActivated()) {
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body("account already activated");
+                }
+                authService.activate(Integer.valueOf(claims.getId()));
             }
 
         } catch (ExpiredJwtException e) {
-            emailService.reactivateLink(token);
+            User u = userService.findById(Integer.valueOf(claims.getId()));
+            emailService.reactivateLink(u);
+            return ResponseEntity.status(200).body("the link expired, new activation link has been sent");
         }
         return ResponseEntity.status(200).body("account activated successfully!");
     }

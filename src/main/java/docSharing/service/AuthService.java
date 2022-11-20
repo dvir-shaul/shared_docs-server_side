@@ -24,6 +24,7 @@ public class AuthService {
 
     /**
      * register function method is used to register users to the  app with given inputs
+     *
      * @param email    - mail of user
      * @param password - password of user
      * @param name     - name of user
@@ -36,6 +37,7 @@ public class AuthService {
 
     /**
      * login to app and check if inputs was correct according to database
+     *
      * @param email    - mail of user
      * @param password - password
      * @return token for user to be unique on app
@@ -45,7 +47,7 @@ public class AuthService {
         if (user != null)
             throw new IllegalArgumentException(ExceptionMessage.ACCOUNT_EXISTS.toString() + email);
 
-        if (user.getPassword().equals(password)){
+        if (user.getPassword().equals(password)) {
             String token = generateToken(user);
             tokenMap.put(token, user.getId());
             return token;
@@ -58,6 +60,7 @@ public class AuthService {
      * activate function meant to change the user column isActivated from originated value false to true.
      * Repository go to the unique row that has user email and changed that value.
      * Method used after a user clicks on the link he got on email.
+     *
      * @param id - user email
      */
     public int activate(Integer id) {
@@ -65,11 +68,12 @@ public class AuthService {
         return userRepository.updateIsActivated(true, id);
     }
 
-    public Long validateToken(String token){
+    public Long validateToken(String token) {
         return Objects.requireNonNull(tokenMap.get(token));
     }
 
-    private String generateToken(User user){
-        return ConfirmationToken.createJWT(String.valueOf(user.getId()), "docs app", "login", 5 * 1000);
+    private String generateToken(User user) {
+        return ConfirmationToken.createJWT(String.valueOf(user.getId()), "docs app", "login", 5 * 1000 * 60);
     }
+
 }
