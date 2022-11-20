@@ -18,6 +18,13 @@ public class DocumentService implements ServiceInterface{
     @Autowired
     FolderRepository folderRepository;
 
+    /**
+     *  create new document.
+     * @param userId - the user that creates the file, the admin.
+     * @param name - name of document.
+     * @param folderId -what folder to create the file into.
+     * @return - id of the document.
+     */
     public Long create(Long userId, String name, Long folderId) {
         if (folderId != null) {
             Optional<Document> doc = documentRepository.findById(folderId);
@@ -27,16 +34,26 @@ public class DocumentService implements ServiceInterface{
         return documentRepository.save(Document.createDocument(userId, name, folderId)).getId();
     }
 
+    /**
+     * rename function gets an id of document and new name to change the document's name.
+     * @param id - document id.
+     * @param name - new name of the document.
+     * @return rows affected in mysql.
+     */
     public int rename(Long id, String name) {
-        // TODO: make sure this folder exists in the db
         if(documentRepository.findById(id).isPresent()){
             return documentRepository.updateName(name, id);
         }
         throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
     }
 
+    /**
+     * relocate is to change the document's location.
+     * @param parentFolderId - the folder that document is located.
+     * @param id - document id.
+     * @return rows affected in mysql.
+     */
     public int relocate(Long parentFolderId, Long id) {
-        // TODO: make sure both folders exist in the db
         boolean a = folderRepository.findById(id).isPresent();
         boolean b = documentRepository.findById(id).isPresent();
         if(! a) {throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());}
@@ -44,8 +61,11 @@ public class DocumentService implements ServiceInterface{
         return documentRepository.updateParentFolderId(parentFolderId, id);
     }
 
+    /**
+     * delete file by getting the document id.
+     * @param docId - gets document id .
+     */
     public void delete(Long docId) {
-        // TODO: make sure this folder exists in the db
         documentRepository.deleteById(docId);
     }
 }

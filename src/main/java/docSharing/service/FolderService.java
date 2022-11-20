@@ -19,6 +19,13 @@ public class FolderService implements ServiceInterface {
     @Autowired
     DocumentRepository documentRepository;
 
+    /**
+     *  create new folder.
+     * @param userId - the user that creates the file, the admin.
+     * @param name - name of document.
+     * @param parentFolderId -what folder to create the folder into.
+     * @return - id of the folder that was created.
+     */
     public Long create(Long userId, String name, Long parentFolderId) {
         if (parentFolderId != null) {
             System.out.println(parentFolderId + " is not null?");
@@ -29,23 +36,36 @@ public class FolderService implements ServiceInterface {
         return folderRepository.save(Folder.createFolder(name, parentFolderId, userId)).getId();
     }
 
+    /**
+     * rename function gets an id of folder and new name to change the folder's name.
+     * @param id - document id.
+     * @param name - new name of the document.
+     * @return rows affected in mysql.
+     */
     public int rename(Long id, String name) {
-        // TODO: make sure this folder exists in the db
-        System.out.println("I am renaming this folder! " + id);
         if(folderRepository.findById(id).isPresent()){
             return folderRepository.updateName(name, id);
         }
         throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
     }
 
+    /**
+     * relocate is to change the document's location.
+     * @param parentFolderId - the folder that folder is located.
+     * @param id - document id.
+     * @return rows affected in mysql.
+     */
     public int relocate(Long parentFolderId, Long id) {
         boolean a = folderRepository.findById(id).isPresent();
         boolean b = folderRepository.findById(id).isPresent();
         if(!a || !b) {throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());}
-        // TODO: make sure both folders exist in the db
         return folderRepository.updateParentFolderId(parentFolderId, id);
     }
-
+    /**
+     * delete folder by getting the document id, and deleting all it's content by recursively
+     * going through the folder files and folders in it.
+     * @param id - gets folder id to start delete the content.
+     */
     public void delete(Long id) {
         // make sure the user doesn't try to delete the root folder.
         // if he really wants to remove the root folder -> user deleteAll function.
@@ -54,10 +74,7 @@ public class FolderService implements ServiceInterface {
         // CONSULT: is this even necessary?
         Optional<Folder> folderFound = folderRepository.findById(id);
         if (!folderFound.isPresent()) return;
-
         // RECURSIVELY CALL A FUNCTION TO REMOVE ALL FOLDERS AND DOCUMENTS FROM A SPECIFIC GIVEN FOLDER ID
-
-        System.out.println("Inside folder " + id + ", going deeper!");
         // get all folders inside this specific folder
         List<Folder> foldersList = folderRepository.findAllByParentFolderId(id);
         // stop condition -> if list is empty. otherwise continue digging.
@@ -68,19 +85,14 @@ public class FolderService implements ServiceInterface {
             if (documentList.size() > 0) {
                 // remove every document inside this folder
                 documentList.forEach(document -> {
-                    System.out.println("Removing document. id" + document.getId());
                     documentRepository.deleteById(document.getId());
                 });
             }
             // eventually, remove this specific folder
-            System.out.println("Removing folder. id:" + id);
             folderRepository.deleteById(id);
             return;
         }
-
         foldersList.forEach(folder -> delete(folder.getId()));
-        System.out.println("Now, deleting the source folder. id:" + id);
         folderRepository.deleteById(id);
-        System.out.println("This is the end of the recursive function!");
     }
 }
