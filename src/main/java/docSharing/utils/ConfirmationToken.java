@@ -36,7 +36,7 @@ public class ConfirmationToken {
                 .signWith(signatureAlgorithm, signingKey);
 
         //if it has been specified, let's add the expiration
-        if (ttlMillis >= 0) {
+        if (ttlMillis > 0) {
             long expMillis = nowMillis + ttlMillis;
             Date exp = new Date(expMillis);
             builder.setExpiration(exp);
@@ -47,13 +47,10 @@ public class ConfirmationToken {
     }
 
     public static Claims decodeJWT(String jwt) {
-        return Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(jwt).getBody();
-
-        //This line will throw an exception if it is not a signed JWS (as expected)
-//        Claims claims = Jwts.parser()
-//                .setSigningKey(DatatypeConverter.parseBase64Binary(SECRET_KEY))
-//                .parseClaimsJws(jwt).getBody();
-       // return claims;
+        Claims claims = Jwts.parser()
+                .setSigningKey(DatatypeConverter.parseBase64Binary(SECRET_KEY))
+                .parseClaimsJws(jwt).getBody();
+        return claims;
     }
 
 
