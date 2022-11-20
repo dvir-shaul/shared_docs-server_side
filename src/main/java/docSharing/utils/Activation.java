@@ -81,12 +81,7 @@ public class Activation {
                 "</div></div>";
     }
 
-    // send activation link
-    public static void sendActivationEmail() {
-        ///...
 
-        //sendEmail(user.getEmail(), email);
-    }
 
     public static String buildLink(String token) {
         String encoded= token.replaceAll("\\."," ");
@@ -95,6 +90,7 @@ public class Activation {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
+        //TODO: replace with address of frontend, and there call the api with POST method
         return "http://localhost:8080/user/auth/activate?token="+encoded;
     }
 

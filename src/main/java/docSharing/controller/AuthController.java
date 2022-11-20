@@ -26,6 +26,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.Optional;
 
 @Controller
 @RequestMapping(value = "/user/auth")
@@ -63,7 +64,7 @@ public class AuthController {
             Validations.validate(Regex.PASSWORD.getRegex(), password);
 //            Validations.validate(Regex.NAME.getRegex(), name);
             User emailUser = authService.register(email, password, name);
-            String token = ConfirmationToken.createJWT(Long.toString(emailUser.getId()), "docs-app", "activation email", 300000);
+            String token = ConfirmationToken.createJWT(Long.toString(emailUser.getId()), "docs-app", "activation email", 1000);
             String link = Activation.buildLink(token);
             String mail = Activation.buildEmail(emailUser.getName(), link);
             try {
@@ -122,7 +123,7 @@ public class AuthController {
      * @param token - A link with activation token
      * @return
      */
-    @RequestMapping(value = "activate", method = RequestMethod.GET)
+    @RequestMapping(value = "activate", method = RequestMethod.POST)
     public ResponseEntity<String> activate(@RequestParam String token) {
         String parsedToken = null;
         try {
@@ -134,15 +135,19 @@ public class AuthController {
         try {
             claims = ConfirmationToken.decodeJWT(parsedToken);
             if (claims.getExpiration().after(new Date())) {
-                if (userService.findById(Integer.valueOf(claims.getId())).getActivated()) {
+                if (userService.findById(Long.valueOf(claims.getId())).get().getActivated()) {
                     return ResponseEntity.status(HttpStatus.CONFLICT).body("account already activated");
                 }
-                authService.activate(Integer.valueOf(claims.getId()));
+                authService.activate(Long.valueOf(claims.getId()));
             }
 
         } catch (ExpiredJwtException e) {
-            User u = userService.findById(Integer.valueOf(claims.getId()));
-            emailService.reactivateLink(u);
+            Optional<User> u = userService.findById(Long.valueOf(claims.getId()));
+            User user=null;
+            if(u.isPresent()){
+                user=u.get();
+            }
+            emailService.reactivateLink(user);
             return ResponseEntity.status(200).body("the link expired, new activation link has been sent");
         }
         return ResponseEntity.status(200).body("account activated successfully!");

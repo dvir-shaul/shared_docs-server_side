@@ -73,7 +73,7 @@ public class AuthService {
     }
 
     private String generateToken(User user) {
-        return ConfirmationToken.createJWT(String.valueOf(user.getId()), "docs app", "login", 5 * 1000 * 60);
+        return ConfirmationToken.createJWT(String.valueOf(user.getId()), "docs app", "login", 0);
     }
 
 }
