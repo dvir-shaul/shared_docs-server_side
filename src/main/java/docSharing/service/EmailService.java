@@ -14,8 +14,13 @@ import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.Message;
+import docSharing.entity.User;
+import docSharing.utils.Activation;
+import docSharing.utils.ConfirmationToken;
 import lombok.AllArgsConstructor;
 import org.apache.commons.codec.binary.Base64;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import javax.mail.Session;
@@ -65,7 +70,6 @@ public class EmailService{
         email.setFrom(new InternetAddress(TEST_EMAIL));
         email.addRecipient(TO, new InternetAddress(to));
         email.setSubject("activate account");
-        //email.setText(message);
         email.setContent(message,"text/html; charset=utf-8");
 
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -89,7 +93,15 @@ public class EmailService{
         }
     }
 
-    public void reactivateLink(String link){
-        // link
+    public void reactivateLink(User user){
+        String token = ConfirmationToken.createJWT(Long.toString(user.getId()), "docs-app", "activation email", 300000);
+        String link = Activation.buildLink(token);
+        String mail = Activation.buildEmail(user.getName(), link);
+        try {
+            send(user.getEmail(), mail);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
     }
 }

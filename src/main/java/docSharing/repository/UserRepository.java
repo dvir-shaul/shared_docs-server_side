@@ -6,11 +6,13 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import javax.transaction.Transactional;
+import java.util.Optional;
 
 @Repository
 @Transactional
 public interface UserRepository extends JpaRepository<User, Long> {
     User findByEmail(String email);
+    Optional<User> findById(Long id);
 
     @Transactional
     @Modifying
