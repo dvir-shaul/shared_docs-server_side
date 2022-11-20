@@ -66,6 +66,6 @@ public class GeneralItem {
                 ", userId=" + userId +
                 ", parentFolderId=" + parentFolderId +
                 ", name='" + name + '\'' +
-                '}';
+                "}\n";
     }
 }
