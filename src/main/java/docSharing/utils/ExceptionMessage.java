@@ -15,11 +15,19 @@ public enum ExceptionMessage {
     CREATE_TABLE("Couldn't create the table properly."),
     NO_PRIMARY_KEY_FOUND("No primary key found."),
     ACCOUNT_EXISTS("This user email already exists: "),
+    ACCOUNT_DOES_NOT_EXISTS("This user email does not exists in database: "),
+
+    DOCUMENT_EXISTS("This document ID already exist in the database: "),
+    DOCUMENT_DOES_NOT_EXISTS("This document ID does not exist in the database: "),
     NOT_MATCH("Error: email or password does not match"),
     NO_ACCOUNT_IN_DATABASE("Could not locate this email in the database."),
     UNAUTHORIZED("You are unauthorized to create such a action"),
-    FOLDER_EXISTS("This folder ID does not exist in the database: "),
+    FOLDER_EXISTS("This folder ID already exist in the database: "),
+    FOLDER_DOES_NOT_EXISTS("This folder ID does not exist in the database: "),
+
     VALIDATION_FAILED("Could not approve the given information: ");
+
+
 
     private final String message;
 
