@@ -60,7 +60,7 @@ public class GeneralItem {
 
     @Override
     public String toString() {
-        return "GeneralItem{" +
+        return "File{" +
                 "id=" + id +
                 ", creationDate=" + creationDate +
                 ", userId=" + userId +

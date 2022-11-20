@@ -1,6 +1,7 @@
 package docSharing.service;
 
 import docSharing.entity.Document;
+import docSharing.entity.GeneralItem;
 import docSharing.entity.Folder;
 import docSharing.repository.DocumentRepository;
 import docSharing.repository.FolderRepository;
@@ -19,21 +20,13 @@ public class FolderService implements ServiceInterface {
     @Autowired
     DocumentRepository documentRepository;
 
-    /**
-     *  create new folder.
-     * @param userId - the user that creates the file, the admin.
-     * @param name - name of document.
-     * @param parentFolderId -what folder to create the folder into.
-     * @return - id of the folder that was created.
-     */
-    public Long create(Long userId, String name, Long parentFolderId) {
-        if (parentFolderId != null) {
-            System.out.println(parentFolderId + " is not null?");
-            Optional<Folder> doc = folderRepository.findById(parentFolderId);
-            if (!doc.isPresent())
-                throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + parentFolderId);
+    public Long create(GeneralItem generalItem) {
+        if (generalItem.getParentFolderId() != null) {
+            Optional<Folder> folder = folderRepository.findById(generalItem.getParentFolderId());
+            if (!folder.isPresent())
+                throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + generalItem.getParentFolderId());
         }
-        return folderRepository.save(Folder.createFolder(name, parentFolderId, userId)).getId();
+        return folderRepository.save((Folder) generalItem).getId();
     }
 
     /**

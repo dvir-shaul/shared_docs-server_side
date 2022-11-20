@@ -10,9 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.security.auth.login.AccountNotFoundException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
 
 @Service
 @AllArgsConstructor
@@ -20,7 +17,6 @@ public class AuthService {
 
     @Autowired
     private UserRepository userRepository;
-
 
     /**
      * register function method is used to register users to the  app with given inputs
@@ -67,7 +63,7 @@ public class AuthService {
         return userRepository.updateIsActivated(true, id);
     }
 
-    public Long validateToken(String token) {
+    public static Long validateToken(String token) {
         if (token.startsWith("Bearer ")){
             token = token.substring(7, token.length());
         } else {

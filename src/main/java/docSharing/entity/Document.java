@@ -4,7 +4,7 @@ import javax.persistence.*;
 
 @Entity(name = "Document")
 @Table(name = "document")
-public class Document extends GeneralItem{
+public class Document extends GeneralItem {
 
     private Boolean isPrivate;
     private String content;
@@ -22,4 +22,27 @@ public class Document extends GeneralItem{
         return doc;
     }
 
+    public Boolean getPrivate() {
+        return isPrivate;
+    }
+
+    public void setPrivate(Boolean aPrivate) {
+        isPrivate = aPrivate;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + "Document{" +
+                "isPrivate=" + isPrivate +
+                ", content='" + content + '\'' +
+                '}';
+    }
 }

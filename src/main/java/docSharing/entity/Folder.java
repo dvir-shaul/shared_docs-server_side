@@ -1,7 +1,6 @@
 package docSharing.entity;
 
 import javax.persistence.*;
-import java.time.LocalDate;
 
 @Entity(name = "Folder")
 @Table(name = "folder")
