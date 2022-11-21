@@ -27,7 +27,7 @@ public class AuthService {
      */
     public User register(String email, String password, String name) {
         if (userRepository.findByEmail(email) != null)
-            throw new IllegalArgumentException(ExceptionMessage.ACCOUNT_EXISTS.toString() + email);
+            throw new IllegalArgumentException(ExceptionMessage.ACCOUNT_EXISTS + email);
         return userRepository.save(User.createUser(email, password, name));
     }
 
@@ -41,7 +41,7 @@ public class AuthService {
     public String login(String email, String password) throws AccountNotFoundException {
         User user = userRepository.findByEmail(email);
         if (user == null)
-            throw new IllegalArgumentException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString() + email);
+            throw new AccountNotFoundException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE + email);
 
         if (user.getPassword().equals(password)) {
             String token = generateToken(user);
@@ -67,7 +67,7 @@ public class AuthService {
         if (token.startsWith("Bearer ")){
             token = token.substring(7, token.length());
         } else {
-           throw new IllegalArgumentException("illegal auth header");
+           throw new IllegalArgumentException(ExceptionMessage.ILLEGAL_AUTH_HEADER.toString());
         }
         Claims claims=ConfirmationToken.decodeJWT(token);
         return Long.valueOf(claims.getId());
