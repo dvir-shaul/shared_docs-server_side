@@ -22,6 +22,11 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
 
     @Transactional
     @Modifying
+    @Query("UPDATE Document d SET d.content = ?1 WHERE d.id = ?2")
+    int updateContent(String content, Long id);
+
+    @Transactional
+    @Modifying
     @Query("UPDATE Document d SET d.parentFolderId = ?1 WHERE d.id = ?2")
     int updateParentFolderId(Long parentFolderId, Long id);
 

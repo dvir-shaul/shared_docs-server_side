@@ -20,6 +20,10 @@ public class DocumentService implements ServiceInterface {
     FolderRepository folderRepository;
 
 
+    public Document getDocById(Long id){
+        return documentRepository.findById(id).get();
+    }
+
     public Long create(GeneralItem generalItem) {
         if (generalItem.getParentFolderId() != null) {
             Optional<Folder> folder = folderRepository.findById(generalItem.getParentFolderId());
@@ -41,6 +45,10 @@ public class DocumentService implements ServiceInterface {
             return documentRepository.updateName(name, id);
         }
         throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
+    }
+
+    public int updateContent(String documentContent, Long documentId){
+        return documentRepository.updateContent(documentContent, documentId);
     }
 
     /**
