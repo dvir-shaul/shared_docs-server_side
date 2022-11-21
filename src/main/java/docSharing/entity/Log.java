@@ -1,6 +1,7 @@
 package docSharing.entity;
 
 import lombok.*;
+
 import java.time.LocalDateTime;
 
 @NoArgsConstructor
@@ -10,8 +11,8 @@ import java.time.LocalDateTime;
 @ToString
 public class Log {
 
-    private LocalDateTime creationDate;
-    private int offset;
+    private LocalDateTime creationDate = LocalDateTime.now();
+    private Integer offset;
     private String action;
     private String data;
     private Long userId;
