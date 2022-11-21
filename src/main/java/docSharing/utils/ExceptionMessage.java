@@ -17,6 +17,7 @@ public enum ExceptionMessage {
     NO_PRIMARY_KEY_FOUND("No primary key found."),
     ACCOUNT_EXISTS("This user email already exists: "),
     ACCOUNT_DOES_NOT_EXISTS("This user email does not exists in database: "),
+    ILLEGAL_AUTH_HEADER("Authorization header is not legal"),
 
     DOCUMENT_EXISTS("This document ID already exist in the database: "),
     DOCUMENT_DOES_NOT_EXISTS("This document ID does not exist in the database: "),
