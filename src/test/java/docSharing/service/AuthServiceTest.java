@@ -12,26 +12,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.willDoNothing;
-import static org.mockito.Mockito.*;
+
 
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.security.auth.login.AccountNotFoundException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
 
-
-import java.util.Optional;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -56,7 +46,7 @@ public class AuthServiceTest {
     }
 
     @Test
-    public void givenExistingEmail_whenSaveUser_thenThrowsException() {
+    public void givenExistingEmail_whenRegisterUser_thenThrowsException() {
         given(userRepository.findByEmail(user.getEmail())).willReturn(user);
         Assertions.assertThrows(RuntimeException.class, () -> {
             authService.register(user.getEmail(), user.getPassword(), user.getName());
