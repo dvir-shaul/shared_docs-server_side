@@ -9,19 +9,24 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 
 import javax.print.Doc;
+import java.util.Map;
 
 @Controller
 public class TextEditController {
 
     @Autowired
     DocumentService documentService;
+    //<docId, content>
+    Map<Long, String> changes;
 
     @MessageMapping("/document")
     @SendTo("/document")
-    public Document receiveLog(@Payload Log log){
-        Document doc = documentService.getDocById(log.getDocumentId());
-        documentService.updateContent(doc.getContent() + log.getData(), doc.getId());
-        return documentService.getDocById(log.getDocumentId());
+    public Log receiveLog(@Payload Log log){
+        // parse token to id
+//        Document doc = documentService.getDocById(log.getDocumentId());
+//        documentService.updateContent(doc.getContent() + log.getData(), doc.getId());
+//        return documentService.getDocById(log.getDocumentId());
+        return log;
     }
 
 //    @MessageMapping("/private-message")
