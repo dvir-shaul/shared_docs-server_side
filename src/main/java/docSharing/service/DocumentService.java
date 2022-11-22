@@ -15,7 +15,6 @@ import java.util.*;
 @Service
 public class DocumentService implements ServiceInterface {
 
-    //       <docId, content>
     static Map<Long, String> documentsContentChanges = new HashMap<>();
     static Map<Long, String> databaseDocumentsContent = new HashMap<>();
 
@@ -28,7 +27,6 @@ public class DocumentService implements ServiceInterface {
 
     @Scheduled(fixedDelay = 10000)
     public void updateDatabaseWithNewContent(){
-        System.out.println("update db");
         for (Map.Entry<Long,String> entry : documentsContentChanges.entrySet()) {
             if(! entry.getValue().equals(databaseDocumentsContent.get(entry.getKey()))){
                 documentRepository.updateContent(entry.getValue(),entry.getKey());
@@ -78,7 +76,6 @@ public class DocumentService implements ServiceInterface {
         return documentsContentChanges.get(id);
     }
 
-    //        return documentRepository.updateContent(documentContent, documentId);
     public void updateContent(Log log) {
         if(! documentRepository.findById(log.getDocumentId()).isPresent()){
             throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
@@ -94,11 +91,6 @@ public class DocumentService implements ServiceInterface {
                 insertText(log);
                 break;
         }
-
-//        Date date = new Date();
-//        if(documentsContentTimerChanges.get(log.getDocumentId()).getTime() - date.getTime() > 10 ){
-//
-//        }
     }
 
     private void insertText(Log log) {
@@ -122,8 +114,6 @@ public class DocumentService implements ServiceInterface {
 
         documentsContentChanges.put(id, content);
     }
-
-    //TODO: create function that calls the db and saves the content every x seconds
 
     /**
      * relocate is to change the document's location.
