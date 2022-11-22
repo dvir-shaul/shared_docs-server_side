@@ -3,22 +3,32 @@ package docSharing.service;
 import docSharing.entity.Document;
 import docSharing.entity.GeneralItem;
 import docSharing.entity.Folder;
+import docSharing.entity.Log;
 import docSharing.repository.DocumentRepository;
 import docSharing.repository.FolderRepository;
 import docSharing.utils.ExceptionMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
 public class DocumentService implements ServiceInterface {
+
+    //       <docId, content>
+    static Map<Long, String> documentsContentChanges = new HashMap<>();
 
     @Autowired
     DocumentRepository documentRepository;
     @Autowired
     FolderRepository folderRepository;
 
+
+    public Document getDocById(Long id) {
+        return documentRepository.findById(id).get();
+    }
 
     public Long create(GeneralItem generalItem) {
         if (generalItem.getParentFolderId() != null) {
@@ -41,6 +51,42 @@ public class DocumentService implements ServiceInterface {
             return documentRepository.updateName(name, id);
         }
         throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
+    }
+
+    public String getContent(Long id){
+        return documentsContentChanges.get(id);
+    }
+
+    //        return documentRepository.updateContent(documentContent, documentId);
+    public void updateContent(Log log) {
+
+        if (!documentsContentChanges.containsKey(log.getDocumentId()))
+            documentsContentChanges.put(log.getDocumentId(), "");
+
+        if (log.getAction().equals("delete")) deleteText(log);
+        if (log.getAction().equals("insert")) insertText(log);
+    }
+
+    private void insertText(Log log) {
+        Long id = log.getDocumentId();
+
+        String temp = documentsContentChanges.get(id);
+        String beforeCut = temp.substring(0, log.getOffset());
+        String afterCut = temp.substring(log.getOffset());
+        String content = beforeCut + log.getData() + afterCut;
+
+        documentsContentChanges.put(id, content);
+    }
+
+    private void deleteText(Log log) {
+        Long id = log.getDocumentId();
+
+        String temp = documentsContentChanges.get(id);
+        String beforeCut = temp.substring(0, log.getOffset());
+        String afterCut = temp.substring(log.getOffset() + Integer.valueOf(log.getData()));
+        String content = beforeCut.concat(afterCut);
+
+        documentsContentChanges.put(id, content);
     }
 
     /**

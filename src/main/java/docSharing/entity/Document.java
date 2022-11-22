@@ -9,6 +9,8 @@ import javax.persistence.*;
 public class Document extends GeneralItem {
 
     private Boolean isPrivate;
+
+    @Column(name = "content", columnDefinition = "text")
     private String content;
 
     private Document() {
