@@ -31,7 +31,6 @@ public class UserController {
     public ResponseEntity<Void> givePermission(@RequestParam Long docId, @RequestParam Long userId ,@RequestParam Permission permission){
         // call service and chang permission to the user
         // ...
-        // ...
         return ResponseEntity.ok().build();
     }
 
