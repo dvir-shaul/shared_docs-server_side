@@ -54,15 +54,16 @@ public class DocumentService implements ServiceInterface {
         throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
     }
 
-    public String getContent(Long id){
+    public String getContent(Long id) {
         return documentsContentChanges.get(id);
     }
 
     //        return documentRepository.updateContent(documentContent, documentId);
     public void updateContent(Log log) {
-
+     //TODO: check if document id exists
         if (!documentsContentChanges.containsKey(log.getDocumentId()))
             documentsContentChanges.put(log.getDocumentId(), "");
+        //FIXME: load document content from db instead of empty string
 
         if (log.getAction().equals("delete")) deleteText(log);
         if (log.getAction().equals("insert")) insertText(log);
@@ -89,6 +90,8 @@ public class DocumentService implements ServiceInterface {
 
         documentsContentChanges.put(id, content);
     }
+
+    //TODO: create function that calls the db and saves the content every x seconds
 
     /**
      * relocate is to change the document's location.
