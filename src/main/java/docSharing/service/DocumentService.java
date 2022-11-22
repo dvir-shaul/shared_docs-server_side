@@ -8,23 +8,41 @@ import docSharing.repository.DocumentRepository;
 import docSharing.repository.FolderRepository;
 import docSharing.utils.ExceptionMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-
+import java.util.*;
 @Service
 public class DocumentService implements ServiceInterface {
 
-    //       <docId, content>
     static Map<Long, String> documentsContentChanges = new HashMap<>();
+    static Map<Long, String> databaseDocumentsContent = new HashMap<>();
+
 
     @Autowired
     DocumentRepository documentRepository;
     @Autowired
     FolderRepository folderRepository;
 
+
+    @Scheduled(fixedDelay = 10000)
+    public void updateDatabaseWithNewContent(){
+        for (Map.Entry<Long,String> entry : documentsContentChanges.entrySet()) {
+            if(! entry.getValue().equals(databaseDocumentsContent.get(entry.getKey()))){
+                documentRepository.updateContent(entry.getValue(),entry.getKey());
+                databaseDocumentsContent.put(entry.getKey(),entry.getValue());
+            }
+        }
+    }
+
+    /**
+     * addToMap used when create a new document
+     * @param id - of document
+     */
+    void addToMap(long id){
+        documentsContentChanges.put(id,"");
+        databaseDocumentsContent.put(id,"");
+    }
 
     public Document getDocById(Long id) {
         return documentRepository.findById(id).get();
@@ -36,7 +54,7 @@ public class DocumentService implements ServiceInterface {
             if (!folder.isPresent())
                 throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + generalItem.getParentFolderId());
         }
-
+        addToMap(generalItem.getId());
         return documentRepository.save((Document) generalItem).getId();
     }
 
@@ -58,15 +76,21 @@ public class DocumentService implements ServiceInterface {
         return documentsContentChanges.get(id);
     }
 
-    //        return documentRepository.updateContent(documentContent, documentId);
     public void updateContent(Log log) {
-     //TODO: check if document id exists
-        if (!documentsContentChanges.containsKey(log.getDocumentId()))
-            documentsContentChanges.put(log.getDocumentId(), "");
-        //FIXME: load document content from db instead of empty string
-
-        if (log.getAction().equals("delete")) deleteText(log);
-        if (log.getAction().equals("insert")) insertText(log);
+        if(! documentRepository.findById(log.getDocumentId()).isPresent()){
+            throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
+        }
+        if (!documentsContentChanges.containsKey(log.getDocumentId())) {
+            documentsContentChanges.put(log.getDocumentId(), documentRepository.findById(log.getDocumentId()).get().getContent());
+        }
+        switch (log.getAction()) {
+            case "delete":
+                deleteText(log);
+                break;
+            case "insert":
+                insertText(log);
+                break;
+        }
     }
 
     private void insertText(Log log) {
@@ -91,8 +115,6 @@ public class DocumentService implements ServiceInterface {
         documentsContentChanges.put(id, content);
     }
 
-    //TODO: create function that calls the db and saves the content every x seconds
-
     /**
      * relocate is to change the document's location.
      *
@@ -113,11 +135,16 @@ public class DocumentService implements ServiceInterface {
     }
 
     /**
-     * delete file by getting the document id.
-     *
+     * delete file by getting the document id,
+     * also remove from the maps of content we have on service.
      * @param docId - gets document id .
      */
     public void delete(Long docId) {
+        databaseDocumentsContent.remove(docId);
+        documentsContentChanges.remove(docId);
         documentRepository.deleteById(docId);
     }
+
+
+
 }
