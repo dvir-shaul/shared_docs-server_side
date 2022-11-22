@@ -12,6 +12,11 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Timer;
+
 @Service
 public class DocumentService implements ServiceInterface {
 
@@ -144,7 +149,4 @@ public class DocumentService implements ServiceInterface {
         documentsContentChanges.remove(docId);
         documentRepository.deleteById(docId);
     }
-
-
-
 }

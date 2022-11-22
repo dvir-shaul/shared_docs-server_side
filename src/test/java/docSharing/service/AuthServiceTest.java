@@ -6,6 +6,7 @@ import docSharing.entity.User;
 import docSharing.repository.UserRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -38,23 +39,26 @@ public class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("Make sure when we register a user, it adds it to the database correctly")
     public void givenUserObject_whenSaveUser_thenReturnUserObject() {
         given(userRepository.findByEmail(user.getEmail())).willReturn(null);
         given(userRepository.save(user)).willReturn(user);
         User savedUser = authService.register(user.getEmail(), user.getPassword(), user.getName());
-        assertThat(savedUser).isNotNull();
+        assertThat(savedUser).isNotNull(); // FIXME: more than not null, it should return the same user
     }
 
     @Test
+    @DisplayName("??")
     public void givenExistingEmail_whenRegisterUser_thenThrowsException() {
         given(userRepository.findByEmail(user.getEmail())).willReturn(user);
         Assertions.assertThrows(RuntimeException.class, () -> {
             authService.register(user.getEmail(), user.getPassword(), user.getName());
         });
-        verify(userRepository, never()).save(any(User.class));
+        verify(userRepository, never()).save(any(User.class)); // What's that?
     }
 
     @Test
+    @DisplayName("Get back a token once any user logs in")
     public void givenExistingEmail_whenLoginUser_thenReturnsToken() {
         try {
             given(userRepository.findByEmail(user.getEmail())).willReturn(user);
@@ -66,13 +70,16 @@ public class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("Check if authService throws exception when a user logs in with the wrong email")
     public void givenNotExistingEmail_whenLoginUser_thenThrowsException() {
         given(userRepository.findByEmail(user.getEmail())).willReturn(null);
         Assertions.assertThrows(AccountNotFoundException.class, () -> {
             authService.login(user.getEmail(), user.getPassword());
         });
     }
+
     @Test
+    @DisplayName("Make sure a user is being activated after accepted the activation link")
     public void givenUserId_whenActivatingUser_thenActivateUser() {
         given(userRepository.updateIsActivated(true, user.getId())).willReturn(1);
         assertThat(authService.activate(user.getId())).isEqualTo(1);

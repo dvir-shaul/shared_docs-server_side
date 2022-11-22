@@ -4,6 +4,7 @@ import docSharing.entity.Folder;
 import docSharing.entity.User;
 import docSharing.repository.FolderRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -30,6 +31,7 @@ public class FolderServiceTest {
         folder = Folder.createFolder("test", 1L, 1L);
     }
     @Test
+    @DisplayName("Make sure the correct folder is inserted to the database")
     public void givenFolderObject_whenCreateFolder_thenReturnFolderId() {
         given(folderRepository.findById(folder.getId())).willReturn(null);
         given(folderRepository.save(folder)).willReturn(folder);
