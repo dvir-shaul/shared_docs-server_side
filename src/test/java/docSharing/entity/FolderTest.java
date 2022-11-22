@@ -1,4 +1,4 @@
-package docSharing.service;
+package docSharing.entity;
 
 import docSharing.entity.Folder;
 import org.junit.jupiter.api.Test;

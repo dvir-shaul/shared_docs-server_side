@@ -36,6 +36,7 @@ public class DocumentService implements ServiceInterface {
             if (!folder.isPresent())
                 throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + generalItem.getParentFolderId());
         }
+
         return documentRepository.save((Document) generalItem).getId();
     }
 
