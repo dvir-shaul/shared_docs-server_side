@@ -114,7 +114,6 @@ class DocumentServiceTest {
     void rename_FailedRenameFolder_throwsException() {
     }
 
-
     @Test
     void relocate_SuccessfulRelocate_Folder() {
     }

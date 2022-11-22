@@ -24,30 +24,7 @@ public class AbstractController {
     @Autowired
     FolderService folderService;
 
-    public ResponseEntity<?> validateAndRoute(GeneralItem item, String token, Action action) {
-        Long userId;
-        try {
-            userId = AuthService.validateToken(token);
-            item.setUserId(userId);
-        } catch (NullPointerException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ExceptionMessage.UNAUTHORIZED.toString());
-        }
-
-        switch (action) {
-            case CREATE:
-                return create(item);
-            case DELETE:
-                return delete(item);
-            case RELOCATE:
-                return relocate(item);
-            case RENAME:
-                return rename(item);
-            default:
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No such action allowed");
-        }
-    }
-
-    private ResponseEntity<String> create(GeneralItem item) {
+    public ResponseEntity<String> create(GeneralItem item) {
         // make sure we got all the data from the client
         try {
             Validations.validate(Regex.FILE_NAME.getRegex(), item.getName());
@@ -61,7 +38,7 @@ public class AbstractController {
         return ResponseEntity.ok().body(convertFromItemToService(item).create(item).toString());
     }
 
-    private ResponseEntity<Object> rename(GeneralItem item) {
+    public ResponseEntity<Object> rename(GeneralItem item) {
         String name = item.getName();
         Long folderId = item.getId();
 
@@ -71,7 +48,7 @@ public class AbstractController {
         return ResponseEntity.ok().body(String.valueOf(convertFromItemToService(item).rename(folderId, name)));
     }
 
-    private ResponseEntity<String> delete(GeneralItem item) {
+    public ResponseEntity<String> delete(GeneralItem item) {
         Long id = item.getId();
 
         if (id == null)
@@ -81,7 +58,7 @@ public class AbstractController {
         return ResponseEntity.ok().body("A document answering to the id:" + id + " has been successfully erased from the database!");
     }
 
-    private ResponseEntity<Object> relocate(GeneralItem item) {
+    public ResponseEntity<Object> relocate(GeneralItem item) {
         Long parentFolderId = item.getParentFolderId();
         Long folderId = item.getId();
 

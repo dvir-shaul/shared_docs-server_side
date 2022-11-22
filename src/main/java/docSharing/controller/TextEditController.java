@@ -21,19 +21,16 @@ public class TextEditController {
     @MessageMapping("/document")
     @SendTo("/document")
     public Log receiveLog(@Payload Log log) {
+        System.out.println(log);
         if (log.getData() == null || log.getAction() == null || log.getOffset() == null) return null;
         documentService.updateContent(log);
-        // parse token to id
-//        Document doc = documentService.getDocById(log.getDocumentId());
-//        documentService.updateContent(doc.getContent() + log.getData(), doc.getId());
-//        return documentService.getDocById(log.getDocumentId());
         return log;
     }
 
     @MessageMapping("/document/getContent")
     @SendTo("/document/getContent")
     public String getContent(@Payload Log log) {
+        System.out.println(log);
         return documentService.getContent(log.getDocumentId());
     }
-
 }
