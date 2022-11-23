@@ -20,6 +20,9 @@ public class FolderService implements ServiceInterface {
     FolderRepository folderRepository;
     @Autowired
     DocumentRepository documentRepository;
+    public Optional<Folder> findById(Long id){
+        return folderRepository.findById(id);
+    }
 
     public Long create(GeneralItem generalItem) {
 
@@ -77,34 +80,6 @@ public class FolderService implements ServiceInterface {
      * @param id - gets folder id to start delete the content.
      */
     public void delete(Long id) {
-//        // make sure the user doesn't try to delete the root folder.
-//        // if he really wants to remove the root folder -> user deleteAll function.
-//        if (id == null) return;
-//        // make sure this folder exists!
-//        // CONSULT: is this even necessary?
-//        Optional<Folder> folderFound = folderRepository.findById(id);
-//        if (!folderFound.isPresent()) return;
-//        //remove all content from a folder
-//        folderFound.get().removeAllContent();
-//        // RECURSIVELY CALL A FUNCTION TO REMOVE ALL FOLDERS AND DOCUMENTS FROM A SPECIFIC GIVEN FOLDER ID
-//        // get all folders inside this specific folder
-//        List<Folder> foldersList = folderRepository.findAllByParentFolderId(id);
-//        // stop condition -> if list is empty. otherwise continue digging.
-//        if (foldersList.size() == 0) {
-//            // find all the documents inside this folder and delete them!
-//            List<Document> documentList = documentRepository.findAllByParentFolderId(id);
-//            // check if this list is empty of documents
-//            if (documentList.size() > 0) {
-//                // remove every document inside this folder
-//                documentList.forEach(document -> {
-//                    documentRepository.deleteById(document.getId());
-//                });
-//            }
-//            // eventually, remove this specific folder
-//            folderRepository.deleteById(id);
-//            return;
-//        }
-//        foldersList.forEach(folder -> delete(folder.getId()));
         folderRepository.deleteById(id);
     }
 

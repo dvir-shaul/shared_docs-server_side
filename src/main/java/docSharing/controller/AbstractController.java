@@ -83,14 +83,13 @@ public class AbstractController {
     }
 
     private ResponseEntity<Object> relocate(GeneralItem item) {
-//        Long parentFolderId = item.getParentFolderId();
-//        Long folderId = item.getId();
-//
-//        if (folderId == null)
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
-//
-//        return ResponseEntity.ok().body(convertFromItemToService(item).relocate(parentFolderId, folderId));
-        return ResponseEntity.ok().build();
+        Folder parentFolder = item.getParentFolder();
+        Long folderId = item.getId();
+
+        if (folderId == null)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+
+        return ResponseEntity.ok().body(convertFromItemToService(item).relocate(parentFolder, folderId));
     }
 
     /**

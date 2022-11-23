@@ -3,8 +3,10 @@ package docSharing.controller;
 import docSharing.entity.Document;
 import docSharing.entity.Folder;
 import docSharing.repository.FolderRepository;
-import docSharing.requests.CreateDocument;
-import docSharing.requests.CreateFolder;
+import docSharing.requests.CreateDocumentReq;
+import docSharing.requests.CreateFolderReq;
+import docSharing.requests.RelocateFolderReq;
+import docSharing.service.FolderService;
 import docSharing.utils.Action;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -16,8 +18,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-import javax.persistence.EntityManager;
-
 @Controller
 @RequestMapping(value = "/file")
 @AllArgsConstructor
@@ -27,18 +27,18 @@ class FileController {
     @Autowired
     AbstractController ac;
     @Autowired
-    FolderRepository folderRepository;
+    FolderService folderService;
 
     @RequestMapping(value = "folder", method = RequestMethod.POST, consumes = "application/json")
-    public ResponseEntity<?> create(@RequestBody CreateFolder folderReq, @RequestHeader(value = "Authorization") String token) {
-        Folder parentFolder = folderRepository.findById(folderReq.getParentFolderId()).get();
+    public ResponseEntity<?> create(@RequestBody CreateFolderReq folderReq, @RequestHeader(value = "Authorization") String token) {
+        Folder parentFolder = folderService.findById(folderReq.getParentFolderId()).get();
         Folder folder = Folder.createFolder(folderReq.getName(), parentFolder);
         return ac.validateAndRoute(folder, token, Action.CREATE);
     }
 
     @RequestMapping(value = "document", method = RequestMethod.POST, consumes = "application/json")
-    public ResponseEntity<?> create(@RequestBody CreateDocument docReq, @RequestHeader(value = "Authorization") String token) {
-        Folder parentFolder=folderRepository.findById(docReq.getParentFolderId()).get();
+    public ResponseEntity<?> create(@RequestBody CreateDocumentReq docReq, @RequestHeader(value = "Authorization") String token) {
+        Folder parentFolder=folderService.findById(docReq.getParentFolderId()).get();
         Document doc=Document.createDocument(docReq.getName(), parentFolder);
         return ac.validateAndRoute(doc, token, Action.CREATE);
     }
@@ -64,12 +64,17 @@ class FileController {
     }
 
     @RequestMapping(value = "folder/relocate", method = RequestMethod.PATCH, consumes = "application/json")
-    public ResponseEntity<?> relocate(@RequestBody Folder folder, @RequestHeader(value = "Authorization") String token) {
+    public ResponseEntity<?> relocate(@RequestBody RelocateFolderReq folderReq, @RequestHeader(value = "Authorization") String token) {
+        Folder parentFolder = folderService.findById(folderReq.getNewParentId()).get();
+        Folder folder = folderService.findById(folderReq.getId()).get();
+        folder.setParentFolder(parentFolder);
         return ac.validateAndRoute(folder, token, Action.RELOCATE);
     }
 
     @RequestMapping(value = "document/relocate", method = RequestMethod.PATCH, consumes = "application/json")
-    public ResponseEntity<?> relocate(@RequestBody Document doc, @RequestHeader(value = "Authorization") String token) {
+    public ResponseEntity<?> relocate(@RequestBody CreateDocumentReq docReq, @RequestHeader(value = "Authorization") String token) {
+        Folder parentFolder=folderService.findById(docReq.getParentFolderId()).get();
+        Document doc=Document.createDocument(docReq.getName(), parentFolder);
         return ac.validateAndRoute(doc, token, Action.RELOCATE);
     }
 }

@@ -3,11 +3,11 @@ package docSharing.requests;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
-public class CreateFolder {
+public class CreateDocumentReq {
     private String name;
     private Long parentFolderId;
 
-    public CreateFolder(String name, Long parentFolderId) {
+    public CreateDocumentReq(String name, Long parentFolderId) {
         this.name = name;
         this.parentFolderId = parentFolderId;
     }
@@ -27,4 +27,5 @@ public class CreateFolder {
     public void setParentFolderId(Long parentFolderId) {
         this.parentFolderId = parentFolderId;
     }
+
 }
