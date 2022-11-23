@@ -2,6 +2,7 @@ package docSharing.utils;
 
 import docSharing.entity.GeneralItem;
 import docSharing.service.AuthService;
+import io.jsonwebtoken.Claims;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -23,7 +24,7 @@ public class Validations {
 //            throw new AuthenticationException(ExceptionMessage.UNAUTHORIZED.toString());
 //    }
 
-    public static Boolean validateAction(AuthService service, GeneralItem item, String token) {
+//    public static Boolean validateAction(AuthService service, GeneralItem item, String token) {
 //        Long userId;
 //        try {
 //            userId = service.validateToken(token);
@@ -31,7 +32,20 @@ public class Validations {
 //            return false;
 //        }
 //        if (userId != item.getUserId()) return false;
-        return true;
+//        return true;
+//    }
 
+    public static Long validateToken(String token) {
+        if (token == null) {
+            throw new NullPointerException(ExceptionMessage.NULL_INPUT.toString());
+        }
+        System.out.println(token);
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7, token.length());
+        } else {
+            throw new IllegalArgumentException(ExceptionMessage.ILLEGAL_AUTH_HEADER.toString());
+        }
+        Claims claims = ConfirmationToken.decodeJWT(token);
+        return Long.valueOf(claims.getId());
     }
 }

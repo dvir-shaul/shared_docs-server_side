@@ -63,16 +63,6 @@ public class AuthService {
         return userRepository.updateIsActivated(true, id);
     }
 
-    public static Long validateToken(String token) {
-        if (token.startsWith("Bearer ")){
-            token = token.substring(7, token.length());
-        } else {
-           throw new IllegalArgumentException(ExceptionMessage.ILLEGAL_AUTH_HEADER.toString());
-        }
-        Claims claims=ConfirmationToken.decodeJWT(token);
-        return Long.valueOf(claims.getId());
-    }
-
     private String generateToken(User user) {
         return ConfirmationToken.createJWT(String.valueOf(user.getId()), "docs app", "login", 0);
     }
