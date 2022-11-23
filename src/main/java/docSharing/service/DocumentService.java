@@ -1,11 +1,9 @@
 package docSharing.service;
 
-import docSharing.entity.Document;
-import docSharing.entity.GeneralItem;
-import docSharing.entity.Folder;
-import docSharing.entity.Log;
+import docSharing.entity.*;
 import docSharing.repository.DocumentRepository;
 import docSharing.repository.FolderRepository;
+import docSharing.repository.UserRepository;
 import docSharing.utils.ExceptionMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,20 +22,25 @@ public class DocumentService implements ServiceInterface {
     DocumentRepository documentRepository;
     @Autowired
     FolderRepository folderRepository;
-
+    @Autowired
+    UserRepository userRepository;
 
     public Document getDocById(Long id) {
         return documentRepository.findById(id).get();
     }
 
     public Long create(GeneralItem generalItem) {
-        if (generalItem.getParentFolderId() != null) {
-            Optional<Folder> folder = folderRepository.findById(generalItem.getParentFolderId());
+        if (generalItem.getParentFolder() != null) {
+            Optional<Folder> folder = folderRepository.findById(generalItem.getParentFolder().getId());
             if (!folder.isPresent())
-                throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + generalItem.getParentFolderId());
+                throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + generalItem.getParentFolder().getId());
         }
-
-        return documentRepository.save((Document) generalItem).getId();
+        Folder parentFolder=generalItem.getParentFolder();
+        User user = generalItem.getUser();
+        Document doc= documentRepository.save((Document) generalItem);
+        parentFolder.addDocument(doc);
+        user.addDocument(doc);
+        return doc.getId();
     }
 
     /**
@@ -60,7 +63,7 @@ public class DocumentService implements ServiceInterface {
 
     //        return documentRepository.updateContent(documentContent, documentId);
     public void updateContent(Log log) {
-     //TODO: check if document id exists
+        //TODO: check if document id exists
         if (!documentsContentChanges.containsKey(log.getDocumentId()))
             documentsContentChanges.put(log.getDocumentId(), "");
         //FIXME: load document content from db instead of empty string
@@ -96,20 +99,22 @@ public class DocumentService implements ServiceInterface {
     /**
      * relocate is to change the document's location.
      *
-     * @param parentFolderId - the folder that document is located.
-     * @param id             - document id.
+     * @param newParentFolder - the folder that document is located.
+     * @param id           - document id.
      * @return rows affected in mysql.
      */
-    public int relocate(Long parentFolderId, Long id) {
-        boolean a = folderRepository.findById(id).isPresent();
-        boolean b = documentRepository.findById(id).isPresent();
-        if (!a) {
+    public int relocate(Folder newParentFolder, Long id) {
+        if (!folderRepository.findById(newParentFolder.getId()).isPresent()) {
             throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
         }
-        if (!b) {
+        if (!documentRepository.findById(id).isPresent()) {
             throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
         }
-        return documentRepository.updateParentFolderId(parentFolderId, id);
+        Document doc= documentRepository.findById(id).get();
+        Folder oldParentFolder=doc.getParentFolder();
+        oldParentFolder.removeDocument(doc);
+        newParentFolder.addDocument(doc);
+        return documentRepository.updateParentFolderId(newParentFolder, id);
     }
 
     /**
@@ -118,6 +123,7 @@ public class DocumentService implements ServiceInterface {
      * @param docId - gets document id .
      */
     public void delete(Long docId) {
+       // User user=documentRepository.findUser(docId);
         documentRepository.deleteById(docId);
     }
 }

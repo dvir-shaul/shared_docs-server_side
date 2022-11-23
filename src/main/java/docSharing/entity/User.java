@@ -1,33 +1,62 @@
 package docSharing.entity;
 
 import javax.persistence.*;
+import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
-@Table(name = "user")
-public class User {
+@Table(name = "users")
+public class User{
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
     @Column(unique = true)
     private String email;
     private String password;
     private Boolean isActivated;
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Document> documents=new HashSet<>();
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Folder> folders=new HashSet<>();
 
-    private User() {
+    public void addDocument(Document document){
+        this.documents.add(document);
+    }
+    public void addFolder(Folder folder){
+        this.folders.add(folder);
+    }
+    public Set<Document> getDocuments() {
+        return documents;
+    }
+
+    public void setDocuments(Set<Document> documents) {
+        this.documents = documents;
+    }
+
+    public Set<Folder> getFolders() {
+        return folders;
+    }
+
+    public void setFolders(Set<Folder> folders) {
+        this.folders = folders;
+    }
+
+    public User() {
         this.isActivated = false;
     }
 
-    public static User createUser(String email, String password,String name){
-        if(email==null||email.length()==0){
+    public static User createUser(String email, String password, String name) {
+        if (email == null || email.length() == 0) {
             throw new IllegalArgumentException("email can not be null or empty");
         }
-        if(password==null||password.length()==0){
+        if (password == null || password.length() == 0) {
             throw new IllegalArgumentException("password can not be null or empty");
         }
-        if(name==null||name.length()==0){
-            throw  new IllegalArgumentException("name can not be null or empty");
+        if (name == null || name.length() == 0) {
+            throw new IllegalArgumentException("name can not be null or empty");
         }
         User user = new User();
         user.setName(name);

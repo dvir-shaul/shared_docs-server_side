@@ -3,22 +3,40 @@ package docSharing.entity;
 import docSharing.utils.ExceptionMessage;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.time.LocalDate;
 
 @MappedSuperclass
 public class GeneralItem {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(name = "created_on", nullable = false, updatable = false)
     private LocalDate creationDate;
-    private Long userId;
-    private Long parentFolderId;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @ManyToOne(fetch=FetchType.LAZY,cascade = {CascadeType.PERSIST,CascadeType.MERGE })
+    //@ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "parent_folder_id")
+    private Folder parentFolder;
     private String name;
 
-    public GeneralItem(){
+    public Folder getParentFolder() {
+        return parentFolder;
+    }
+
+    public void setParentFolder(Folder parentFolder) {
+        this.parentFolder = parentFolder;
+    }
+
+    public GeneralItem() {
         this.creationDate = LocalDate.now();
-    };
+    }
+
+
 
     public Long getId() {
         return id;
@@ -36,29 +54,21 @@ public class GeneralItem {
         this.creationDate = creationDate;
     }
 
-    public Long getUserId() {
-        return userId;
+    public User getUser() {
+        return user;
     }
 
-    public void setUserId(Long userId) {
-        if(userId == null) throw new IllegalArgumentException(ExceptionMessage.NULL_INPUT.toString());
-        this.userId = userId;
+    public void setUser(User user) {
+        this.user = user;
     }
 
-    public Long getParentFolderId() {
-        return parentFolderId;
-    }
-
-    public void setParentFolderId(Long parentFolderId) {
-        this.parentFolderId = parentFolderId;
-    }
 
     public String getName() {
         return name;
     }
 
     public void setName(String name) {
-        if(name == null) throw new IllegalArgumentException(ExceptionMessage.NULL_INPUT.toString());
+        if (name == null) throw new IllegalArgumentException(ExceptionMessage.NULL_INPUT.toString());
         this.name = name;
     }
 
@@ -67,8 +77,8 @@ public class GeneralItem {
         return "File{" +
                 "id=" + id +
                 ", creationDate=" + creationDate +
-                ", userId=" + userId +
-                ", parentFolderId=" + parentFolderId +
+                ", user=" + user +
+                ", parentFolder=" + parentFolder +
                 ", name='" + name + '\'' +
                 "}\n";
     }

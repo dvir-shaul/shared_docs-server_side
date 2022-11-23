@@ -5,7 +5,7 @@ import docSharing.utils.ExceptionMessage;
 import javax.persistence.*;
 
 @Entity(name = "Document")
-@Table(name = "document")
+@Table(name = "documents")
 public class Document extends GeneralItem {
 
     private Boolean isPrivate;
@@ -18,11 +18,17 @@ public class Document extends GeneralItem {
         this.isPrivate = true;
     }
 
-    public static Document createDocument(Long userId, String name, Long folderId) {
+    public static Document createDocument(String name,Folder parentFolder){
+        Document document = new Document();
+        document.setName(name);
+        document.setParentFolder(parentFolder);
+        return document;
+    }
+    public static Document createDocument(User user, String name, Folder folder) {
         Document doc = new Document();
         doc.setName(name);
-        doc.setParentFolderId(folderId);
-        doc.setUserId(userId);
+        doc.setParentFolder(folder);
+        doc.setUser(user);
         return doc;
     }
 

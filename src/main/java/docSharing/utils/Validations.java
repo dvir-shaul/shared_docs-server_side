@@ -24,13 +24,14 @@ public class Validations {
 //    }
 
     public static Boolean validateAction(AuthService service, GeneralItem item, String token) {
-        Long userId;
-        try {
-            userId = service.validateToken(token);
-        } catch (NullPointerException e) {
-            return false;
-        }
-        if (userId != item.getUserId()) return false;
+//        Long userId;
+//        try {
+//            userId = service.validateToken(token);
+//        } catch (NullPointerException e) {
+//            return false;
+//        }
+//        if (userId != item.getUserId()) return false;
         return true;
+
     }
 }

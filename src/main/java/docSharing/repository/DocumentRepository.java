@@ -2,9 +2,10 @@ package docSharing.repository;
 
 import docSharing.entity.Document;
 import docSharing.entity.Folder;
-import org.springframework.data.jpa.repository.JpaRepository;
+import docSharing.entity.User;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 import javax.transaction.Transactional;
@@ -12,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface DocumentRepository extends JpaRepository<Document, Long> {
+public interface DocumentRepository extends CrudRepository<Document, Long> {
     Optional<Document> findById(Long id);
 
     @Transactional
@@ -27,8 +28,10 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
 
     @Transactional
     @Modifying
-    @Query("UPDATE Document d SET d.parentFolderId = ?1 WHERE d.id = ?2")
-    int updateParentFolderId(Long parentFolderId, Long id);
+    @Query("UPDATE Document d SET d.parentFolder = ?1 WHERE d.id = ?2")
+    int updateParentFolderId(Folder parentFolder, Long id);
+
+
 
 //    @Transactional
 //    @Modifying
