@@ -20,36 +20,34 @@ public class FolderService implements ServiceInterface {
     FolderRepository folderRepository;
     @Autowired
     DocumentRepository documentRepository;
-    public Optional<Folder> findById(Long id){
+
+    public Optional<Folder> findById(Long id) {
         return folderRepository.findById(id);
     }
 
     public Long create(GeneralItem generalItem) {
-
         if (generalItem.getParentFolder() != null) {
             Optional<Folder> folder = folderRepository.findById(generalItem.getParentFolder().getId());
             if (!folder.isPresent())
                 throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + generalItem.getParentFolder().getId());
         }
-        Folder parentFolder=generalItem.getParentFolder();
-        User user = generalItem.getUser();
-        Folder folder=(Folder) generalItem;
-        if(parentFolder!=null) {
-            parentFolder.addFolder(folder);
+        Folder savedFolder = folderRepository.save((Folder) generalItem);
+        if (savedFolder.getParentFolder() != null) {
+            savedFolder.getParentFolder().addFolder(savedFolder);
         }
-        user.addFolder(folder);
-        return folderRepository.save(folder).getId();
-
+        savedFolder.getUser().addFolder(savedFolder);
+        return savedFolder.getId();
     }
 
     /**
      * rename function gets an id of folder and new name to change the folder's name.
-     * @param id - document id.
+     *
+     * @param id   - document id.
      * @param name - new name of the document.
      * @return rows affected in mysql.
      */
     public int rename(Long id, String name) {
-        if(folderRepository.findById(id).isPresent()){
+        if (folderRepository.findById(id).isPresent()) {
             return folderRepository.updateName(name, id);
         }
         throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
@@ -57,30 +55,57 @@ public class FolderService implements ServiceInterface {
 
     /**
      * relocate is to change the document's location.
+     *
      * @param newParentFolder - the folder that folder is located.
-     * @param id - document id.
+     * @param id              - document id.
      * @return rows affected in mysql.
      */
     public int relocate(Folder newParentFolder, Long id) {
-        if (!folderRepository.findById(newParentFolder.getId()).isPresent()) {
+        if (newParentFolder != null && !folderRepository.findById(newParentFolder.getId()).isPresent()) {
             throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
         }
         if (!folderRepository.findById(id).isPresent()) {
             throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
         }
-        Folder folder= folderRepository.findById(id).get();
-        Folder oldParentFolder=folder.getParentFolder();
-        oldParentFolder.removeFolder(folder);
-        newParentFolder.addFolder(folder);
+        Folder folder = folderRepository.findById(id).get();
+        if (newParentIsChild(newParentFolder, folder)) {
+            throw new IllegalArgumentException(ExceptionMessage.CIRCULAR_FOLDERS.toString());
+        }
+
+        Folder oldParentFolder = folder.getParentFolder();
+        folder.setParentFolder(newParentFolder);
+        if (oldParentFolder != null) {
+            oldParentFolder.removeFolder(folder);
+        }
+        if (newParentFolder != null) {
+            newParentFolder.addFolder(folder);
+        }
         return documentRepository.updateParentFolderId(newParentFolder, id);
     }
+
     /**
      * delete folder by getting the document id, and deleting all it's content by recursively
      * going through the folder files and folders in it.
+     *
      * @param id - gets folder id to start delete the content.
      */
     public void delete(Long id) {
         folderRepository.deleteById(id);
     }
 
+    private boolean newParentIsChild(Folder targetFolder, Folder destinationFolder) {
+        if (destinationFolder.getFolders().isEmpty()) {
+            return false;
+        }
+        if (destinationFolder.getFolders().contains(targetFolder)) {
+            return true;
+        }
+        for (Folder folder :
+                destinationFolder.getFolders()) {
+            if (newParentIsChild(targetFolder, folder)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

@@ -28,15 +28,10 @@ public interface DocumentRepository extends CrudRepository<Document, Long> {
 
     @Transactional
     @Modifying
-    @Query("UPDATE Document d SET d.parentFolder = ?1 WHERE d.id = ?2")
+    @Query("UPDATE Document SET parentFolder = ?1 WHERE id = ?2")
     int updateParentFolderId(Folder parentFolder, Long id);
 
 
 
-//    @Transactional
-//    @Modifying
-//    @Query("UPDATE User u SET u.isActivated = ?1 WHERE u.id = ?2")
-//    int updateIsActivated(Boolean bool, Long id);
 
-    List<Document> findAllByParentFolderId(Long parentFolderId);
 }

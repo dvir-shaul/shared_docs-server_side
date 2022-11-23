@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import javax.print.Doc;
 import java.util.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +40,10 @@ public class DocumentService implements ServiceInterface {
         }
     }
 
+
+    public Optional<Document> findById(Long id){
+        return documentRepository.findById(id);
+    }
     /**
      * addToMap used when create a new document
      * @param id - of document
@@ -58,13 +63,13 @@ public class DocumentService implements ServiceInterface {
             if (!folder.isPresent())
                 throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + generalItem.getParentFolder().getId());
         }
-        addToMap(generalItem.getId());
-        Folder parentFolder=generalItem.getParentFolder();
-        User user = generalItem.getUser();
-        Document doc= documentRepository.save((Document) generalItem);
-        parentFolder.addDocument(doc);
-        user.addDocument(doc);
-        return doc.getId();
+        Document savedDoc= documentRepository.save((Document) generalItem);
+        addToMap(savedDoc.getId());
+        if(savedDoc.getParentFolder()!=null) {
+            savedDoc.getParentFolder().addDocument(savedDoc);
+        }
+        savedDoc.getUser().addDocument(savedDoc);
+        return savedDoc.getId();
     }
 
     /**
@@ -132,7 +137,7 @@ public class DocumentService implements ServiceInterface {
      * @return rows affected in mysql.
      */
     public int relocate(Folder newParentFolder, Long id) {
-        if (!folderRepository.findById(newParentFolder.getId()).isPresent()) {
+        if (newParentFolder!=null&&!folderRepository.findById(newParentFolder.getId()).isPresent()) {
             throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
         }
         if (!documentRepository.findById(id).isPresent()) {
@@ -140,8 +145,11 @@ public class DocumentService implements ServiceInterface {
         }
         Document doc= documentRepository.findById(id).get();
         Folder oldParentFolder=doc.getParentFolder();
+        doc.setParentFolder(newParentFolder);
         oldParentFolder.removeDocument(doc);
-        newParentFolder.addDocument(doc);
+        if(newParentFolder!=null) {
+            newParentFolder.addDocument(doc);
+        }
         return documentRepository.updateParentFolderId(newParentFolder, id);
     }
 

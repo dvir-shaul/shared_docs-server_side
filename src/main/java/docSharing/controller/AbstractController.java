@@ -58,10 +58,12 @@ public class AbstractController {
         return ResponseEntity.ok().body("A document answering to the id:" + id + " has been successfully erased from the database!");
     }
 
-    private ResponseEntity<Object> relocate(GeneralItem item) {
-        Folder parentFolder = item.getParentFolder();
+    public ResponseEntity<Object> relocate(Long newParentId, GeneralItem item) {
+        Folder parentFolder=null;
+        if(newParentId!=null) {
+            parentFolder = folderService.findById(newParentId).get();
+        }
         Long folderId = item.getId();
-
         if (folderId == null)
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
 

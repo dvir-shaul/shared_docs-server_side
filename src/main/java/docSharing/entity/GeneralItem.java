@@ -1,5 +1,6 @@
 package docSharing.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import docSharing.utils.ExceptionMessage;
 
 import javax.persistence.*;
@@ -19,8 +20,8 @@ public class GeneralItem {
     private User user;
 
     @ManyToOne(fetch=FetchType.LAZY,cascade = {CascadeType.PERSIST,CascadeType.MERGE })
-    //@ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "parent_folder_id")
+    @JsonIgnore
     private Folder parentFolder;
     private String name;
 

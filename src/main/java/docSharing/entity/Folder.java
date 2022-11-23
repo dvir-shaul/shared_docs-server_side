@@ -12,14 +12,11 @@ public class Folder extends GeneralItem {
     @OneToMany(mappedBy = "parentFolder", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Document> documents = new HashSet<>();
 
-    //    private Folder() {
-//        super();
-//    }
     public Folder() {
         super();
     }
 
-    ;
+
 
     public Set<Folder> getFolders() {
         return folders;
