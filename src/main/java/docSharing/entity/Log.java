@@ -10,12 +10,10 @@ import java.time.LocalDateTime;
 @Setter
 @ToString
 public class Log {
-
     private LocalDateTime creationDate = LocalDateTime.now();
     private Integer offset;
     private String action;
     private String data;
     private Long userId;
     private Long documentId;
-
 }

@@ -8,24 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.annotation.Rollback;
-//@Autowired
-//private TestEntityManager testEntityManager;
-//@Test
-//public void testCreateUserThree() {
-//        User user = new User();
-//        //unique email, change and check if inserted
-//        user.setEmail("hen@gmail.com");
-//        user.setPassword("1234");
-//        user.setName("hen");
-//
-//        User savedUser = userRepo.save(user);
-//
-//        User existUser = testEntityManager.find(User.class, savedUser.getId());
-//
-//        assertThat(user.getEmail()).isEqualTo(existUser.getEmail());
-//        }
-
-import javax.print.Doc;
 
 import java.util.List;
 

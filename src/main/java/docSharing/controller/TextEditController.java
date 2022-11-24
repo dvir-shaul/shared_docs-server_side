@@ -17,9 +17,8 @@ public class TextEditController {
     @MessageMapping("/document")
     @SendTo("/document")
     public Log receiveLog(@Payload Log log) {
-        System.out.println(log);
-        if (log.getData() == null || log.getAction() == null || log.getOffset() == null ||
-                log.getDocumentId()==null || log.getUserId()==null || log.getCreationDate()==null)
+        if (log.getData() == null || log.getAction() == null || log.getOffset() == null || log.getDocumentId() == null || log.getUserId() == null || log.getCreationDate() == null)
+            // FIXME: What to do if anything fails? Do we do anything with the client?
             return null;
 
         documentService.updateContent(log);

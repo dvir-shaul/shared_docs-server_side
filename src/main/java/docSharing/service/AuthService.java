@@ -4,11 +4,9 @@ import docSharing.entity.User;
 import docSharing.utils.ExceptionMessage;
 import docSharing.repository.UserRepository;
 import docSharing.utils.ConfirmationToken;
-import io.jsonwebtoken.Claims;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import javax.security.auth.login.AccountNotFoundException;
 
 @Service

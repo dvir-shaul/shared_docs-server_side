@@ -1,55 +1,91 @@
 package docSharing.service;
 
-import docSharing.entity.Document;
-import docSharing.entity.GeneralItem;
-import docSharing.entity.Folder;
-import docSharing.entity.Log;
+import docSharing.entity.*;
 import docSharing.repository.DocumentRepository;
 import docSharing.repository.FolderRepository;
 import docSharing.utils.ExceptionMessage;
+import docSharing.utils.debounce.Debouncer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Timer;
 
 @Service
 public class DocumentService implements ServiceInterface {
 
-    static Map<Long, String> documentsContentChanges = new HashMap<>();
-    static Map<Long, String> databaseDocumentsContent = new HashMap<>();
+    static Map<Long, String> documentsContentChanges = new HashMap<>(); // current content in cache
+    static Map<Long, String> databaseDocumentsContent = new HashMap<>(); // current content in database
+    static Map<Long, Log> changeLogs = new HashMap<>(); // logs history until storing to database
+    //       userId, changesList
 
+    Debouncer debouncer = new Debouncer<>(new SendLogsToDatabase(changeLogs), 10000);
 
     @Autowired
     DocumentRepository documentRepository;
     @Autowired
     FolderRepository folderRepository;
 
+    private void insertLogToLog(Log currentLog, Log newLog) {
+//        if(currentLog.getDocumentId() != newLog.getDocumentId()) return; // send current log to db and make map null
+//        if (!(currentLog.getOffset() - 1 >= newLog.getOffset() && currentLog.getOffset() + currentLog.getData().length() + 1 <= newLog.getOffset()))
+//            return;
+//        System.out.println(currentLog.getOffset() + " " + newLog.getOffset() + " " + (currentLog.getOffset() - 1 >= newLog.getOffset()));
+//        System.out.println(currentLog.getOffset() + (currentLog.getData().length() + 1) + " " + newLog.getOffset() + " " + (currentLog.getOffset() + currentLog.getData().length() + 1 <= newLog.getOffset()));
+
+        String currentText = currentLog.getData();
+        String beforeCut = currentText.substring(0, newLog.getOffset());
+        String afterCut = currentText.substring(newLog.getOffset());
+        String content = beforeCut + newLog.getData() + afterCut;
+        currentLog.setData(content);
+
+        changeLogs.put(currentLog.getUserId(), currentLog);
+    }
+
+    public void updateContent(Log log) {
+//        addToMap(log.getDocumentId());
+
+//        if (!changeLogs.containsKey(log.getUserId())) changeLogs.put(log.getUserId(), log);
+//        else {
+//            insertLogToLog(changeLogs.get(log.getUserId()), log);
+//        }
+
+//        debouncer.call(log.getUserId());
+
+        if (!documentRepository.findById(log.getDocumentId()).isPresent()) {
+            throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
+        }
+        if (!documentsContentChanges.containsKey(log.getDocumentId())) {
+            documentsContentChanges.put(log.getDocumentId(), documentRepository.findById(log.getDocumentId()).get().getContent());
+        }
+
+        switch (log.getAction()) {
+            case "delete":
+                deleteText(log);
+                break;
+            case "insert":
+                insertText(log);
+                break;
+        }
+    }
 
     @Scheduled(fixedDelay = 10000)
-    public void updateDatabaseWithNewContent(){
-        for (Map.Entry<Long,String> entry : documentsContentChanges.entrySet()) {
-            if(! entry.getValue().equals(databaseDocumentsContent.get(entry.getKey()))){
-                documentRepository.updateContent(entry.getValue(),entry.getKey());
-                databaseDocumentsContent.put(entry.getKey(),entry.getValue());
+    public void updateDatabaseWithNewContent() {
+        for (Map.Entry<Long, String> entry : documentsContentChanges.entrySet()) {
+            if (!entry.getValue().equals(databaseDocumentsContent.get(entry.getKey()))) {
+                documentRepository.updateContent(entry.getValue(), entry.getKey());
+                databaseDocumentsContent.put(entry.getKey(), entry.getValue());
             }
         }
     }
 
-    /**
-     * addToMap used when create a new document
-     * @param id - of document
-     */
-    void addToMap(long id){
-        documentsContentChanges.put(id,"");
-        databaseDocumentsContent.put(id,"");
+    void addToMap(long id) {
+        documentsContentChanges.putIfAbsent(id, "");
+        databaseDocumentsContent.putIfAbsent(id, "");
     }
 
     public Document getDocById(Long id) {
+        // FIXME: it is optional so we need to check if it exists
         return documentRepository.findById(id).get();
     }
 
@@ -63,13 +99,6 @@ public class DocumentService implements ServiceInterface {
         return documentRepository.save((Document) generalItem).getId();
     }
 
-    /**
-     * rename function gets an id of document and new name to change the document's name.
-     *
-     * @param id   - document id.
-     * @param name - new name of the document.
-     * @return rows affected in mysql.
-     */
     public int rename(Long id, String name) {
         if (documentRepository.findById(id).isPresent()) {
             return documentRepository.updateName(name, id);
@@ -81,22 +110,6 @@ public class DocumentService implements ServiceInterface {
         return documentsContentChanges.get(id);
     }
 
-    public void updateContent(Log log) {
-        if(! documentRepository.findById(log.getDocumentId()).isPresent()){
-            throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
-        }
-        if (!documentsContentChanges.containsKey(log.getDocumentId())) {
-            documentsContentChanges.put(log.getDocumentId(), documentRepository.findById(log.getDocumentId()).get().getContent());
-        }
-        switch (log.getAction()) {
-            case "delete":
-                deleteText(log);
-                break;
-            case "insert":
-                insertText(log);
-                break;
-        }
-    }
 
     private void insertText(Log log) {
         Long id = log.getDocumentId();
@@ -109,6 +122,7 @@ public class DocumentService implements ServiceInterface {
         documentsContentChanges.put(id, content);
     }
 
+
     private void deleteText(Log log) {
         Long id = log.getDocumentId();
 
@@ -120,13 +134,6 @@ public class DocumentService implements ServiceInterface {
         documentsContentChanges.put(id, content);
     }
 
-    /**
-     * relocate is to change the document's location.
-     *
-     * @param parentFolderId - the folder that document is located.
-     * @param id             - document id.
-     * @return rows affected in mysql.
-     */
     public int relocate(Long parentFolderId, Long id) {
         boolean a = folderRepository.findById(id).isPresent();
         boolean b = documentRepository.findById(id).isPresent();
@@ -139,11 +146,6 @@ public class DocumentService implements ServiceInterface {
         return documentRepository.updateParentFolderId(parentFolderId, id);
     }
 
-    /**
-     * delete file by getting the document id,
-     * also remove from the maps of content we have on service.
-     * @param docId - gets document id .
-     */
     public void delete(Long docId) {
         databaseDocumentsContent.remove(docId);
         documentsContentChanges.remove(docId);
