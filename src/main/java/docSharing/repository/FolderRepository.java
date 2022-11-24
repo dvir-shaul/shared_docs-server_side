@@ -21,8 +21,8 @@ public interface FolderRepository extends JpaRepository<Folder, Long> {
 
     @Transactional
     @Modifying
-    @Query("UPDATE Folder f " + "SET f.parentFolderId = ?1 WHERE f.id = ?2")
-    int updateParentFolderId(Long parentFolderId, Long id);
+    @Query("UPDATE Folder SET parentFolder = ?1 WHERE id = ?2")
+    int updateParentFolderId(Folder parentFolder, Long id);
 
     List<Folder> findAllByParentFolderId(Long parentFolderId);
 }

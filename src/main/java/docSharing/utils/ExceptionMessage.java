@@ -27,9 +27,9 @@ public enum ExceptionMessage {
     FOLDER_EXISTS("This folder ID already exist in the database: "),
     FOLDER_DOES_NOT_EXISTS("This folder ID does not exist in the database: "),
 
-    VALIDATION_FAILED("Could not approve the given information: ");
+    VALIDATION_FAILED("Could not approve the given information: "),
 
-
+    CIRCULAR_FOLDERS("The destination folder is subfolder of the source folder");
 
     private final String message;
 

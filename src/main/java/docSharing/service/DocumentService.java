@@ -3,12 +3,14 @@ package docSharing.service;
 import docSharing.entity.*;
 import docSharing.repository.DocumentRepository;
 import docSharing.repository.FolderRepository;
+import docSharing.repository.UserRepository;
 import docSharing.utils.ExceptionMessage;
 import docSharing.utils.debounce.Debouncer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import javax.print.Doc;
 import java.util.*;
 
 @Service
@@ -69,6 +71,9 @@ public class DocumentService implements ServiceInterface {
         }
     }
 
+    @Autowired
+    UserRepository userRepository;
+
     @Scheduled(fixedDelay = 10000)
     public void updateDatabaseWithNewContent() {
         for (Map.Entry<Long, String> entry : documentsContentChanges.entrySet()) {
@@ -79,9 +84,19 @@ public class DocumentService implements ServiceInterface {
         }
     }
 
+
+    public Optional<Document> findById(Long id) {
+        return documentRepository.findById(id);
+    }
+
+    /**
+     * addToMap used when create a new document
+     *
+     * @param id - of document
+     */
     void addToMap(long id) {
-        documentsContentChanges.putIfAbsent(id, "");
-        databaseDocumentsContent.putIfAbsent(id, "");
+        documentsContentChanges.put(id, "");
+        databaseDocumentsContent.put(id, "");
     }
 
     public Document getDocById(Long id) {
@@ -90,13 +105,18 @@ public class DocumentService implements ServiceInterface {
     }
 
     public Long create(GeneralItem generalItem) {
-        if (generalItem.getParentFolderId() != null) {
-            Optional<Folder> folder = folderRepository.findById(generalItem.getParentFolderId());
+        if (generalItem.getParentFolder() != null) {
+            Optional<Folder> folder = folderRepository.findById(generalItem.getParentFolder().getId());
             if (!folder.isPresent())
-                throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + generalItem.getParentFolderId());
+                throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + generalItem.getParentFolder().getId());
         }
-        addToMap(generalItem.getId());
-        return documentRepository.save((Document) generalItem).getId();
+        Document savedDoc = documentRepository.save((Document) generalItem);
+        addToMap(savedDoc.getId());
+        if (savedDoc.getParentFolder() != null) {
+            savedDoc.getParentFolder().addDocument(savedDoc);
+        }
+        savedDoc.getUser().addDocument(savedDoc);
+        return savedDoc.getId();
     }
 
     public int rename(Long id, String name) {
@@ -134,18 +154,36 @@ public class DocumentService implements ServiceInterface {
         documentsContentChanges.put(id, content);
     }
 
-    public int relocate(Long parentFolderId, Long id) {
-        boolean a = folderRepository.findById(id).isPresent();
-        boolean b = documentRepository.findById(id).isPresent();
-        if (!a) {
+    /**
+     * relocate is to change the document's location.
+     *
+     * @param newParentFolder - the folder that document is located.
+     * @param id              - document id.
+     * @return rows affected in mysql.
+     */
+    public int relocate(Folder newParentFolder, Long id) {
+        if (newParentFolder != null && !folderRepository.findById(newParentFolder.getId()).isPresent()) {
             throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
         }
-        if (!b) {
+        if (!documentRepository.findById(id).isPresent()) {
             throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
         }
-        return documentRepository.updateParentFolderId(parentFolderId, id);
+        Document doc = documentRepository.findById(id).get();
+        Folder oldParentFolder = doc.getParentFolder();
+        doc.setParentFolder(newParentFolder);
+        oldParentFolder.removeDocument(doc);
+        if (newParentFolder != null) {
+            newParentFolder.addDocument(doc);
+        }
+        return documentRepository.updateParentFolderId(newParentFolder, id);
     }
 
+    /**
+     * delete file by getting the document id,
+     * also remove from the maps of content we have on service.
+     *
+     * @param docId - gets document id .
+     */
     public void delete(Long docId) {
         databaseDocumentsContent.remove(docId);
         documentsContentChanges.remove(docId);
