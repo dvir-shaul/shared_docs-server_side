@@ -3,6 +3,7 @@ package docSharing.service;
 import docSharing.entity.*;
 import docSharing.repository.DocumentRepository;
 import docSharing.repository.FolderRepository;
+import docSharing.repository.UserDocumentRepository;
 import docSharing.repository.UserRepository;
 import docSharing.utils.ExceptionMessage;
 import docSharing.utils.debounce.Debouncer;
@@ -27,6 +28,8 @@ public class DocumentService implements ServiceInterface {
     DocumentRepository documentRepository;
     @Autowired
     FolderRepository folderRepository;
+    @Autowired
+    UserDocumentRepository userDocumentRepository;
 
     private void insertLogToLog(Log currentLog, Log newLog) {
 //        if(currentLog.getDocumentId() != newLog.getDocumentId()) return; // send current log to db and make map null
@@ -116,6 +119,12 @@ public class DocumentService implements ServiceInterface {
             savedDoc.getParentFolder().addDocument(savedDoc);
         }
         savedDoc.getUser().addDocument(savedDoc);
+        UserDocument userDocument=new UserDocument();
+        userDocument.setId(new UserDocumentPk());
+        userDocument.setDocument(savedDoc);
+        userDocument.setUser(savedDoc.getUser());
+        userDocument.setPermission(Permission.MODERATOR);
+        userDocumentRepository.save(userDocument);
         return savedDoc.getId();
     }
 

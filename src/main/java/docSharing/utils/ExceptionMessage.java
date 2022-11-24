@@ -29,7 +29,8 @@ public enum ExceptionMessage {
 
     VALIDATION_FAILED("Could not approve the given information: "),
 
-    CIRCULAR_FOLDERS("The destination folder is subfolder of the source folder");
+    CIRCULAR_FOLDERS("The destination folder is subfolder of the source folder"),
+    CANT_ASSIGN_PERMISSION("Document ID or user ID or Permission does not exist in the database: ");
 
     private final String message;
 
