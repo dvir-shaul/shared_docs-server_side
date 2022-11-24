@@ -3,10 +3,8 @@ package docSharing.controller;
 import docSharing.entity.Document;
 import docSharing.entity.GeneralItem;
 import docSharing.entity.Folder;
-import docSharing.service.AuthService;
-import docSharing.service.DocumentService;
-import docSharing.service.FolderService;
-import docSharing.service.ServiceInterface;
+import docSharing.entity.User;
+import docSharing.service.*;
 import docSharing.utils.Action;
 import docSharing.utils.ExceptionMessage;
 import docSharing.utils.Regex;
@@ -23,6 +21,8 @@ public class AbstractController {
     DocumentService documentService;
     @Autowired
     FolderService folderService;
+    @Autowired
+    UserService userService;
 
     public ResponseEntity<String> create(GeneralItem item) {
         // make sure we got all the data from the client
@@ -58,14 +58,16 @@ public class AbstractController {
         return ResponseEntity.ok().body("A document answering to the id:" + id + " has been successfully erased from the database!");
     }
 
-    public ResponseEntity<Object> relocate(GeneralItem item) {
-        Long parentFolderId = item.getParentFolderId();
+    public ResponseEntity<Object> relocate(Long newParentId, GeneralItem item) {
+        Folder parentFolder=null;
+        if(newParentId!=null) {
+            parentFolder = folderService.findById(newParentId).get();
+        }
         Long folderId = item.getId();
-
         if (folderId == null)
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
 
-        return ResponseEntity.ok().body(convertFromItemToService(item).relocate(parentFolderId, folderId));
+        return ResponseEntity.ok().body(convertFromItemToService(item).relocate(parentFolder, folderId));
     }
 
     /**
