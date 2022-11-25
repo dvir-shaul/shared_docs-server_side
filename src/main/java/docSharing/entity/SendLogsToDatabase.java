@@ -7,22 +7,21 @@ import java.util.Map;
 
 public class SendLogsToDatabase implements Callback {
 
-    private Map<Long, Log> changesMap;
+    private Map<Long, Log> logsMap;
 
-    public SendLogsToDatabase(Map<Long, Log> changesMap) {
-        this.changesMap = changesMap;
+    public SendLogsToDatabase(Map<Long, Log> logsMap) {
+        this.logsMap = logsMap;
     }
 
     @Override
     public void call(Object o) {
-        System.out.println("TIME IS UP for userId:" + o);
-        System.out.println(changesMap.get(o));
-        changesMap.remove(o);
+        System.out.println("TIME IS UP for userId:" + o + ", stored data: " + logsMap.get(o));
+        logsMap.remove(o);
 
         // once time is up:
-            //
-            //
-            //
-            //
+        //
+        //
+        //
+        //
     }
 }

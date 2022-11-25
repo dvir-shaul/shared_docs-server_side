@@ -39,7 +39,6 @@ public class Validations {
         if (token == null) {
             throw new NullPointerException(ExceptionMessage.NULL_INPUT.toString());
         }
-        System.out.println(token);
         if (token.startsWith("Bearer ")) {
             token = token.substring(7, token.length());
         } else {
