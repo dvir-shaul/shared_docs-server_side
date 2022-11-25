@@ -17,20 +17,6 @@ public class CustomFilter extends GenericFilterBean {
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-
-//        HttpServletRequest httpRequest = (HttpServletRequest) request;
-//        Enumeration<String> headerNames = httpRequest.getHeaderNames();
-//
-//        if (headerNames != null) {
-//            while (headerNames.hasMoreElements()) {
-//                Object x = headerNames.nextElement();
-//                System.out.println(x);
-//                System.out.println("Header: " + httpRequest.getHeader(x.toString()));
-//            }
-//        }
-
-//        String token = "Bearer eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIxIiwiaWF0IjoxNjY5MjgyMDE2LCJzdWIiOiJsb2dpbiIsImlzcyI6ImRvY3MgYXBwIn0.vu3Q7tYN-G4PxXKnMalFyw8Io8GCgsFbEiNhjBUxOXo";
-//        System.out.println("token: " + token);
         String url = ((HttpServletRequest) request).getRequestURL().toString();
 
 //         Authorization
