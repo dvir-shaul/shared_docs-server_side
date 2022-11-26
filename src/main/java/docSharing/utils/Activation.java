@@ -82,18 +82,16 @@ public class Activation {
     }
 
 
-
     public static String buildLink(String token) {
-        String encoded= token.replaceAll("\\."," ");
+        String encoded = token.replaceAll("\\.", " ");
         try {
             encoded = URLEncoder.encode(encoded, StandardCharsets.UTF_8.toString());
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
         //TODO: replace with address of frontend, and there call the api with POST method
-        return "http://localhost:8080/user/auth/activate?token="+encoded;
+        return "http://localhost:8080/user/auth/activate?token=" + encoded;
     }
-
 
 
 }

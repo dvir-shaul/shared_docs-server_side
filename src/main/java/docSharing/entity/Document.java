@@ -28,6 +28,7 @@ public class Document extends GeneralItem {
         Document doc = new Document();
         doc.setName(name);
         doc.setParentFolder(folder);
+        doc.setContent("");
         doc.setUser(user);
         return doc;
     }

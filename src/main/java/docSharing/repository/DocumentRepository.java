@@ -14,7 +14,6 @@ import java.util.Optional;
 
 @Repository
 public interface DocumentRepository extends CrudRepository<Document, Long> {
-    Optional<Document> findById(Long id);
 
     @Transactional
     @Modifying
@@ -31,7 +30,8 @@ public interface DocumentRepository extends CrudRepository<Document, Long> {
     @Query("UPDATE Document SET parentFolder = ?1 WHERE id = ?2")
     int updateParentFolderId(Folder parentFolder, Long id);
 
-
-
-
+//    @Transactional
+//    @Modifying
+//    @Query("SELECT * FROM Document d WHERE d.parentFolderId = ?1 and d.userId = ?2")
+    List<Document> findAllByUserIdAndParentFolderId(Long parentFolderId, Long userId);
 }

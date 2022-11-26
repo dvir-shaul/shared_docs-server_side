@@ -11,18 +11,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import javax.print.Doc;
 import java.util.*;
 
 @Service
 public class DocumentService implements ServiceInterface {
 
-    static Map<Long, String> documentsContentChanges = new HashMap<>(); // current content in cache
-    static Map<Long, String> databaseDocumentsContent = new HashMap<>(); // current content in database
-    static Map<Long, Log> changeLogs = new HashMap<>(); // logs history until storing to database
+    static Map<Long, String> documentsContentLiveChanges = new HashMap<>(); // current content in cache
+    static Map<Long, String> databaseDocumentsCurrentContent = new HashMap<>(); // current content in database
+    static Map<Long, Log> chainedLogs = new HashMap<>(); // logs history until storing to database
     //       userId, changesList
 
-    Debouncer debouncer = new Debouncer<>(new SendLogsToDatabase(changeLogs), 10000);
+    Debouncer debouncer = new Debouncer<>(new SendLogsToDatabase(chainedLogs), 5000);
 
     @Autowired
     DocumentRepository documentRepository;
@@ -31,59 +30,115 @@ public class DocumentService implements ServiceInterface {
     @Autowired
     UserDocumentRepository userDocumentRepository;
 
-    private void insertLogToLog(Log currentLog, Log newLog) {
-//        if(currentLog.getDocumentId() != newLog.getDocumentId()) return; // send current log to db and make map null
-//        if (!(currentLog.getOffset() - 1 >= newLog.getOffset() && currentLog.getOffset() + currentLog.getData().length() + 1 <= newLog.getOffset()))
-//            return;
-//        System.out.println(currentLog.getOffset() + " " + newLog.getOffset() + " " + (currentLog.getOffset() - 1 >= newLog.getOffset()));
-//        System.out.println(currentLog.getOffset() + (currentLog.getData().length() + 1) + " " + newLog.getOffset() + " " + (currentLog.getOffset() + currentLog.getData().length() + 1 <= newLog.getOffset()));
+//    @Scheduled(fixedDelay = 10000)
+//    public void updateDatabaseWithNewContent() {
+//        for (Map.Entry<Long, String> entry : documentsContentLiveChanges.entrySet()) {
+//            if (!entry.getValue().equals(databaseDocumentsCurrentContent.get(entry.getKey()))) {
+//                documentRepository.updateContent(entry.getValue(), entry.getKey());
+//                databaseDocumentsCurrentContent.put(entry.getKey(), entry.getValue());
+//            }
+//        }
+//    }
 
-        String currentText = currentLog.getData();
-        String beforeCut = currentText.substring(0, newLog.getOffset());
-        String afterCut = currentText.substring(newLog.getOffset());
-        String content = beforeCut + newLog.getData() + afterCut;
-        currentLog.setData(content);
+    private void updateLogsOffset(Log log) {
 
-        changeLogs.put(currentLog.getUserId(), currentLog);
+        chainedLogs.replaceAll((userId, _log) -> {
+            // create a copy of the log in case we need to modify it
+            Log tempLog = Log.copy(_log);
+
+            // make sure not to change the current user's log
+            if (log.getUserId() != userId) {
+
+                // if the offset is before other logs' offset, decrease its offset by the length of the log
+                if (log.getAction().equals("delete") && log.getOffset() <= _log.getOffset()) {
+                    tempLog.setOffset(_log.getOffset() - log.getData().length());
+                }
+
+                // if the offset is before other logs' offset, increase its offset by the length of the log
+                else if (log.getAction().equals("insert") && log.getOffset() <= _log.getOffset()) {
+                    tempLog.setOffset(_log.getOffset() + log.getData().length());
+                }
+
+                // if the offset is in the middle of the logs' offset, split it to two, commit the first one and store only the second part
+                else if (log.getOffset() > _log.getOffset() && log.getOffset() < _log.getOffset() + _log.getData().length()) {
+                    // cut the _log to half
+                    Log firstPartOfLog = Log.copy(_log);
+                    firstPartOfLog.setData(_log.getData().substring(0, log.getOffset()));
+                    // store the first half in the database. for now just print it
+                    System.out.println(firstPartOfLog);
+
+                    // keep the second half in the cache
+                    // there's not a real need to store it in a different log, but for simplicity...
+                    Log secondPartOfLog = Log.copy(_log);
+                    secondPartOfLog.setOffset(log.getOffset() + 1);
+                    secondPartOfLog.setData(_log.getData().substring(log.getOffset()));
+
+                    // firstPartLog.sendtoDB!!!!
+                    tempLog = secondPartOfLog;
+                }
+
+                // if the offset is after the log's data, skip it because it doesn't matter.
+            }
+            return tempLog;
+        });
     }
 
     public void updateContent(Log log) {
-//        addToMap(log.getDocumentId());
 
-//        if (!changeLogs.containsKey(log.getUserId())) changeLogs.put(log.getUserId(), log);
-//        else {
-//            insertLogToLog(changeLogs.get(log.getUserId()), log);
-//        }
-
-//        debouncer.call(log.getUserId());
+        debouncer.call(log.getUserId());
 
         if (!documentRepository.findById(log.getDocumentId()).isPresent()) {
-            throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
+            throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString() + log.getDocumentId());
         }
-        if (!documentsContentChanges.containsKey(log.getDocumentId())) {
-            documentsContentChanges.put(log.getDocumentId(), documentRepository.findById(log.getDocumentId()).get().getContent());
+        if (!documentsContentLiveChanges.containsKey(log.getDocumentId())) {
+            Document doc = documentRepository.findById(log.getDocumentId()).get();
+            if (doc.getContent() == null) doc.setContent("");
+            documentsContentLiveChanges.put(log.getDocumentId(), doc.getContent());
         }
 
+        updateCurrentContentCache(log);
+        chainLogs(chainedLogs.get(log.getUserId()), log);
+        updateLogsOffset(log);
+    }
+
+    private void updateCurrentContentCache(Log log) {
         switch (log.getAction()) {
             case "delete":
-                deleteText(log);
+                log.setData(String.valueOf(documentsContentLiveChanges.get(log.getDocumentId()).charAt(log.getOffset())));
+                documentsContentLiveChanges.put(log.getDocumentId(), truncateString(documentsContentLiveChanges.get(log.getDocumentId()), log));
                 break;
             case "insert":
-                insertText(log);
+                documentsContentLiveChanges.put(log.getDocumentId(), concatenateStrings(documentsContentLiveChanges.get(log.getDocumentId()), log));
                 break;
         }
     }
 
-    @Autowired
-    UserRepository userRepository;
+    private void chainLogs(Log currentLog, Log newLog) {
 
-    @Scheduled(fixedDelay = 10000)
-    public void updateDatabaseWithNewContent() {
-        for (Map.Entry<Long, String> entry : documentsContentChanges.entrySet()) {
-            if (!entry.getValue().equals(databaseDocumentsContent.get(entry.getKey()))) {
-                documentRepository.updateContent(entry.getValue(), entry.getKey());
-                databaseDocumentsContent.put(entry.getKey(), entry.getValue());
+        // if such a log doesn't exist in the cache, create a new entry for it in the map
+        if (!chainedLogs.containsKey(newLog.getUserId())) {
+            chainedLogs.put(newLog.getUserId(), newLog);
+            return;
+        }
+
+        // if the new log is not a sequel to current log, store the current one in the db and start a new one instead.
+        if ((currentLog.getOffset() - 1 >= newLog.getOffset() && currentLog.getOffset() + currentLog.getData().length() + 1 <= newLog.getOffset()))
+            chainedLogs.put(currentLog.getUserId(), newLog);
+
+        // if the current log was attempting to delete and how we want to insert, push the delete and create a new log
+        if(currentLog.getAction().equals("delete") && newLog.getAction().equals("insert")){
+            chainedLogs.put(currentLog.getUserId(), newLog);
+        }
+
+            // if the new log is in the middle of the current log, it must be concatenated.
+        else {
+            if (newLog.getAction().equals("delete")) {
+                currentLog.setData(truncateLogs(currentLog, newLog));
+            } else if (newLog.getAction().equals("insert")) {
+                currentLog.setData(concatenateLogs(currentLog, newLog));
             }
+            // change to concatenateLogs
+            chainedLogs.put(currentLog.getUserId(), currentLog);
         }
     }
 
@@ -98,13 +153,17 @@ public class DocumentService implements ServiceInterface {
      * @param id - of document
      */
     void addToMap(long id) {
-        documentsContentChanges.put(id, "");
-        databaseDocumentsContent.put(id, "");
+        documentsContentLiveChanges.put(id, "");
+        databaseDocumentsCurrentContent.put(id, "");
     }
 
     public Document getDocById(Long id) {
         // FIXME: it is optional so we need to check if it exists
         return documentRepository.findById(id).get();
+    }
+
+    public List<Document> get(Long folderId, Long userId) {
+        return documentRepository.findAllByUserIdAndParentFolderId(folderId, userId);
     }
 
     public Long create(GeneralItem generalItem) {
@@ -125,6 +184,7 @@ public class DocumentService implements ServiceInterface {
         userDocument.setUser(savedDoc.getUser());
         userDocument.setPermission(Permission.MODERATOR);
         userDocumentRepository.save(userDocument);
+        System.out.println("A new doc has been added with an id of " + savedDoc.getId());
         return savedDoc.getId();
     }
 
@@ -136,31 +196,31 @@ public class DocumentService implements ServiceInterface {
     }
 
     public String getContent(Long id) {
-        return documentsContentChanges.get(id);
+        return documentsContentLiveChanges.get(id);
     }
 
-
-    private void insertText(Log log) {
-        Long id = log.getDocumentId();
-
-        String temp = documentsContentChanges.get(id);
-        String beforeCut = temp.substring(0, log.getOffset());
-        String afterCut = temp.substring(log.getOffset());
-        String content = beforeCut + log.getData() + afterCut;
-
-        documentsContentChanges.put(id, content);
+    private String concatenateStrings(String text, Log log) {
+        String beforeCut = text.substring(0, log.getOffset());
+        String afterCut = text.substring(log.getOffset());
+        return beforeCut + log.getData() + afterCut;
     }
 
+    private String concatenateLogs(Log currentLog, Log newLog) {
+        newLog.setOffset(newLog.getOffset() - (currentLog.getOffset()));
+        if (currentLog.getData() == null) currentLog.setData(""); // CONSULT: shouldn't happen, so why did I write it?
+        return concatenateStrings(currentLog.getData(), newLog);
+    }
 
-    private void deleteText(Log log) {
-        Long id = log.getDocumentId();
+    private String truncateString(String text, Log log) {
+        String beforeCut = text.substring(0, log.getOffset());
+        String afterCut = text.substring(log.getOffset() + log.getData().length());
+        return beforeCut.concat(afterCut);
+    }
 
-        String temp = documentsContentChanges.get(id);
-        String beforeCut = temp.substring(0, log.getOffset());
-        String afterCut = temp.substring(log.getOffset() + Integer.valueOf(log.getData()));
-        String content = beforeCut.concat(afterCut);
-
-        documentsContentChanges.put(id, content);
+    private String truncateLogs(Log currentLog, Log newLog) {
+        newLog.setOffset(newLog.getOffset() - (currentLog.getOffset()));
+        if (currentLog.getData() == null) currentLog.setData("");
+        return truncateString(currentLog.getData(), newLog);
     }
 
     /**
@@ -194,10 +254,9 @@ public class DocumentService implements ServiceInterface {
      * @param docId - gets document id .
      */
     public void delete(Long docId) {
-        databaseDocumentsContent.remove(docId);
-        documentsContentChanges.remove(docId);
+        databaseDocumentsCurrentContent.remove(docId);
+        documentsContentLiveChanges.remove(docId);
         userDocumentRepository.deleteDocument(documentRepository.findById(docId).get());
         documentRepository.deleteById(docId);
     }
-
 }
