@@ -10,7 +10,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class GivePermissionReq {
+public class UpdatePermissionReq {
     private Long documentId;
     private Long userId;
     private Permission permission;

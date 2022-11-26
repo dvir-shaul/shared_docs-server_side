@@ -13,6 +13,7 @@ import docSharing.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -33,22 +34,27 @@ class FileController {
     @Autowired
     UserService userService;
 
+    @RequestMapping(value = "/document",method = RequestMethod.OPTIONS)
+    public ResponseEntity handle() {
+        System.out.println("in options");
+        return new ResponseEntity(HttpStatus.OK);
+    }
 
     @RequestMapping(value = "folder", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<?> create(@RequestBody CreateFolderReq folderReq, @RequestAttribute Long userId) {
-        Folder parentFolder=null;
-        if(folderReq.getParentFolderId()!=null) {
+        Folder parentFolder = null;
+        if (folderReq.getParentFolderId() != null) {
             parentFolder = folderService.findById(folderReq.getParentFolderId()).get();
         }
-        User user=userService.findById(userId).get();
+        User user = userService.findById(userId).get();
         Folder folder = Folder.createFolder(folderReq.getName(), parentFolder, user);
         return ac.create(folder);
     }
 
     @RequestMapping(value = "document", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<?> create(@RequestBody CreateDocumentReq docReq, @RequestAttribute Long userId) {
-        Folder parentFolder=null;
-        if(docReq.getParentFolderId()!=null) {
+        Folder parentFolder = null;
+        if (docReq.getParentFolderId() != null) {
             parentFolder = folderService.findById(docReq.getParentFolderId()).get();
         }
         User user = userService.findById(userId).get();

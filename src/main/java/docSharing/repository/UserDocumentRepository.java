@@ -19,4 +19,16 @@ public interface UserDocumentRepository extends JpaRepository<UserDocument, Long
     @Modifying
     @Query("UPDATE UserDocument urd SET urd.permission = ?1 WHERE (urd.document = ?2 and urd.user = ?3)")
     int updatePermission(Permission permission, Document document, User user);
+
+    @Transactional
+    @Modifying
+    @Query("DELETE UserDocument urd WHERE urd.document = ?1")
+    int deleteDocument(Document document);
+
+    @Transactional
+    @Modifying
+    @Query("DELETE UserDocument urd WHERE urd.user = ?1")
+    int deleteUser(User user);
+
+
 }

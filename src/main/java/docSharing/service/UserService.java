@@ -25,25 +25,42 @@ public class UserService {
     private DocumentRepository documentRepository;
 
 
-    public Optional<User> findById(Long id){
+    public Optional<User> findById(Long id) {
         return userRepository.findById(id);
     }
 
-    public int givePermission(Long docId, Long userId, Permission permission){
-        if(!documentRepository.findById(docId).isPresent()){
+    public int updatePermission(Long docId, Long userId, Permission permission) {
+        if (!documentRepository.findById(docId).isPresent()) {
             throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
         }
-        if(!userRepository.findById(userId).isPresent()){
+        if (!userRepository.findById(userId).isPresent()) {
             throw new IllegalArgumentException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
         }
-        Document doc=documentRepository.findById(docId).get();
-        User user=userRepository.findById(userId).get();
+        Document doc = documentRepository.findById(docId).get();
+        User user = userRepository.findById(userId).get();
         if (userDocumentRepository.find(doc, user).isPresent()) {
-            UserDocument userDocument=userDocumentRepository.find(doc, user).get();
+            UserDocument userDocument = userDocumentRepository.find(doc, user).get();
             userDocument.setPermission(permission);
-            return userDocumentRepository.updatePermission(permission,doc,user);
+            return userDocumentRepository.updatePermission(permission, doc, user);
         }
         throw new IllegalArgumentException(ExceptionMessage.CANT_ASSIGN_PERMISSION.toString());
     }
+
+    public UserDocument givePermission(Long docId, Long userId, Permission permission) {
+        if (!documentRepository.findById(docId).isPresent()) {
+            throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
+        }
+        if (!userRepository.findById(userId).isPresent()) {
+            throw new IllegalArgumentException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
+        }
+        Document doc = documentRepository.findById(docId).get();
+        User user = userRepository.findById(userId).get();
+        UserDocument userDocument=new UserDocument();
+        userDocument.setUser(user);
+        userDocument.setDocument(doc);
+        userDocument.setPermission(permission);
+        return userDocumentRepository.save(userDocument);
+    }
+
 
 }

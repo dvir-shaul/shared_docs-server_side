@@ -196,6 +196,7 @@ public class DocumentService implements ServiceInterface {
     public void delete(Long docId) {
         databaseDocumentsContent.remove(docId);
         documentsContentChanges.remove(docId);
+        userDocumentRepository.deleteDocument(documentRepository.findById(docId).get());
         documentRepository.deleteById(docId);
     }
 
