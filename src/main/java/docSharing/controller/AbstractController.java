@@ -14,6 +14,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Component
 public class AbstractController {
 
@@ -21,8 +24,17 @@ public class AbstractController {
     DocumentService documentService;
     @Autowired
     FolderService folderService;
-    @Autowired
-    UserService userService;
+
+    public ResponseEntity<List<GeneralItem>> get(Long parentFolderId, Long userId) {
+        List<Folder> folderList = folderService.get(parentFolderId, userId);
+        System.out.println(folderList);
+//        List<Document> documentList = documentService.get(parentFolderId, userId);
+//        System.out.println(documentList);
+        List<GeneralItem> generalItemList = new ArrayList<>();
+//        generalItemList.addAll(folderList);
+//        generalItemList.addAll(documentList);
+        return ResponseEntity.ok().body(generalItemList);
+    }
 
     public ResponseEntity<String> create(GeneralItem item) {
         // make sure we got all the data from the client
@@ -59,8 +71,8 @@ public class AbstractController {
     }
 
     public ResponseEntity<Object> relocate(Long newParentId, GeneralItem item) {
-        Folder parentFolder=null;
-        if(newParentId!=null) {
+        Folder parentFolder = null;
+        if (newParentId != null) {
             parentFolder = folderService.findById(newParentId).get();
         }
         Long folderId = item.getId();

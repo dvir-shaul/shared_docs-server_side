@@ -22,7 +22,12 @@ public class FolderService implements ServiceInterface {
     DocumentRepository documentRepository;
 
     public Optional<Folder> findById(Long id) {
+        System.out.println("looking for a folder " + id);
         return folderRepository.findById(id);
+    }
+
+    public List<Folder> get(Long parentFolderId, Long userId) {
+        return folderRepository.findAllByParentFolderIdAndUserId(parentFolderId, userId);
     }
 
     public Long create(GeneralItem generalItem) {

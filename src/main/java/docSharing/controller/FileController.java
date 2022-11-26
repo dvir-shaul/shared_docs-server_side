@@ -2,6 +2,7 @@ package docSharing.controller;
 
 import docSharing.entity.Document;
 import docSharing.entity.Folder;
+import docSharing.entity.GeneralItem;
 import docSharing.entity.User;
 import docSharing.requests.CreateDocumentReq;
 import docSharing.requests.CreateFolderReq;
@@ -17,10 +18,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Controller
 @RequestMapping(value = "/file")
 @CrossOrigin
-@AllArgsConstructor
 @NoArgsConstructor
 class FileController {
 
@@ -33,22 +36,33 @@ class FileController {
     @Autowired
     UserService userService;
 
+    @RequestMapping(value = "/**", method = RequestMethod.OPTIONS)
+    public ResponseEntity handle() {
+        System.out.println("Do I get to OPTIONS ?");
+        return ResponseEntity.ok().build();
+    }
+
+    @RequestMapping(value = "getAll", method = RequestMethod.GET)
+    public ResponseEntity<List<GeneralItem>> get(@RequestParam Long parentFolderId, @RequestAttribute Long userId) {
+        System.out.println("userId: " + userId);
+        return ac.get(parentFolderId, userId);
+    }
 
     @RequestMapping(value = "folder", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<?> create(@RequestBody CreateFolderReq folderReq, @RequestAttribute Long userId) {
-        Folder parentFolder=null;
-        if(folderReq.getParentFolderId()!=null) {
+        Folder parentFolder = null;
+        if (folderReq.getParentFolderId() != null) {
             parentFolder = folderService.findById(folderReq.getParentFolderId()).get();
         }
-        User user=userService.findById(userId).get();
+        User user = userService.findById(userId).get();
         Folder folder = Folder.createFolder(folderReq.getName(), parentFolder, user);
         return ac.create(folder);
     }
 
     @RequestMapping(value = "document", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<?> create(@RequestBody CreateDocumentReq docReq, @RequestAttribute Long userId) {
-        Folder parentFolder=null;
-        if(docReq.getParentFolderId()!=null) {
+        Folder parentFolder = null;
+        if (docReq.getParentFolderId() != null) {
             parentFolder = folderService.findById(docReq.getParentFolderId()).get();
         }
         User user = userService.findById(userId).get();

@@ -2,6 +2,7 @@ package docSharing.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import docSharing.utils.ExceptionMessage;
+import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -10,7 +11,12 @@ import java.time.LocalDate;
 @MappedSuperclass
 public class GeneralItem {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue
+    @GenericGenerator(
+            name = "sequence-generator",
+            strategy = "org.hibernate.id.enhanced.SequenceStyleGenerator", parameters = {
+            @org.hibernate.annotations.Parameter(name = "initial_value", value = "10")
+    })
     private Long id;
     @Column(name = "created_on", nullable = false, updatable = false)
     private LocalDate creationDate;
@@ -19,7 +25,7 @@ public class GeneralItem {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(fetch=FetchType.LAZY,cascade = {CascadeType.PERSIST,CascadeType.MERGE })
+    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "parent_folder_id")
     @JsonIgnore
     private Folder parentFolder;
@@ -36,7 +42,6 @@ public class GeneralItem {
     public GeneralItem() {
         this.creationDate = LocalDate.now();
     }
-
 
 
     public Long getId() {
