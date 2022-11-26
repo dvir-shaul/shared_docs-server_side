@@ -25,8 +25,9 @@ public class TextEditController {
         if (log.getData() == null || log.getAction() == null || log.getOffset() == null || log.getDocumentId() == null || log.getUserId() == null || log.getCreationDate() == null)
             // FIXME: What to do if anything fails? Do we do anything with the client?
             return null;
+        Log copyOfLog = Log.copy(log);
         documentService.updateContent(log);
-        return log;
+        return copyOfLog;
     }
 
     @MessageMapping("/document/getContent")

@@ -3,7 +3,6 @@ package docSharing.service;
 import docSharing.entity.*;
 import docSharing.repository.DocumentRepository;
 import docSharing.repository.FolderRepository;
-import docSharing.repository.UserRepository;
 import docSharing.utils.ExceptionMessage;
 import docSharing.utils.debounce.Debouncer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +26,15 @@ public class DocumentService implements ServiceInterface {
     @Autowired
     FolderRepository folderRepository;
 
+//    @Scheduled(fixedDelay = 10000)
+//    public void updateDatabaseWithNewContent() {
+//        for (Map.Entry<Long, String> entry : documentsContentLiveChanges.entrySet()) {
+//            if (!entry.getValue().equals(databaseDocumentsCurrentContent.get(entry.getKey()))) {
+//                documentRepository.updateContent(entry.getValue(), entry.getKey());
+//                databaseDocumentsCurrentContent.put(entry.getKey(), entry.getValue());
+//            }
+//        }
+//    }
 
     private void updateLogsOffset(Log log) {
 
@@ -37,10 +45,16 @@ public class DocumentService implements ServiceInterface {
             // make sure not to change the current user's log
             if (log.getUserId() != userId) {
 
+                // if the offset is before other logs' offset, decrease its offset by the length of the log
+                if (log.getAction().equals("delete") && log.getOffset() <= _log.getOffset()) {
+                    tempLog.setOffset(_log.getOffset() - log.getData().length());
+                }
+
                 // if the offset is before other logs' offset, increase its offset by the length of the log
-                if (log.getOffset() <= _log.getOffset()) {
+                else if (log.getAction().equals("insert") && log.getOffset() <= _log.getOffset()) {
                     tempLog.setOffset(_log.getOffset() + log.getData().length());
                 }
+
                 // if the offset is in the middle of the logs' offset, split it to two, commit the first one and store only the second part
                 else if (log.getOffset() > _log.getOffset() && log.getOffset() < _log.getOffset() + _log.getData().length()) {
                     // cut the _log to half
@@ -72,58 +86,57 @@ public class DocumentService implements ServiceInterface {
         if (!documentRepository.findById(log.getDocumentId()).isPresent()) {
             throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString() + log.getDocumentId());
         }
-
         if (!documentsContentLiveChanges.containsKey(log.getDocumentId())) {
-            // FIXME: we need to check if there's a doc in the database
-            // FIXME: if not, we need to create a new one or to throw an exception that this doc doesn't exist.
             Document doc = documentRepository.findById(log.getDocumentId()).get();
-            if(doc.getContent() == null) doc.setContent("");
+            if (doc.getContent() == null) doc.setContent("");
             documentsContentLiveChanges.put(log.getDocumentId(), doc.getContent());
         }
 
+        updateCurrentContentCache(log);
+        chainLogs(chainedLogs.get(log.getUserId()), log);
+        updateLogsOffset(log);
+    }
+
+    private void updateCurrentContentCache(Log log) {
         switch (log.getAction()) {
             case "delete":
+                log.setData(String.valueOf(documentsContentLiveChanges.get(log.getDocumentId()).charAt(log.getOffset())));
                 documentsContentLiveChanges.put(log.getDocumentId(), truncateString(documentsContentLiveChanges.get(log.getDocumentId()), log));
+                break;
             case "insert":
                 documentsContentLiveChanges.put(log.getDocumentId(), concatenateStrings(documentsContentLiveChanges.get(log.getDocumentId()), log));
-            default:
-                chainLogs(chainedLogs.get(log.getUserId()), log);
-                updateLogsOffset(log);
-
+                break;
         }
     }
 
     private void chainLogs(Log currentLog, Log newLog) {
 
+        // if such a log doesn't exist in the cache, create a new entry for it in the map
         if (!chainedLogs.containsKey(newLog.getUserId())) {
             chainedLogs.put(newLog.getUserId(), newLog);
             return;
         }
-//        if(currentLog.getDocumentId() != newLog.getDocumentId()) return; // send current log to db and make map null
 
+        // if the new log is not a sequel to current log, store the current one in the db and start a new one instead.
         if ((currentLog.getOffset() - 1 >= newLog.getOffset() && currentLog.getOffset() + currentLog.getData().length() + 1 <= newLog.getOffset()))
-            // send the old log to the database, reset its place in the map and place the new log inside it.
             chainedLogs.put(currentLog.getUserId(), newLog);
-//        return;
+
+        // if the current log was attempting to delete and how we want to insert, push the delete and create a new log
+        if(currentLog.getAction().equals("delete") && newLog.getAction().equals("insert")){
+            chainedLogs.put(currentLog.getUserId(), newLog);
+        }
+
+            // if the new log is in the middle of the current log, it must be concatenated.
         else {
+            if (newLog.getAction().equals("delete")) {
+                currentLog.setData(truncateLogs(currentLog, newLog));
+            } else if (newLog.getAction().equals("insert")) {
+                currentLog.setData(concatenateLogs(currentLog, newLog));
+            }
             // change to concatenateLogs
-            currentLog.setData(concatenateLogs(currentLog, newLog));
             chainedLogs.put(currentLog.getUserId(), currentLog);
         }
     }
-
-    @Autowired
-    UserRepository userRepository;
-
-//    @Scheduled(fixedDelay = 10000)
-//    public void updateDatabaseWithNewContent() {
-//        for (Map.Entry<Long, String> entry : documentsContentLiveChanges.entrySet()) {
-//            if (!entry.getValue().equals(databaseDocumentsCurrentContent.get(entry.getKey()))) {
-//                documentRepository.updateContent(entry.getValue(), entry.getKey());
-//                databaseDocumentsCurrentContent.put(entry.getKey(), entry.getValue());
-//            }
-//        }
-//    }
 
 
     public Optional<Document> findById(Long id) {
@@ -183,16 +196,21 @@ public class DocumentService implements ServiceInterface {
     }
 
     private String concatenateLogs(Log currentLog, Log newLog) {
-        int distanceBetweenLogsOffset = newLog.getOffset() - (currentLog.getOffset());
-        newLog.setOffset(distanceBetweenLogsOffset);
-        if (currentLog.getData() == null) currentLog.setData("");
+        newLog.setOffset(newLog.getOffset() - (currentLog.getOffset()));
+        if (currentLog.getData() == null) currentLog.setData(""); // CONSULT: shouldn't happen, so why did I write it?
         return concatenateStrings(currentLog.getData(), newLog);
     }
 
     private String truncateString(String text, Log log) {
         String beforeCut = text.substring(0, log.getOffset());
-        String afterCut = text.substring(log.getOffset() + Integer.valueOf(log.getData()));
+        String afterCut = text.substring(log.getOffset() + log.getData().length());
         return beforeCut.concat(afterCut);
+    }
+
+    private String truncateLogs(Log currentLog, Log newLog) {
+        newLog.setOffset(newLog.getOffset() - (currentLog.getOffset()));
+        if (currentLog.getData() == null) currentLog.setData("");
+        return truncateString(currentLog.getData(), newLog);
     }
 
     /**
