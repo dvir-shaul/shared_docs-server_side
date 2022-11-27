@@ -14,6 +14,7 @@ public class CustomWebSecurityConfigurerAdapter {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        System.out.println("in security filter chain");
         http.authorizeRequests().antMatchers("*").authenticated().and().httpBasic().and().csrf().disable();
         http.addFilterAfter(new AuthorizationFilter(), BasicAuthenticationFilter.class);
         http.addFilterAfter(new AuthorizationFilter(), BasicAuthenticationFilter.class);

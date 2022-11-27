@@ -3,6 +3,8 @@ package docSharing.service;
 import docSharing.entity.*;
 import docSharing.repository.DocumentRepository;
 import docSharing.repository.FolderRepository;
+import docSharing.repository.UserDocumentRepository;
+import docSharing.repository.UserRepository;
 import docSharing.utils.ExceptionMessage;
 import docSharing.utils.debounce.Debouncer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,8 @@ public class DocumentService implements ServiceInterface {
     DocumentRepository documentRepository;
     @Autowired
     FolderRepository folderRepository;
+    @Autowired
+    UserDocumentRepository userDocumentRepository;
 
 //    @Scheduled(fixedDelay = 10000)
 //    public void updateDatabaseWithNewContent() {
@@ -174,6 +178,12 @@ public class DocumentService implements ServiceInterface {
             savedDoc.getParentFolder().addDocument(savedDoc);
         }
         savedDoc.getUser().addDocument(savedDoc);
+        UserDocument userDocument=new UserDocument();
+        userDocument.setId(new UserDocumentPk());
+        userDocument.setDocument(savedDoc);
+        userDocument.setUser(savedDoc.getUser());
+        userDocument.setPermission(Permission.MODERATOR);
+        userDocumentRepository.save(userDocument);
         System.out.println("A new doc has been added with an id of " + savedDoc.getId());
         return savedDoc.getId();
     }
@@ -246,6 +256,10 @@ public class DocumentService implements ServiceInterface {
     public void delete(Long docId) {
         databaseDocumentsCurrentContent.remove(docId);
         documentsContentLiveChanges.remove(docId);
+        userDocumentRepository.deleteDocument(documentRepository.findById(docId).get());
         documentRepository.deleteById(docId);
+    }
+    public List<User> getOnlineUsers(Document doc){
+        return doc.getOnlineUsers();
     }
 }
