@@ -259,7 +259,7 @@ public class DocumentService implements ServiceInterface {
         userDocumentRepository.deleteDocument(documentRepository.findById(docId).get());
         documentRepository.deleteById(docId);
     }
-    public List<User> getOnlineUsers(Document doc){
+    public Set<User> getOnlineUsers(Document doc){
         return doc.getOnlineUsers();
     }
 }
