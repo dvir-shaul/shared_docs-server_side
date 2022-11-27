@@ -1,9 +1,7 @@
 package docSharing.entity;
 
 import javax.persistence.*;
-import java.io.Serializable;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -135,6 +133,9 @@ public class User{
                 ", name='" + name + '\'' +
                 ", email='" + email + '\'' +
                 ", password='" + password + '\'' +
+                ", isActivated=" + isActivated +
+                ", documents=" + documents +
+                ", folders=" + folders +
                 '}';
     }
 }

@@ -4,6 +4,7 @@ import docSharing.utils.ExceptionMessage;
 
 import javax.persistence.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -15,12 +16,12 @@ public class Document extends GeneralItem {
     @Column(name = "content", columnDefinition = "text")
     private String content;
     @Transient
-    private List<User> onlineUsers;
+    private Set<User> onlineUsers;
 
     private Document() {
         super();
         this.isPrivate = true;
-        this.onlineUsers=new ArrayList<>();
+        this.onlineUsers = new HashSet<>();
     }
 
     public static Document createDocument(String name, Folder parentFolder) {
@@ -55,22 +56,29 @@ public class Document extends GeneralItem {
         if (content == null) throw new IllegalArgumentException(ExceptionMessage.NULL_INPUT.toString());
         this.content = content;
     }
-    public List<User> getOnlineUsers() {
+
+    public Set<User> getOnlineUsers() {
         return onlineUsers;
     }
 
-    public void setOnlineUsers(List<User> onlineUsers) {
+    public void setOnlineUsers(Set<User> onlineUsers) {
         this.onlineUsers = onlineUsers;
     }
 
-    public void addOnlineUser(User user){
+    public void addOnlineUser(User user) {
         this.onlineUsers.add(user);
     }
+
+    public void removeOnlineUser(User user) {
+        onlineUsers.removeIf(u -> u.getId().equals(user.getId()));
+    }
+
     @Override
     public String toString() {
-        return super.toString() + "Document{" +
+        return "Document{" +
                 "isPrivate=" + isPrivate +
                 ", content='" + content + '\'' +
+                ", onlineUsers=" + onlineUsers +
                 '}';
     }
 }
