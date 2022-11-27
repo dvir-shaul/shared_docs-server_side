@@ -4,10 +4,8 @@ import docSharing.entity.Document;
 import docSharing.entity.Folder;
 import docSharing.entity.GeneralItem;
 import docSharing.entity.User;
-import docSharing.requests.CreateDocumentReq;
-import docSharing.requests.CreateFolderReq;
-import docSharing.requests.RelocateDocReq;
-import docSharing.requests.RelocateFolderReq;
+import docSharing.requests.*;
+import docSharing.response.ExportDoc;
 import docSharing.service.DocumentService;
 import docSharing.service.FolderService;
 import docSharing.service.UserService;
@@ -102,5 +100,22 @@ class FileController {
     public ResponseEntity<?> relocate(@RequestBody RelocateDocReq docReq, @RequestAttribute Long userId) {
         Document doc = documentService.findById(docReq.getId()).get();
         return ac.relocate(docReq.getNewParentId(), doc);
+    }
+
+    @RequestMapping(value = "document/import", method = RequestMethod.POST, consumes = "application/json")
+    public ResponseEntity<?> importDoc(@RequestBody ImportDocReq importDocReq, @RequestAttribute Long userId) {
+        User user = userService.findById(userId).get();
+        Folder parentFolder = null;
+        if (importDocReq.getParentFolderId() != null)
+            parentFolder = folderService.findById(importDocReq.getParentFolderId()).get();
+        Document document = Document.createDocument(user, importDocReq.getName(), parentFolder);
+        document.setContent(importDocReq.getContent());
+        return ResponseEntity.ok().body(documentService.create(document));
+    }
+    @RequestMapping(value = "document/export", method = RequestMethod.GET)
+    public ResponseEntity<?> export(@RequestParam Long documentId, @RequestAttribute Long userId) {
+        Document document=documentService.findById(documentId).get();
+        ExportDoc exportDoc=new ExportDoc(document.getName(), document.getContent());
+        return ResponseEntity.ok().body(exportDoc);
     }
 }
