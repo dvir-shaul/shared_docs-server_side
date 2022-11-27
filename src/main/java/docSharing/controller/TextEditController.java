@@ -1,5 +1,6 @@
 package docSharing.controller;
 
+import docSharing.entity.Document;
 import docSharing.entity.Log;
 import docSharing.entity.User;
 import docSharing.service.DocumentService;
@@ -40,7 +41,8 @@ public class TextEditController {
 
     @MessageMapping("/document/onlineUsers")
     @SendTo("/document/onlineUsers")
-    public List<User> getOnlineUsers() {
-        return new ArrayList<>();
+    public List<User> getOnlineUsers(@Payload Long docId) {
+        Document document=documentService.getDocById(docId);
+        return documentService.getOnlineUsers(document);
     }
 }
