@@ -143,4 +143,10 @@ class FileController {
         } while (parentFolder != null);
         return ResponseEntity.ok(path);
     }
+
+    @RequestMapping(value="document/isExists", method = RequestMethod.GET)
+    public ResponseEntity<?> documentExists(@RequestParam Long documentId, @RequestAttribute Long userId){
+        return ResponseEntity.ok(documentService.findById(documentId).isPresent());
+    }
+
 }
