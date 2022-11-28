@@ -17,6 +17,7 @@ public class Log {
     private String data;
     private Long userId;
     private Long documentId;
+    private String token;
 
     public static Log copy(Log log){
         Log tempLog = new Log();
@@ -26,6 +27,7 @@ public class Log {
         tempLog.setDocumentId(log.getDocumentId());
         tempLog.setData(log.getData());
         tempLog.setAction(log.getAction());
+        tempLog.setToken(log.getToken());
         return tempLog;
     }
 }
