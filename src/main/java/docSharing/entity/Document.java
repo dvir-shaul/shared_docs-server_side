@@ -15,13 +15,13 @@ public class Document extends GeneralItem {
     private Boolean isPrivate;
     @Column(name = "content", columnDefinition = "text")
     private String content;
-    @Transient
-    private Set<User> onlineUsers;
+//    @Transient
+//    private Set<User> onlineUsers;
 
     private Document() {
         super();
         this.isPrivate = true;
-        this.onlineUsers = new HashSet<>();
+//        this.onlineUsers = new HashSet<>();
     }
 
     public static Document createDocument(String name, Folder parentFolder) {
@@ -57,21 +57,22 @@ public class Document extends GeneralItem {
         this.content = content;
     }
 
-    public Set<User> getOnlineUsers() {
-        return onlineUsers;
-    }
+//    public Set<User> getOnlineUsers() {
+//        return onlineUsers;
+//    }
 
-    public void setOnlineUsers(Set<User> onlineUsers) {
-        this.onlineUsers = onlineUsers;
-    }
+//    public void setOnlineUsers(Set<User> onlineUsers) {
+//        this.onlineUsers = onlineUsers;
+//    }
 
-    public void addOnlineUser(User user) {
-        this.onlineUsers.add(user);
-    }
+//    public void addOnlineUser(User user) {
+//        this.onlineUsers.add(user);
+//    }
 
-    public void removeOnlineUser(User user) {
-        onlineUsers.removeIf(u -> u.getId().equals(user.getId()));
-    }
+//    public void removeOnlineUser(User user) {
+//        onlineUsers.removeIf(u -> u.getId().equals(user.getId()));
+//    }
+
 
 //    @Override
 //    public String toString() {

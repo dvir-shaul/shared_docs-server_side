@@ -47,26 +47,25 @@ public class TextEditController {
     @MessageMapping("/document/getContent")
     @SendTo("/document/getContent")
     public String getContent(@Payload Log log) {
-
-        return documentService.getContent(log.getDocumentId());
+        String content = documentService.getContent(log.getDocumentId());
+        return content;
     }
 
     @MessageMapping("/document/onlineUsers")
     @SendTo("/document/onlineUsers")
     public List<String> getOnlineUsers(@Payload OnlineUsersReq onlineUsersReq) {
-        Document document = documentService.getDocById(onlineUsersReq.getDocId());
-        User user = userService.findById(onlineUsersReq.getUserId()).get();
-        document.addOnlineUser(user);
-        Set<User> onlineUsers= documentService.getOnlineUsers(document);
-        return onlineUsers.stream().map(u->u.getName()).collect(Collectors.toList());
+        System.out.println("Looking for online users for document id:" + onlineUsersReq.getDocumentId());
+        Set<User> onlineUsers =  documentService.addUserToDocActiveUsers(onlineUsersReq.getUserId(), onlineUsersReq.getDocumentId());
+        return onlineUsers.stream().map(u -> u.getName()).collect(Collectors.toList());
     }
-    @MessageMapping("/document/removeUser")
-    @SendTo("/document/removeUser")
-    public List<String> removeUser(@Payload OnlineUsersReq onlineUsersReq) {
-        Document document = documentService.getDocById(onlineUsersReq.getDocId());
-        User user = userService.findById(onlineUsersReq.getUserId()).get();
-        document.removeOnlineUser(user);
-        Set<User> onlineUsers= documentService.getOnlineUsers(document);
-        return onlineUsers.stream().map(u->u.getName()).collect(Collectors.toList());
-    }
+
+//    @MessageMapping("/document/removeUser")
+//    @SendTo("/document/removeUser")
+//    public List<String> removeUser(@Payload OnlineUsersReq onlineUsersReq) {
+//        Document document = documentService.getDocById(onlineUsersReq.getDocumentId());
+//        User user = userService.findById(onlineUsersReq.getUserId()).get();
+//        document.removeOnlineUser(user);
+//        Set<User> onlineUsers = documentService.getOnlineUsers(document);
+//        return onlineUsers.stream().map(u -> u.getName()).collect(Collectors.toList());
+//    }
 }

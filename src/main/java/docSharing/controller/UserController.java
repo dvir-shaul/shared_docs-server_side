@@ -44,7 +44,7 @@ public class UserController {
         if (updatePermissionReq.getDocumentId() == null || updatePermissionReq.getUserId() == null || updatePermissionReq.getPermission() == null) {
             return ResponseEntity.badRequest().build();
         }
-        if(documentService.findById(updatePermissionReq.getDocumentId()).get().getUser().getId()!=userId){
+        if (documentService.findById(updatePermissionReq.getDocumentId()).get().getUser().getId() != userId) {
             return ResponseEntity.badRequest().body(ExceptionMessage.USER_IS_NOT_THE_ADMIN);
         }
         try {
@@ -53,7 +53,6 @@ public class UserController {
             return ResponseEntity.badRequest().body(exception.getMessage());
 
         }
-
     }
 
     @RequestMapping(value = "/permission/give", method = RequestMethod.PATCH)
@@ -61,10 +60,9 @@ public class UserController {
         if (permissionReq.getDocumentId() == null || permissionReq.getUserId() == null || permissionReq.getPermission() == null) {
             return ResponseEntity.badRequest().build();
         }
-            if(documentService.findById(permissionReq.getDocumentId()).get().getUser().getId()!=userId){
-                return ResponseEntity.badRequest().body(ExceptionMessage.USER_IS_NOT_THE_ADMIN);
-            }
-
+        if (documentService.findById(permissionReq.getDocumentId()).get().getUser().getId() != userId) {
+            return ResponseEntity.badRequest().body(ExceptionMessage.USER_IS_NOT_THE_ADMIN);
+        }
         try {
             return ResponseEntity.ok().body(String.valueOf(userService.givePermission(permissionReq.getDocumentId(), permissionReq.getUserId(), permissionReq.getPermission())));
         } catch (IllegalArgumentException exception) {
@@ -72,14 +70,15 @@ public class UserController {
 
         }
     }
+
     @RequestMapping(value = "/share", method = RequestMethod.PATCH, consumes = "application/json")
     public ResponseEntity<?> givePermissionToAll(@RequestBody List<String> emails, @RequestParam Long documentId, @RequestAttribute Long userId) {
-        for (String email:
-             emails) {
-            User user=userService.findByEmail(email);
-            Document document=documentService.findById(documentId).get();
+        for (String email :
+                emails) {
+            User user = userService.findByEmail(email);
+            Document document = documentService.findById(documentId).get();
             userService.givePermission(documentId, user.getId(), Permission.VIEWER);
-            String body= Share.buildEmail(user.getName(), "hello", document.getName());
+            String body = Share.buildEmail(user.getName(), "hello", document.getName());
             try {
                 emailService.send(user.getEmail(), body);
             } catch (Exception e) {
