@@ -122,8 +122,8 @@ class FileController {
 
     @RequestMapping(value = "getPath", method = RequestMethod.GET)
     public ResponseEntity<?> getPath(@RequestParam Type type, @RequestParam Long fileId, @RequestAttribute Long userId) {
-        Stack<FileRes> path = new Stack<>();
-        GeneralItem generalItem=null;
+        List<FileRes> path = new ArrayList<>();
+        GeneralItem generalItem = null;
         switch (type) {
             case FOLDER:
                 generalItem = folderService.findById(fileId).get();
@@ -133,16 +133,16 @@ class FileController {
                 break;
         }
         Folder parentFolder = generalItem.getParentFolder();
-        path.add(new FileRes(generalItem.getName(), generalItem.getId(), type));
+        path.add(0, new FileRes(generalItem.getName(), generalItem.getId(), type));
         do {
-            path.add(new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER));
+            path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER));
             parentFolder = parentFolder.getParentFolder();
         } while (parentFolder != null);
         return ResponseEntity.ok(path);
     }
 
-    @RequestMapping(value="document/isExists", method = RequestMethod.GET)
-    public ResponseEntity<?> documentExists(@RequestParam Long documentId, @RequestAttribute Long userId){
+    @RequestMapping(value = "document/isExists", method = RequestMethod.GET)
+    public ResponseEntity<?> documentExists(@RequestParam Long documentId, @RequestAttribute Long userId) {
         return ResponseEntity.ok(documentService.findById(documentId).isPresent());
     }
 
