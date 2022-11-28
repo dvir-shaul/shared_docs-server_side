@@ -117,21 +117,25 @@ public class User{
         return Objects.equals(password, user.password);
     }
 
-    @Override
-    public int hashCode() {
-        return super.hashCode();
-    }
+//    @Override
+//    public int hashCode() {
+//        Long result = id;
+//        result = 31 * result + (name != null ? name.hashCode() : 0);
+//        result = 31 * result + (email != null ? email.hashCode() : 0);
+//        result = 31 * result + (password != null ? password.hashCode() : 0);
+//        return Math.toIntExact(result);
+//    }
 
-    @Override
-    public String toString() {
-        return "User{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", email='" + email + '\'' +
-                ", password='" + password + '\'' +
-                ", isActivated=" + isActivated +
-                ", documents=" + documents +
-                ", folders=" + folders +
-                '}';
-    }
+//    @Override
+//    public String toString() {
+//        return "User{" +
+//                "id=" + id +
+//                ", name='" + name + '\'' +
+//                ", email='" + email + '\'' +
+//                ", password='" + password + '\'' +
+//                ", isActivated=" + isActivated +
+//                ", documents=" + documents +
+//                ", folders=" + folders +
+//                '}';
+//    }
 }

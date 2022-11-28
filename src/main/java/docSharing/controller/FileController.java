@@ -5,6 +5,7 @@ import docSharing.entity.Folder;
 import docSharing.entity.GeneralItem;
 import docSharing.entity.User;
 import docSharing.requests.*;
+import docSharing.response.PathItem;
 import docSharing.response.ExportDoc;
 import docSharing.service.DocumentService;
 import docSharing.service.FolderService;
@@ -12,13 +13,13 @@ import docSharing.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 @Controller
 @RequestMapping(value = "/file")
@@ -112,10 +113,24 @@ class FileController {
         document.setContent(importDocReq.getContent());
         return ResponseEntity.ok().body(documentService.create(document));
     }
+
     @RequestMapping(value = "document/export", method = RequestMethod.GET)
     public ResponseEntity<?> export(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        Document document=documentService.findById(documentId).get();
-        ExportDoc exportDoc=new ExportDoc(document.getName(), document.getContent());
+        Document document = documentService.findById(documentId).get();
+        ExportDoc exportDoc = new ExportDoc(document.getName(), document.getContent());
         return ResponseEntity.ok().body(exportDoc);
+    }
+
+    @RequestMapping(value = "document/getPath", method = RequestMethod.GET)
+    public ResponseEntity<?> getPath(@RequestParam Long documentId, @RequestAttribute Long userId) {
+        Queue<PathItem> path = new LinkedList<>();
+        Document document = documentService.findById(documentId).get();
+        Folder parentFolder=document.getParentFolder();
+        path.add(new PathItem(document.getId(), document.getName()));
+        do {
+            path.add(new PathItem(parentFolder.getId(), parentFolder.getName()));
+            parentFolder=parentFolder.getParentFolder();
+        } while (parentFolder != null);
+        return ResponseEntity.ok(path);
     }
 }

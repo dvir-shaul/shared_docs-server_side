@@ -72,5 +72,11 @@ public class Folder extends GeneralItem {
         return folder;
     }
 
-
+//    @Override
+//    public String toString() {
+//        return super.toString()+
+//                "folders=" + folders +
+//                ", documents=" + documents +
+//                '}';
+//    }
 }

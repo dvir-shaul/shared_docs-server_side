@@ -73,11 +73,13 @@ public class Document extends GeneralItem {
 //        onlineUsers.removeIf(u -> u.getId().equals(user.getId()));
 //    }
 
-    @Override
-    public String toString() {
-        return "Document{" +
-                "isPrivate=" + isPrivate +
-                ", content='" + content + '\'' +
-                '}';
-    }
+
+//    @Override
+//    public String toString() {
+//        return super.toString()+
+//                "isPrivate=" + isPrivate +
+//                ", content='" + content + '\'' +
+//                ", onlineUsers=" + onlineUsers +
+//                '}';
+//    }
 }

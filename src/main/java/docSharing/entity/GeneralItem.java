@@ -77,14 +77,14 @@ public class GeneralItem {
         this.name = name;
     }
 
-    @Override
-    public String toString() {
-        return "File{" +
-                "id=" + id +
-                ", creationDate=" + creationDate +
-                ", user=" + user +
-                ", parentFolder=" + parentFolder +
-                ", name='" + name + '\'' +
-                "}\n";
-    }
+//    @Override
+//    public String toString() {
+//        return "File{" +
+//                "id=" + id +
+//                ", creationDate=" + creationDate +
+//                ", user=" + user +
+//                ", parentFolder=" + parentFolder +
+//                ", name='" + name + '\'' +
+//                "}\n";
+//    }
 }
