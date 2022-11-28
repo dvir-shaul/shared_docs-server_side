@@ -119,11 +119,7 @@ public class User{
 
     @Override
     public int hashCode() {
-        Long result = id;
-        result = 31 * result + (name != null ? name.hashCode() : 0);
-        result = 31 * result + (email != null ? email.hashCode() : 0);
-        result = 31 * result + (password != null ? password.hashCode() : 0);
-        return Math.toIntExact(result);
+        return super.hashCode();
     }
 
     @Override

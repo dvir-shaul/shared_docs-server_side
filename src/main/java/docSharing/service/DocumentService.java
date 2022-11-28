@@ -20,6 +20,7 @@ public class DocumentService implements ServiceInterface {
     static Map<Long, String> databaseDocumentsCurrentContent = new HashMap<>(); // current content in database
     static Map<Long, Log> chainedLogs = new HashMap<>(); // logs history until storing to database
     //       userId, changesList
+    static Map<Long, Set<User>> onlineUsersPerDoc = new HashMap<>();
 
     Debouncer debouncer = new Debouncer<>(new SendLogsToDatabase(chainedLogs), 5000);
 
@@ -29,6 +30,8 @@ public class DocumentService implements ServiceInterface {
     FolderRepository folderRepository;
     @Autowired
     UserDocumentRepository userDocumentRepository;
+    @Autowired
+    UserRepository userRepository;
 
 //    @Scheduled(fixedDelay = 10000)
 //    public void updateDatabaseWithNewContent() {
@@ -81,6 +84,14 @@ public class DocumentService implements ServiceInterface {
             }
             return tempLog;
         });
+    }
+
+    public Set<User> addUserToDocActiveUsers(Long userId, Long documentId){
+        onlineUsersPerDoc.putIfAbsent(documentId, new HashSet<>());
+        // FIXME: check if this user id even exists in the db
+        User user = userRepository.findById(userId).get();
+        onlineUsersPerDoc.get(documentId).add(user);
+        return onlineUsersPerDoc.get(documentId);
     }
 
     public void updateContent(Log log) {
@@ -196,6 +207,8 @@ public class DocumentService implements ServiceInterface {
     }
 
     public String getContent(Long id) {
+        String content = documentsContentLiveChanges.get(id);
+        if(content == null) documentsContentLiveChanges.put(id, "");
         return documentsContentLiveChanges.get(id);
     }
 
@@ -259,7 +272,7 @@ public class DocumentService implements ServiceInterface {
         userDocumentRepository.deleteDocument(documentRepository.findById(docId).get());
         documentRepository.deleteById(docId);
     }
-    public Set<User> getOnlineUsers(Document doc){
-        return doc.getOnlineUsers();
+    public Set<User> getOnlineUsers(Long documentId){
+        return onlineUsersPerDoc.get(documentId);
     }
 }
