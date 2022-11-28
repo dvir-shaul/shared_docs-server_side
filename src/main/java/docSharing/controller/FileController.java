@@ -123,11 +123,9 @@ class FileController {
         return ResponseEntity.ok().body(exportDoc);
     }
 
-    @RequestMapping(value = "document/getPath", method = RequestMethod.GET)
+    @RequestMapping(value = "getPath", method = RequestMethod.GET)
     public ResponseEntity<?> getPath(@RequestParam Type type, @RequestParam Long fileId, @RequestAttribute Long userId) {
-        Queue<PathItem> path = new LinkedList<>();
-        Folder folder = null;
-        Document document = null;
+        Queue<FileRes> path = new LinkedList<>();
         GeneralItem generalItem=null;
         switch (type) {
             case FOLDER:
@@ -137,10 +135,10 @@ class FileController {
                 generalItem = documentService.findById(fileId).get();
                 break;
         }
-        Folder parentFolder = document.getParentFolder();
-        path.add(new PathItem(document.getId(), document.getName()));
+        Folder parentFolder = generalItem.getParentFolder();
+        path.add(new FileRes(generalItem.getName(), generalItem.getId(), type));
         do {
-            path.add(new PathItem(parentFolder.getId(), parentFolder.getName()));
+            path.add(new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER));
             parentFolder = parentFolder.getParentFolder();
         } while (parentFolder != null);
         return ResponseEntity.ok(path);
