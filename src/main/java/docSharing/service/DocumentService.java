@@ -5,6 +5,7 @@ import docSharing.repository.DocumentRepository;
 import docSharing.repository.FolderRepository;
 import docSharing.repository.UserDocumentRepository;
 import docSharing.repository.UserRepository;
+import docSharing.requests.Method;
 import docSharing.utils.ExceptionMessage;
 import docSharing.utils.debounce.Debouncer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,11 +87,17 @@ public class DocumentService implements ServiceInterface {
         });
     }
 
-    public Set<User> addUserToDocActiveUsers(Long userId, Long documentId){
+    public Set<User> addUserToDocActiveUsers(Long userId, Long documentId, Method method) {
         onlineUsersPerDoc.putIfAbsent(documentId, new HashSet<>());
         // FIXME: check if this user id even exists in the db
         User user = userRepository.findById(userId).get();
-        onlineUsersPerDoc.get(documentId).add(user);
+        switch (method) {
+            case ADD:
+                onlineUsersPerDoc.get(documentId).add(user);
+                break;
+            case REMOVE:
+                onlineUsersPerDoc.get(documentId).remove(user);
+        }
         return onlineUsersPerDoc.get(documentId);
     }
 
@@ -137,11 +144,11 @@ public class DocumentService implements ServiceInterface {
             chainedLogs.put(currentLog.getUserId(), newLog);
 
         // if the current log was attempting to delete and how we want to insert, push the delete and create a new log
-        if(currentLog.getAction().equals("delete") && newLog.getAction().equals("insert")){
+        if (currentLog.getAction().equals("delete") && newLog.getAction().equals("insert")) {
             chainedLogs.put(currentLog.getUserId(), newLog);
         }
 
-            // if the new log is in the middle of the current log, it must be concatenated.
+        // if the new log is in the middle of the current log, it must be concatenated.
         else {
             if (newLog.getAction().equals("delete")) {
                 currentLog.setData(truncateLogs(currentLog, newLog));
@@ -189,7 +196,7 @@ public class DocumentService implements ServiceInterface {
             savedDoc.getParentFolder().addDocument(savedDoc);
         }
         savedDoc.getUser().addDocument(savedDoc);
-        UserDocument userDocument=new UserDocument();
+        UserDocument userDocument = new UserDocument();
         userDocument.setId(new UserDocumentPk());
         userDocument.setDocument(savedDoc);
         userDocument.setUser(savedDoc.getUser());
@@ -208,7 +215,7 @@ public class DocumentService implements ServiceInterface {
 
     public String getContent(Long id) {
         String content = documentsContentLiveChanges.get(id);
-        if(content == null) documentsContentLiveChanges.put(id, "");
+        if (content == null) documentsContentLiveChanges.put(id, "");
         return documentsContentLiveChanges.get(id);
     }
 
@@ -272,7 +279,8 @@ public class DocumentService implements ServiceInterface {
         userDocumentRepository.deleteDocument(documentRepository.findById(docId).get());
         documentRepository.deleteById(docId);
     }
-    public Set<User> getOnlineUsers(Long documentId){
+
+    public Set<User> getOnlineUsers(Long documentId) {
         return onlineUsersPerDoc.get(documentId);
     }
 }

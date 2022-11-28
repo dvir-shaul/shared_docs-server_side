@@ -10,4 +10,7 @@ import lombok.Setter;
 public class OnlineUsersReq {
     private Long userId;
     private Long documentId;
+    private Method method;
+
+
 }
