@@ -148,4 +148,5 @@ class FileController {
     public ResponseEntity<?> documentExists(@RequestParam Long documentId, @RequestAttribute Long userId){
         return ResponseEntity.ok(documentService.findById(documentId).isPresent());
     }
+
 }

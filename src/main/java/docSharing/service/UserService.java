@@ -7,11 +7,14 @@ import docSharing.entity.UserDocument;
 import docSharing.repository.DocumentRepository;
 import docSharing.repository.UserDocumentRepository;
 import docSharing.repository.UserRepository;
+import docSharing.response.UserDocumentRes;
 import docSharing.utils.ExceptionMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -33,7 +36,7 @@ public class UserService {
     }
 
 
-    public int updatePermission(Long docId, Long userId, Permission permission) {
+    public void updatePermission(Long docId, Long userId, Permission permission) {
         if (!documentRepository.findById(docId).isPresent()) {
             throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
         }
@@ -42,29 +45,32 @@ public class UserService {
         }
         Document doc = documentRepository.findById(docId).get();
         User user = userRepository.findById(userId).get();
+        UserDocument userDocument=null;
         if (userDocumentRepository.find(doc, user).isPresent()) {
-            UserDocument userDocument = userDocumentRepository.find(doc, user).get();
+            userDocument = userDocumentRepository.find(doc, user).get();
             userDocument.setPermission(permission);
-            return userDocumentRepository.updatePermission(permission, doc, user);
+            userDocumentRepository.updatePermission(permission, doc, user);
+        }
+        else{
+            userDocument=new UserDocument();
+            userDocument.setUser(user);
+            userDocument.setDocument(doc);
+            userDocument.setPermission(permission);
+           userDocumentRepository.save(userDocument);
         }
         throw new IllegalArgumentException(ExceptionMessage.CANT_ASSIGN_PERMISSION.toString());
     }
 
-    public UserDocument givePermission(Long docId, Long userId, Permission permission) {
-        if (!documentRepository.findById(docId).isPresent()) {
-            throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
-        }
-        if (!userRepository.findById(userId).isPresent()) {
-            throw new IllegalArgumentException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
-        }
-        Document doc = documentRepository.findById(docId).get();
-        User user = userRepository.findById(userId).get();
-        UserDocument userDocument=new UserDocument();
-        userDocument.setUser(user);
-        userDocument.setDocument(doc);
-        userDocument.setPermission(permission);
-        return userDocumentRepository.save(userDocument);
-    }
+  public List<UserDocumentRes> documentsOfUser(Long userId){
+        User user=userRepository.findById(userId).get();
+        List<UserDocument> ud= userDocumentRepository.findByUser(user);
+        List<UserDocumentRes> userDocumentResList=new ArrayList<>();
+      for (UserDocument userDocument :
+              ud) {
+          userDocumentResList.add(new UserDocumentRes(userDocument.getDocument().getId(), userDocument.getPermission()));
+      }
+        return userDocumentResList;
+  }
 
 
 }

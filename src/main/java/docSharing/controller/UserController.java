@@ -39,21 +39,7 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    @RequestMapping(value = "/permission/update", method = RequestMethod.PATCH)
-    public ResponseEntity<?> updatePermission(@RequestBody UpdatePermissionReq updatePermissionReq, @RequestAttribute Long userId) {
-        if (updatePermissionReq.getDocumentId() == null || updatePermissionReq.getUserId() == null || updatePermissionReq.getPermission() == null) {
-            return ResponseEntity.badRequest().build();
-        }
-        if (documentService.findById(updatePermissionReq.getDocumentId()).get().getUser().getId() != userId) {
-            return ResponseEntity.badRequest().body(ExceptionMessage.USER_IS_NOT_THE_ADMIN);
-        }
-        try {
-            return ResponseEntity.ok().body(String.valueOf(userService.updatePermission(updatePermissionReq.getDocumentId(), updatePermissionReq.getUserId(), updatePermissionReq.getPermission())));
-        } catch (IllegalArgumentException exception) {
-            return ResponseEntity.badRequest().body(exception.getMessage());
 
-        }
-    }
 
     @RequestMapping(value = "/permission/give", method = RequestMethod.PATCH)
     public ResponseEntity<?> givePermission(@RequestBody UpdatePermissionReq permissionReq, @RequestAttribute Long userId) {
@@ -64,7 +50,8 @@ public class UserController {
             return ResponseEntity.badRequest().body(ExceptionMessage.USER_IS_NOT_THE_ADMIN);
         }
         try {
-            return ResponseEntity.ok().body(String.valueOf(userService.givePermission(permissionReq.getDocumentId(), permissionReq.getUserId(), permissionReq.getPermission())));
+            userService.updatePermission(permissionReq.getDocumentId(), permissionReq.getUserId(), permissionReq.getPermission());
+            return ResponseEntity.ok().body("permission added successfully!");
         } catch (IllegalArgumentException exception) {
             return ResponseEntity.badRequest().body(exception.getMessage());
 
@@ -77,7 +64,7 @@ public class UserController {
                 emails) {
             User user = userService.findByEmail(email);
             Document document = documentService.findById(documentId).get();
-            userService.givePermission(documentId, user.getId(), Permission.VIEWER);
+            userService.updatePermission(documentId, user.getId(), Permission.VIEWER);
             String body = Share.buildEmail(user.getName(), "hello", document.getName());
             try {
                 emailService.send(user.getEmail(), body);
@@ -87,5 +74,9 @@ public class UserController {
             //TODO: send email to user
         }
         return ResponseEntity.ok("doc shared successfully!");
+    }
+    @RequestMapping(value="documents", method = RequestMethod.GET)
+    public ResponseEntity<?> getDocuments(@RequestAttribute Long userId){
+        return ResponseEntity.ok(userService.documentsOfUser(userId));
     }
 }
