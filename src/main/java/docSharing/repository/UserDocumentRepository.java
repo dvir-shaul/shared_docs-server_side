@@ -15,6 +15,7 @@ public interface UserDocumentRepository extends JpaRepository<UserDocument, Long
     Optional<UserDocument> find(Document doc, User user);
 
 
+
     @Transactional
     @Modifying
     @Query("UPDATE UserDocument urd SET urd.permission = ?1 WHERE (urd.document = ?2 and urd.user = ?3)")

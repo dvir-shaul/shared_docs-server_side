@@ -1,7 +1,14 @@
 package docSharing.filter;
 
+import com.google.gson.Gson;
+import docSharing.entity.Permission;
+import docSharing.entity.User;
+import docSharing.repository.UserDocumentRepository;
+import docSharing.repository.UserRepository;
 import docSharing.utils.Validations;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.GenericFilterBean;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -10,8 +17,15 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
+import java.io.BufferedReader;
 import java.io.IOException;
-
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
+import java.util.Enumeration;
+import java.util.stream.Collectors;
+@Component
 public class AuthorizationFilter extends GenericFilterBean {
 
     @Override
@@ -36,7 +50,7 @@ public class AuthorizationFilter extends GenericFilterBean {
                 request.setAttribute("userId", userId);
             }
         }
-
+        System.out.println("----------AuthorizationFilter-----------");
         chain.doFilter(request, response);
     }
 }
