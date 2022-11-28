@@ -1,6 +1,7 @@
 package docSharing.filter;
 
 import docSharing.utils.Validations;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.filter.GenericFilterBean;
 import org.springframework.web.server.ResponseStatusException;
@@ -22,18 +23,21 @@ public class AuthorizationFilter extends GenericFilterBean {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
 
 //         Authorization
-        if (!url.contains("auth") && !url.contains("ws")) {
-            if ((httpRequest.getHeader("access-control-request-headers") != null)) {
-                if (!httpRequest.getHeader("access-control-request-headers").equals("authorization"))
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "A request must include authorization field");
-            } else if (httpRequest.getHeader("authorization") != null) {
+        if (!url.contains("auth") && !url.contains("ws") && !httpRequest.getMethod().equals(HttpMethod.OPTIONS.toString())) {
+
+//            if ((httpRequest.getHeader("access-control-request-headers") != null)) {
+//                if (!httpRequest.getHeader("access-control-request-headers").equals("authorization"))
+//                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "A request must include authorization field");
+//            } else if (httpRequest.getHeader("authorization") != null) {
+
+            if (httpRequest.getHeader("authorization") != null) {
                 String token = httpRequest.getHeader("authorization");
                 if (token == null)
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Could not find a token in the request");
-//                System.out.println("token: " + token);
                 Long userId = Validations.validateToken(token);
-//                System.out.println("userId: " + userId);
                 request.setAttribute("userId", userId);
+            } else {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Could not find a token in the request");
             }
         }
 

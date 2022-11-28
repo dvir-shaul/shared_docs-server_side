@@ -9,5 +9,5 @@ import lombok.Setter;
 @Setter
 public class OnlineUsersReq {
     private Long userId;
-    private Long docId;
+    private Long documentId;
 }
