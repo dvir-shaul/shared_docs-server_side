@@ -28,6 +28,10 @@ public class UserService {
     public Optional<User> findById(Long id) {
         return userRepository.findById(id);
     }
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
 
     public int updatePermission(Long docId, Long userId, Permission permission) {
         if (!documentRepository.findById(docId).isPresent()) {
