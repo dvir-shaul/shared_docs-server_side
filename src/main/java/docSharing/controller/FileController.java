@@ -18,10 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 
 @Controller
 @RequestMapping(value = "/file")
@@ -125,7 +122,7 @@ class FileController {
 
     @RequestMapping(value = "getPath", method = RequestMethod.GET)
     public ResponseEntity<?> getPath(@RequestParam Type type, @RequestParam Long fileId, @RequestAttribute Long userId) {
-        Queue<FileRes> path = new LinkedList<>();
+        Stack<FileRes> path = new Stack<>();
         GeneralItem generalItem=null;
         switch (type) {
             case FOLDER:

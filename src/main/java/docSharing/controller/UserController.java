@@ -8,12 +8,14 @@ import docSharing.service.DocumentService;
 import docSharing.service.EmailService;
 import docSharing.service.UserService;
 import docSharing.utils.ExceptionMessage;
+import docSharing.utils.Invite;
 import docSharing.utils.Share;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -60,18 +62,33 @@ public class UserController {
 
     @RequestMapping(value = "/share", method = RequestMethod.PATCH, consumes = "application/json")
     public ResponseEntity<?> givePermissionToAll(@RequestBody List<String> emails, @RequestParam Long documentId, @RequestAttribute Long userId) {
+       List<String> unregisteredUsers=new ArrayList<>();
         for (String email :
                 emails) {
             User user = userService.findByEmail(email);
+            if(user==null){
+                unregisteredUsers.add(email);
+                continue;
+            }
             Document document = documentService.findById(documentId).get();
             userService.updatePermission(documentId, user.getId(), Permission.VIEWER);
-            String body = Share.buildEmail(user.getName(), "hello", document.getName());
+            String body = Share.buildEmail(user.getName(), "HERE SHOULD BE THE DOC URL", document.getName());
             try {
-                emailService.send(user.getEmail(), body);
+                emailService.send(user.getEmail(), body,"You have been invited to view the document");
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-            //TODO: send email to user
+
+        }
+
+        for (String unregisteredEmail :
+                unregisteredUsers) {
+            String inviteUserString= Invite.emailBody;
+            try {
+                emailService.send(unregisteredEmail, inviteUserString, "A personal invitation");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
         return ResponseEntity.ok("doc shared successfully!");
     }

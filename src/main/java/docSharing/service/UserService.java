@@ -45,20 +45,16 @@ public class UserService {
         }
         Document doc = documentRepository.findById(docId).get();
         User user = userRepository.findById(userId).get();
-        UserDocument userDocument=null;
         if (userDocumentRepository.find(doc, user).isPresent()) {
-            userDocument = userDocumentRepository.find(doc, user).get();
-            userDocument.setPermission(permission);
             userDocumentRepository.updatePermission(permission, doc, user);
         }
         else{
-            userDocument=new UserDocument();
+            UserDocument userDocument=new UserDocument();
             userDocument.setUser(user);
             userDocument.setDocument(doc);
             userDocument.setPermission(permission);
            userDocumentRepository.save(userDocument);
         }
-        throw new IllegalArgumentException(ExceptionMessage.CANT_ASSIGN_PERMISSION.toString());
     }
 
   public List<UserDocumentRes> documentsOfUser(Long userId){
