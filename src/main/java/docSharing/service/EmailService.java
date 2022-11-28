@@ -63,13 +63,13 @@ public class EmailService{
         LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
         return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
     }
-    public void send(String to, String message) throws Exception {
+    public void send(String to, String message, String subject) throws Exception {
         Properties props = new Properties();
         Session session = Session.getDefaultInstance(props, null);
         MimeMessage email = new MimeMessage(session);
         email.setFrom(new InternetAddress(TEST_EMAIL));
         email.addRecipient(TO, new InternetAddress(to));
-        email.setSubject("activate account");
+        email.setSubject(subject);
         email.setContent(message,"text/html; charset=utf-8");
 
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -98,7 +98,7 @@ public class EmailService{
         String link = Activation.buildLink(token);
         String mail = Activation.buildEmail(user.getName(), link);
         try {
-            send(user.getEmail(), mail);
+            send(user.getEmail(), mail,"activate account");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

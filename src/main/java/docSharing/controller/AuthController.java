@@ -65,7 +65,7 @@ public class AuthController {
             String link = Activation.buildLink(token);
             String mail = Activation.buildEmail(emailUser.getName(), link);
             try {
-                emailService.send(emailUser.getEmail(), mail);
+                emailService.send(emailUser.getEmail(), mail, "activate account");
             } catch (Exception e) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
             }
