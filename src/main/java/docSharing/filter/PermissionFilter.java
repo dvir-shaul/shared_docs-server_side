@@ -51,93 +51,86 @@ public class PermissionFilter extends GenericFilterBean {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         System.out.println("----------PermissionFilter-----------");
-
+        boolean flag = false;
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         // Permission//
         String token = httpRequest.getHeader("authorization");
         List<String> list = List.of(httpRequest.getRequestURI().split("/"));
-        System.out.println(httpRequest.getRequestURI());
-        if (list.contains("user")) {
-            chain.doFilter(request, response);
+        if (list.contains("auth")) {
             // we are in auth controller
-            return;
+            flag= true;
         }
+        Long Id = getId(httpRequest);
         Long userId = Validations.validateToken(token);
-        for (String s : list) {
-            System.out.println(s);
-        }
-        System.out.println("----------------------pre doc");
-        if (list.contains("document")) {
-            if (list.contains("file")) {
-                if (httpRequest.getMethod().equals("POST")) {
-                    chain.doFilter(request, response);
-                    return;
-                }
-                Long docId = getId(request);
-                System.out.println("--------docId "+docId);
-                Optional<Document> optDocument = documentRepository.findById(docId);
-                Optional<User> optUser = userRepository.findById(userId);
-                if (!optUser.isPresent()) {
-                    System.out.println("1");
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ExceptionMessage.NO_USER_IN_DATABASE.toString());
-                }if (!optDocument.isPresent()) {
-                    System.out.println("2");
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ExceptionMessage.NO_DOCUMENT_IN_DATABASE.toString());
-                }
-                Document document = optDocument.get();
-                User user = optUser.get();
-                System.out.println(user);
-                System.out.println(document);
+        System.out.println(userId);
+        System.out.println(Id);
 
-                // file controller
-                if (Objects.equals(document.getUser().getId(), user.getId())) {
-                    chain.doFilter(request, response);
-                    return;
-                }
-                UserDocument userDocument = getUserDocument(request,userId);
+        if (!flag && list.contains("folder")) {
+            Optional<Folder> optFolder = folderRepository.findById(Id);
+            if (!optFolder.isPresent())
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
+            Folder folder = optFolder.get();
 
-                if (httpRequest.getMethod().equals("PATCH") && userDocument.getPermission().equals(Permission.MODERATOR)) {
-                    chain.doFilter(request, response);
-                    return;
-                }
-                if (httpRequest.getMethod().equals("DELETE")) {
+            if (httpRequest.getMethod().equals("PATCH") || httpRequest.getMethod().equals("DELETE")) {
+                if (folder.getUser().getId().equals(userId)) {
+                    System.out.println("work");
+                    flag= true;
+                } else {
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.UNAUTHORIZED_USER.toString());
                 }
-            } else {
-                UserDocument userDocument = getUserDocument(request,userId);
+            }
+            if (httpRequest.getMethod().equals("POST") || httpRequest.getMethod().equals("GET")) {
+                flag= true;
+            }
+            chain.doFilter(request, response);
+            return;
+        }
+
+        if (!flag && list.contains("document")) {
+            if (list.contains("file")) {
+                if (httpRequest.getMethod().equals("POST")) {
+                    flag= true;
+                }
+            }
+            UserDocument userDocument = getUserDocument(Id, userId);
+
+            if (!flag && list.contains("file")) {
+                if (httpRequest.getMethod().equals("PATCH")) {
+                    if (userDocument.getPermission().equals(Permission.MODERATOR)) {
+                        flag= true;;
+                    }
+                }
+                if (httpRequest.getMethod().equals("DELETE") && !(userDocument.getPermission().equals(Permission.MODERATOR))) {
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.UNAUTHORIZED_USER.toString());
+                }
+            }
+            if (!flag && httpRequest.getMethod().equals("POST")) {
                 // text edit controller
                 if (userDocument.getPermission().equals(Permission.VIEWER)) {
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.UNAUTHORIZED_USER.toString());
                 }
-                chain.doFilter(request, response);
-                return;
+                flag= true;
             }
         }
-        if (list.contains("folder")) {
-            if (httpRequest.getMethod().equals("PATCH")) {
+
+
+        if(!flag && list.contains("permission")){//in permissions
+            UserDocument userDocument = getUserDocument(Id, userId);
+            System.out.println("................................");
+            if(userDocument.getPermission().equals(Permission.MODERATOR)){
+                System.out.println("................................");
                 chain.doFilter(request, response);
-                return;
+                flag= true;
             }
-            if (httpRequest.getMethod().equals("POST")) {
-                chain.doFilter(request, response);
-                return;
-            }
-            if (httpRequest.getMethod().equals("DELETE")) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.UNAUTHORIZED_USER.toString());
-            }
-            // we are in file controller
-            chain.doFilter(request, response);
-            return;
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.UNAUTHORIZED_USER.toString());
         }
-        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.UNAUTHORIZED_USER.toString());
+
     }
 
     public static String getBody(ServletRequest request) throws IOException {
-
         String body = null;
         StringBuilder stringBuilder = new StringBuilder();
         BufferedReader bufferedReader = null;
-
         try {
             InputStream inputStream = request.getInputStream();
             if (inputStream != null) {
@@ -167,17 +160,14 @@ public class PermissionFilter extends GenericFilterBean {
         List<String> list1 = List.of(payloadRequest.split(","));
         for (String s : list1) {
             if (s.contains("id")) {
-                System.out.println("-------------------------------");
                 String tempId = s.split(":")[1].split("}")[0].trim();
-                System.out.println(tempId);
                 docId = Long.parseLong(tempId);
             }
         }
         return docId;
     }
 
-    public UserDocument getUserDocument(ServletRequest request, Long userId) throws IOException {
-        Long docId = getId(request);
+    public UserDocument getUserDocument(Long docId, Long userId) throws IOException {
         Optional<Document> optDocument = documentRepository.findById(docId);
         Optional<User> optUser = userRepository.findById(userId);
         if (!optUser.isPresent())
@@ -195,6 +185,13 @@ public class PermissionFilter extends GenericFilterBean {
 
 
 /**
+ * user1
  * eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIxIiwiaWF0IjoxNjY5NjI5Mzk5LCJzdWIiOiJsb2dpbiIsImlzcyI6ImRvY3MgYXBwIn0.4Qcz2o6NzXVzJXLl0IdJec6-vCRGnzBLM11H2bmsaPQ
+ * user2
+ * eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIyIiwiaWF0IjoxNjY5NjM4MzYyLCJzdWIiOiJsb2dpbiIsImlzcyI6ImRvY3MgYXBwIn0.QQtT3liScCSUqleIBVbTNw232MNExjK4b196i9w09ak
+ * user2
+ * eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIyIiwiaWF0IjoxNjY5NjM4MzYyLCJzdWIiOiJsb2dpbiIsImlzcyI6ImRvY3MgYXBwIn0.QQtT3liScCSUqleIBVbTNw232MNExjK4b196i9w09ak
  */
-
+/** user2
+ *eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIyIiwiaWF0IjoxNjY5NjM4MzYyLCJzdWIiOiJsb2dpbiIsImlzcyI6ImRvY3MgYXBwIn0.QQtT3liScCSUqleIBVbTNw232MNExjK4b196i9w09ak
+ */
