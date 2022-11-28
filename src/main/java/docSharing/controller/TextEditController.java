@@ -3,17 +3,26 @@ package docSharing.controller;
 import docSharing.entity.Document;
 import docSharing.entity.Log;
 import docSharing.entity.User;
+import docSharing.requests.OnlineUsersReq;
 import docSharing.service.DocumentService;
+import docSharing.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import javax.websocket.server.ServerEndpoint;
 
 @Controller
 @CrossOrigin
@@ -21,6 +30,8 @@ public class TextEditController {
 
     @Autowired
     DocumentService documentService;
+    @Autowired
+    UserService userService;
 
     @MessageMapping("/document")
     @SendTo("/document")
@@ -36,13 +47,25 @@ public class TextEditController {
     @MessageMapping("/document/getContent")
     @SendTo("/document/getContent")
     public String getContent(@Payload Log log) {
-        return documentService.getContent(log.getDocumentId());
+        String content = documentService.getContent(log.getDocumentId());
+        return content;
     }
 
     @MessageMapping("/document/onlineUsers")
     @SendTo("/document/onlineUsers")
-    public List<User> getOnlineUsers(@Payload Long docId) {
-        Document document=documentService.getDocById(docId);
-        return documentService.getOnlineUsers(document);
+    public List<String> getOnlineUsers(@Payload OnlineUsersReq onlineUsersReq) {
+        System.out.println("Looking for online users for document id:" + onlineUsersReq.getDocumentId());
+        Set<User> onlineUsers =  documentService.addUserToDocActiveUsers(onlineUsersReq.getUserId(), onlineUsersReq.getDocumentId());
+        return onlineUsers.stream().map(u -> u.getName()).collect(Collectors.toList());
     }
+
+//    @MessageMapping("/document/removeUser")
+//    @SendTo("/document/removeUser")
+//    public List<String> removeUser(@Payload OnlineUsersReq onlineUsersReq) {
+//        Document document = documentService.getDocById(onlineUsersReq.getDocumentId());
+//        User user = userService.findById(onlineUsersReq.getUserId()).get();
+//        document.removeOnlineUser(user);
+//        Set<User> onlineUsers = documentService.getOnlineUsers(document);
+//        return onlineUsers.stream().map(u -> u.getName()).collect(Collectors.toList());
+//    }
 }
