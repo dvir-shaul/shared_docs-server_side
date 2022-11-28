@@ -55,17 +55,8 @@ public class TextEditController {
     @SendTo("/document/onlineUsers")
     public List<String> getOnlineUsers(@Payload OnlineUsersReq onlineUsersReq) {
         System.out.println("Looking for online users for document id:" + onlineUsersReq.getDocumentId());
-        Set<User> onlineUsers =  documentService.addUserToDocActiveUsers(onlineUsersReq.getUserId(), onlineUsersReq.getDocumentId());
+        Set<User> onlineUsers =  documentService.addUserToDocActiveUsers(onlineUsersReq.getUserId(), onlineUsersReq.getDocumentId(), onlineUsersReq.getMethod());
         return onlineUsers.stream().map(u -> u.getName()).collect(Collectors.toList());
     }
 
-//    @MessageMapping("/document/removeUser")
-//    @SendTo("/document/removeUser")
-//    public List<String> removeUser(@Payload OnlineUsersReq onlineUsersReq) {
-//        Document document = documentService.getDocById(onlineUsersReq.getDocumentId());
-//        User user = userService.findById(onlineUsersReq.getUserId()).get();
-//        document.removeOnlineUser(user);
-//        Set<User> onlineUsers = documentService.getOnlineUsers(document);
-//        return onlineUsers.stream().map(u -> u.getName()).collect(Collectors.toList());
-//    }
 }

@@ -31,7 +31,7 @@ public class GeneralItem {
     private String name;
 
     public Folder getParentFolder() {
-        return parentFolder;
+        return this.parentFolder;
     }
 
     public void setParentFolder(Folder parentFolder) {
@@ -77,14 +77,5 @@ public class GeneralItem {
         this.name = name;
     }
 
-    @Override
-    public String toString() {
-        return "File{" +
-                "id=" + id +
-                ", creationDate=" + creationDate +
-                ", user=" + user +
-                ", parentFolder=" + parentFolder +
-                ", name='" + name + '\'' +
-                "}\n";
-    }
+
 }

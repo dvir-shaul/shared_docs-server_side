@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import javax.transaction.Transactional;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -14,6 +15,8 @@ public interface UserDocumentRepository extends JpaRepository<UserDocument, Long
     @Query("SELECT u FROM UserDocument u WHERE (u.document = ?1 and u.user = ?2) ")
     Optional<UserDocument> find(Document doc, User user);
 
+    @Query("SELECT u FROM UserDocument u WHERE u.user = ?1")
+    List<UserDocument> findByUser(User user);
 
 
     @Transactional
