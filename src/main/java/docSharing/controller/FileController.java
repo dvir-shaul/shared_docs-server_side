@@ -5,6 +5,7 @@ import docSharing.entity.Folder;
 import docSharing.entity.GeneralItem;
 import docSharing.entity.User;
 import docSharing.requests.*;
+import docSharing.response.FileRes;
 import docSharing.response.PathItem;
 import docSharing.response.ExportDoc;
 import docSharing.service.DocumentService;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Set;
 
 @Controller
 @RequestMapping(value = "/file")
@@ -44,7 +46,7 @@ class FileController {
     }
 
     @RequestMapping(value = "getAll", method = RequestMethod.GET)
-    public ResponseEntity<List<GeneralItem>> get(@RequestParam Long parentFolderId, @RequestAttribute Long userId) {
+    public ResponseEntity<List<FileRes>> get(@RequestParam Long parentFolderId, @RequestAttribute Long userId) {
         System.out.println("userId: " + userId);
         return ac.get(parentFolderId, userId);
     }
@@ -121,15 +123,23 @@ class FileController {
         return ResponseEntity.ok().body(exportDoc);
     }
 
-    @RequestMapping(value = "document/getPath", method = RequestMethod.GET)
-    public ResponseEntity<?> getPath(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        Queue<PathItem> path = new LinkedList<>();
-        Document document = documentService.findById(documentId).get();
-        Folder parentFolder=document.getParentFolder();
-        path.add(new PathItem(document.getId(), document.getName()));
+    @RequestMapping(value = "getPath", method = RequestMethod.GET)
+    public ResponseEntity<?> getPath(@RequestParam Type type, @RequestParam Long fileId, @RequestAttribute Long userId) {
+        Queue<FileRes> path = new LinkedList<>();
+        GeneralItem generalItem=null;
+        switch (type) {
+            case FOLDER:
+                generalItem = folderService.findById(fileId).get();
+                break;
+            case DOCUMENT:
+                generalItem = documentService.findById(fileId).get();
+                break;
+        }
+        Folder parentFolder = generalItem.getParentFolder();
+        path.add(new FileRes(generalItem.getName(), generalItem.getId(), type));
         do {
-            path.add(new PathItem(parentFolder.getId(), parentFolder.getName()));
-            parentFolder=parentFolder.getParentFolder();
+            path.add(new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER));
+            parentFolder = parentFolder.getParentFolder();
         } while (parentFolder != null);
         return ResponseEntity.ok(path);
     }

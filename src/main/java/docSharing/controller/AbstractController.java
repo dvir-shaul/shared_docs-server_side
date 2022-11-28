@@ -4,6 +4,8 @@ import docSharing.entity.Document;
 import docSharing.entity.GeneralItem;
 import docSharing.entity.Folder;
 import docSharing.entity.User;
+import docSharing.requests.Type;
+import docSharing.response.FileRes;
 import docSharing.service.*;
 import docSharing.utils.Action;
 import docSharing.utils.ExceptionMessage;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Component
 public class AbstractController {
@@ -25,15 +28,21 @@ public class AbstractController {
     @Autowired
     FolderService folderService;
 
-    public ResponseEntity<List<GeneralItem>> get(Long parentFolderId, Long userId) {
-        List<Folder> folderList = folderService.get(parentFolderId, userId);
-        System.out.println(folderList);
-//        List<Document> documentList = documentService.get(parentFolderId, userId);
-//        System.out.println(documentList);
-        List<GeneralItem> generalItemList = new ArrayList<>();
-//        generalItemList.addAll(folderList);
-//        generalItemList.addAll(documentList);
-        return ResponseEntity.ok().body(generalItemList);
+    public ResponseEntity<List<FileRes>> get(Long parentFolderId, Long userId) {
+        //FIXME: check if parent folder exists
+        Folder parentFolder=folderService.findById(parentFolderId).get();
+        Set<Folder> folderSet = parentFolder.getFolders();
+        Set<Document> documentSet=parentFolder.getDocuments();
+        List<FileRes> files=new ArrayList<>();
+        for (Folder folder:
+             folderSet) {
+            files.add(new FileRes(folder.getName(), folder.getId(), Type.FOLDER));
+        }
+        for (Document document:
+             documentSet) {
+            files.add(new FileRes(document.getName(), document.getId(), Type.DOCUMENT));
+        }
+        return ResponseEntity.ok().body(files);
     }
 
     public ResponseEntity<String> create(GeneralItem item) {
