@@ -23,7 +23,7 @@ public class AuthorizationFilter extends GenericFilterBean {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
 
 //         Authorization
-        if (!url.contains("auth") && !url.contains("ws") && !httpRequest.getMethod().equals(HttpMethod.OPTIONS.toString())) {
+        if (!url.contains("auth") && !url.contains("ws") && !url.contains("error") && !httpRequest.getMethod().equals(HttpMethod.OPTIONS.toString())) {
 
 //            if ((httpRequest.getHeader("access-control-request-headers") != null)) {
 //                if (!httpRequest.getHeader("access-control-request-headers").equals("authorization"))

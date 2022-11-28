@@ -91,13 +91,15 @@ public class DocumentService implements ServiceInterface {
         onlineUsersPerDoc.putIfAbsent(documentId, new HashSet<>());
         // FIXME: check if this user id even exists in the db
         User user = userRepository.findById(userId).get();
-        switch (method) {
-            case ADD:
-                onlineUsersPerDoc.get(documentId).add(user);
-                break;
-            case REMOVE:
-                onlineUsersPerDoc.get(documentId).remove(user);
-        }
+        if (method != null)
+            switch (method) {
+                case ADD:
+                    onlineUsersPerDoc.get(documentId).add(user);
+                    break;
+                case REMOVE:
+                    onlineUsersPerDoc.get(documentId).remove(user);
+                    break;
+            }
         return onlineUsersPerDoc.get(documentId);
     }
 
@@ -213,10 +215,10 @@ public class DocumentService implements ServiceInterface {
         throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
     }
 
-    public String getContent(Long id) {
-        String content = documentsContentLiveChanges.get(id);
-        if (content == null) documentsContentLiveChanges.put(id, "");
-        return documentsContentLiveChanges.get(id);
+    public String getContent(Long documentId) {
+        String content = documentsContentLiveChanges.get(documentId);
+        if (content == null) documentsContentLiveChanges.put(documentId, "");
+        return documentsContentLiveChanges.get(documentId);
     }
 
     private String concatenateStrings(String text, Log log) {
