@@ -15,7 +15,7 @@ import javax.persistence.Entity;
 @NoArgsConstructor
 public class UserDocument {
     @EmbeddedId
-    private UserDocumentPk id;
+    private UserDocumentPk id=new UserDocumentPk();
 
     @ManyToOne
     @MapsId("documentId")
