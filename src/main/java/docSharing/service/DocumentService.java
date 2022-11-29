@@ -378,6 +378,25 @@ public class DocumentService implements ServiceInterface {
     }
 
     public List<Document> getAllWhereParentFolderIsNull(Long userId) {
-        User user=userRepository.findById(userId).get();
+        User user = userRepository.findById(userId).get();
         return documentRepository.findAllByParentFolderIsNull(user);
-    }}
+    }
+
+    public List<UserDocument> getAllUsersInDocument(Long documentId) {
+        Document document = documentRepository.findById(documentId).get();
+        return userDocumentRepository.findAllUsersInDocument(document);
+    }
+
+    public Permission getUserPermissionInDocument(Long userId, Long documentId){
+        User user=userRepository.findById(userId).get();
+        Document document=documentRepository.findById(documentId).get();
+        Optional<UserDocument> userDocument=userDocumentRepository.find(document, user);
+        if(!userDocument.isPresent()){
+            return Permission.UNAUTORIZED;
+        }
+        return userDocument.get().getPermission();
+    }
+    public UserDocument saveUserInDocument(UserDocument userDocument){
+        return userDocumentRepository.save(userDocument);
+    }
+}

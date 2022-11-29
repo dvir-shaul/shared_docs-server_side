@@ -3,7 +3,9 @@ package docSharing.controller;
 import docSharing.entity.Document;
 import docSharing.entity.Permission;
 import docSharing.entity.User;
+import docSharing.entity.UserDocument;
 import docSharing.requests.UpdatePermissionReq;
+import docSharing.response.UsersInDocRes;
 import docSharing.service.DocumentService;
 import docSharing.service.EmailService;
 import docSharing.service.UserService;
@@ -19,6 +21,7 @@ import javax.security.auth.login.AccountNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 
 @RestController
@@ -64,8 +67,8 @@ public class UserController {
         }
     }
 
-    @RequestMapping(value = "/share", method = RequestMethod.PATCH, consumes = "application/json")
-    public ResponseEntity<?> givePermissionToAll(@RequestBody List<String> emails, @RequestParam Long documentId, @RequestAttribute Long userId) throws AccountNotFoundException {
+    @RequestMapping(value = "/share", method = RequestMethod.POST, consumes = "application/json")
+    public ResponseEntity<?> givePermissionToAll(@RequestBody List<String> emails, @RequestParam Long documentId, @RequestAttribute Long userId) {
        List<String> unregisteredUsers=new ArrayList<>();
         for (String email :
                 emails) {
@@ -95,7 +98,9 @@ public class UserController {
                 throw new RuntimeException(e);
             }
         }
-        return ResponseEntity.ok("doc shared successfully!");
+        List<UserDocument> usersInDocument=documentService.getAllUsersInDocument(documentId);
+        List<UsersInDocRes> usersInDocRes=usersInDocument.stream().map(u->new UsersInDocRes(u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
+        return ResponseEntity.ok(usersInDocRes);
     }
     @RequestMapping(value="documents", method = RequestMethod.GET)
     public ResponseEntity<?> getDocuments(@RequestAttribute Long userId){
