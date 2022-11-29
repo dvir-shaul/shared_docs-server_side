@@ -222,12 +222,14 @@ public class DocumentService implements ServiceInterface {
 
     /**
      * this function gets called when we want to show to te client all the documents that in a specific folder.
-     * @param folderId - parent folder
+     * @param parentFolderId - parent folder
      * @param userId - current user
      * @return list with all the document entities.
      */
-    public List<Document> get(Long folderId, Long userId) {
-        return documentRepository.findAllByUserIdAndParentFolderId(folderId, userId);
+    public List<Document> get(Long parentFolderId, Long userId) {
+        User user = userRepository.findById(userId).get();
+        Folder parentFolder = folderRepository.findById(parentFolderId).get();
+        return documentRepository.findAllByUserIdAndParentFolderId(parentFolder, user);
     }
 
     /**
@@ -273,16 +275,15 @@ public class DocumentService implements ServiceInterface {
         }
         throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
     }
-
     /**
      * this function goal is to show the live content of a document to the client.
-     * @param id - document id
+     * @param documentId - document id
      * @return content in documentsContentLiveChanges
      */
-    public String getContent(Long id) {
-        String content = documentsContentLiveChanges.get(id);
-        if (content == null) documentsContentLiveChanges.put(id, "");
-        return documentsContentLiveChanges.get(id);
+    public String getContent(Long documentId) {
+        String content = documentsContentLiveChanges.get(documentId);
+        if (content == null) documentsContentLiveChanges.put(documentId, "");
+        return documentsContentLiveChanges.get(documentId);
     }
 
     /**
@@ -376,7 +377,7 @@ public class DocumentService implements ServiceInterface {
         documentRepository.deleteById(docId);
     }
 
-    public Set<User> getOnlineUsers(Long documentId) {
-        return onlineUsersPerDoc.get(documentId);
-    }
-}
+    public List<Document> getAllWhereParentFolderIsNull(Long userId) {
+        User user=userRepository.findById(userId).get();
+        return documentRepository.findAllByParentFolderIsNull(user);
+    }}

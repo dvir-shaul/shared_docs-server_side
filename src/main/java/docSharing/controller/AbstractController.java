@@ -3,12 +3,9 @@ package docSharing.controller;
 import docSharing.entity.Document;
 import docSharing.entity.GeneralItem;
 import docSharing.entity.Folder;
-import docSharing.entity.User;
 import docSharing.requests.Type;
 import docSharing.response.FileRes;
 import docSharing.service.*;
-import docSharing.utils.Action;
-import docSharing.utils.ExceptionMessage;
 import docSharing.utils.Regex;
 import docSharing.utils.Validations;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +16,6 @@ import org.springframework.stereotype.Component;
 import javax.security.auth.login.AccountNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Component
 public class AbstractController {
@@ -29,7 +25,7 @@ public class AbstractController {
     @Autowired
     FolderService folderService;
 
-    public ResponseEntity<List<FileRes>> get(Long parentFolderId, Long userId) {
+    public ResponseEntity<List<FileRes>> getAll(Long parentFolderId, Long userId) {
         //FIXME: check if parent folder exists
         try {
             Folder parentFolder = folderService.findById(parentFolderId);

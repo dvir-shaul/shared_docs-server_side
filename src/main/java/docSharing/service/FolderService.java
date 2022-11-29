@@ -6,6 +6,7 @@ import docSharing.entity.Folder;
 import docSharing.entity.User;
 import docSharing.repository.DocumentRepository;
 import docSharing.repository.FolderRepository;
+import docSharing.repository.UserRepository;
 import docSharing.utils.ExceptionMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,8 @@ public class FolderService implements ServiceInterface {
     FolderRepository folderRepository;
     @Autowired
     DocumentRepository documentRepository;
+    @Autowired
+    UserRepository userRepository;
 
     /**
      * @param id - id of folder in database
@@ -39,7 +42,14 @@ public class FolderService implements ServiceInterface {
      * @return - list of inner folders in parent folder.
      */
     public List<Folder> get(Long parentFolderId, Long userId) {
-        return folderRepository.findAllByParentFolderIdAndUserId(parentFolderId, userId);
+        User user=userRepository.findById(userId).get();
+        Folder parentFolder=folderRepository.findById(parentFolderId).get();
+        return folderRepository.findAllByParentFolderIdAndUserId(parentFolder, user);
+    }
+
+    public List<Folder> getAllWhereParentFolderIsNull(Long userId) {
+        User user = userRepository.findById(userId).get();
+        return folderRepository.findAllByParentFolderIsNull(user);
     }
 
     /**
