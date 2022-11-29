@@ -23,7 +23,7 @@ public class AuthService {
      * @param name     - name of user
      */
     public User register(String email, String password, String name) {
-        if (! userRepository.findByEmail(email).isPresent())
+        if (userRepository.findByEmail(email).isPresent())
             throw new IllegalArgumentException(ExceptionMessage.ACCOUNT_EXISTS + email);
         return userRepository.save(User.createUser(email, password, name));
     }
