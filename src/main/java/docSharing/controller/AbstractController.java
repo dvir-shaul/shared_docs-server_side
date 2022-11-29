@@ -33,12 +33,10 @@ public class AbstractController {
             Set<Folder> folderSet = parentFolder.getFolders();
             Set<Document> documentSet = parentFolder.getDocuments();
             List<FileRes> files = new ArrayList<>();
-            for (Folder folder :
-                    folderSet) {
+            for (Folder folder : folderSet) {
                 files.add(new FileRes(folder.getName(), folder.getId(), Type.FOLDER));
             }
-            for (Document document :
-                    documentSet) {
+            for (Document document : documentSet) {
                 files.add(new FileRes(document.getName(), document.getId(), Type.DOCUMENT));
             }
             return ResponseEntity.ok().body(files);

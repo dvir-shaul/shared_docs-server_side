@@ -5,7 +5,7 @@ package docSharing.utils;
  * this enum class is used in the filter permission process.
  */
 public enum Params {
-    FOLDER_ID("id"),
+    FOLDER_ID("folderId"),
     PARENT_FOLDER_ID("parentFolderId"),
     DOCUMENT_ID("documentId");
 //    FOLDER_ID("id");

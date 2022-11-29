@@ -106,7 +106,7 @@ class FileController {
     }
 
     @RequestMapping(value = "document", method = RequestMethod.DELETE, consumes = "application/json")
-    public ResponseEntity<?> delete(@RequestBody Document doc, @RequestAttribute Long userId) {
+    public ResponseEntity<?> delete(@RequestParam Document doc, @RequestAttribute Long userId) {
         return ac.delete(doc);
     }
 
@@ -185,9 +185,9 @@ class FileController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
-    @RequestMapping("/document/getContent/{documentId}")
-    public String getContent(@DestinationVariable Long documentId, @RequestAttribute Long userId) {
+    @RequestMapping(value = "/document/getContent", method = RequestMethod.GET)
+    public ResponseEntity<String> getContent(@RequestParam Long documentId, @RequestAttribute Long userId) {
         String content = documentService.getContent(documentId);
-        return content;
+        return ResponseEntity.ok().body(content);
     }
 }
