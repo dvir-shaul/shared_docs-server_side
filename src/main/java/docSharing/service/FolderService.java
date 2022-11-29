@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class FolderService implements ServiceInterface {
@@ -33,8 +34,8 @@ public class FolderService implements ServiceInterface {
     }
 
     public List<Folder> get(Long parentFolderId, Long userId) {
-        User user=userRepository.findById(userId).get();
-        Folder parentFolder=folderRepository.findById(parentFolderId).get();
+        User user = userRepository.findById(userId).get();
+        Folder parentFolder = folderRepository.findById(parentFolderId).get();
         return folderRepository.findAllByParentFolderIdAndUserId(parentFolder, user);
     }
 
@@ -101,15 +102,8 @@ public class FolderService implements ServiceInterface {
         return documentRepository.updateParentFolderId(newParentFolder, id);
     }
 
-    /**
-     * delete folder by getting the document id, and deleting all it's content by recursively
-     * going through the folder files and folders in it.
-     *
-     * @param id - gets folder id to start delete the content.
-     */
-    public void delete(Long id) {
-        folderRepository.deleteById(id);
-    }
+
+
 
     private boolean newParentIsChild(Folder targetFolder, Folder destinationFolder) {
         if (destinationFolder.getFolders().isEmpty()) {
@@ -125,5 +119,17 @@ public class FolderService implements ServiceInterface {
             }
         }
         return false;
+    }
+
+    public void delete(Long folderId) {
+        Folder folder = folderRepository.findById(folderId).get();
+        folder.getDocuments().forEach(document -> {
+            userDocumentRepository.deleteDocument(document);
+            documentRepository.delete(document);
+        });
+        folder.getFolders().forEach(f -> {
+            delete(f.getId());
+        });
+        folderRepository.delete(folder);
     }
 }

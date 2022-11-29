@@ -67,11 +67,6 @@ class FileController {
         }
         User user = userService.findById(userId).get();
         Document doc = Document.createDocument(user, docReq.getName(), parentFolder, docReq.getContent());
-        UserDocument userDocument=new UserDocument();
-        userDocument.setPermission(Permission.ADMIN);
-        userDocument.setUser(user);
-        userDocument.setDocument(doc);
-        documentService.saveUserInDocument(userDocument);
         return ac.create(doc);
     }
 

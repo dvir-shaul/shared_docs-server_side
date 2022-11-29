@@ -204,7 +204,7 @@ public class DocumentService implements ServiceInterface {
         userDocument.setId(new UserDocumentPk());
         userDocument.setDocument(savedDoc);
         userDocument.setUser(savedDoc.getUser());
-        userDocument.setPermission(Permission.MODERATOR);
+        userDocument.setPermission(Permission.ADMIN);
         userDocumentRepository.save(userDocument);
         System.out.println("A new doc has been added with an id of " + savedDoc.getId());
         return savedDoc.getId();
