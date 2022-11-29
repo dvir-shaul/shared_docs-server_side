@@ -68,12 +68,11 @@ public class PermissionFilter extends GenericFilterBean {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         String token = httpRequest.getHeader("authorization");
         List<String> list = List.of(httpRequest.getRequestURI().split("/"));
-        if (list.contains("auth")) {
+        if (list.contains("auth") ||list.contains("getAll")  ) {
             flag = true;
         }
 
         if (!flag && list.contains("folder")) {
-
             if (httpRequest.getMethod().equals(HttpMethod.PATCH.toString()) || httpRequest.getMethod().equals(HttpMethod.DELETE.toString())) {
                 Long FolderId = Long.valueOf(request.getParameter(Params.FOLDER_ID.toString()));
                 Long userId = Validations.validateToken(token);
@@ -87,13 +86,16 @@ public class PermissionFilter extends GenericFilterBean {
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.UNAUTHORIZED_USER.toString());
                 }
             }
+            //TODO: CHECK AGAIN
             if (httpRequest.getMethod().equals(HttpMethod.POST.toString()) || httpRequest.getMethod().equals(HttpMethod.GET.toString())) {
-                Long parentFolderId = Long.valueOf(request.getParameter(Params.PARENT_FOLDER_ID.toString()));
-                Optional<Folder> optFolder = folderRepository.findById(parentFolderId);
-                if (!optFolder.isPresent())
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
-                Folder folder = optFolder.get();
-                flag = true;
+//                if (request.getParameter(Params.PARENT_FOLDER_ID.toString()) != null) {
+//                    Long parentFolderId = Long.valueOf(request.getParameter(Params.PARENT_FOLDER_ID.toString()));
+//                    Optional<Folder> optFolder = folderRepository.findById(parentFolderId);
+//                    if (!optFolder.isPresent())
+//                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
+//                    Folder folder = optFolder.get();
+//                }
+                flag=true;
             }
         }
 //
@@ -173,7 +175,7 @@ public class PermissionFilter extends GenericFilterBean {
 
 /**
  * user1
- * eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIxIiwiaWF0IjoxNjY5NjI5Mzk5LCJzdWIiOiJsb2dpbiIsImlzcyI6ImRvY3MgYXBwIn0.4Qcz2o6NzXVzJXLl0IdJec6-vCRGnzBLM11H2bmsaPQ
+ * eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIxIiwiaWF0IjoxNjY5NzQxMDkxLCJzdWIiOiJsb2dpbiIsImlzcyI6ImRvY3MgYXBwIn0.Uz6NzXGJLu62GHhFBQC36GNB5cAhXCVMGrnzUyzlBVo
  * user2
  * eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIyIiwiaWF0IjoxNjY5NjM4MzYyLCJzdWIiOiJsb2dpbiIsImlzcyI6ImRvY3MgYXBwIn0.QQtT3liScCSUqleIBVbTNw232MNExjK4b196i9w09ak
  */
