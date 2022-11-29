@@ -69,37 +69,37 @@ public class UserController {
 
     @RequestMapping(value = "/share", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<?> givePermissionToAll(@RequestBody List<String> emails, @RequestParam Long documentId, @RequestAttribute Long userId) {
-       List<String> unregisteredUsers=new ArrayList<>();
-        for (String email :
-                emails) {
-            User user = userService.findByEmail(email);
-            if(user==null){
-                unregisteredUsers.add(email);
-                continue;
-            }
-            try {
+        List<String> unregisteredUsers = new ArrayList<>();
+        try {
+            for (String email :
+                    emails) {
+                User user = userService.findByEmail(email);
+                if (user == null) {
+                    unregisteredUsers.add(email);
+                    continue;
+                }
                 Document document = documentService.findById(documentId);
                 userService.updatePermission(documentId, user.getId(), Permission.VIEWER);
                 String body = Share.buildEmail(user.getName(), "HERE SHOULD BE THE DOC URL", document.getName());
-                emailService.send(user.getEmail(), body,"You have been invited to view the document");
-            }catch (AccountNotFoundException e) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+                emailService.send(user.getEmail(), body, "You have been invited to view the document");
             }
+        } catch (AccountNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
         for (String unregisteredEmail :
                 unregisteredUsers) {
-            String inviteUserString= Invite.emailBody;
+            String inviteUserString = Invite.emailBody;
             try {
                 emailService.send(unregisteredEmail, inviteUserString, "A personal invitation");
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
-        List<UserDocument> usersInDocument=documentService.getAllUsersInDocument(documentId);
-        List<UsersInDocRes> usersInDocRes=usersInDocument.stream().map(u->new UsersInDocRes(u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
+        List<UserDocument> usersInDocument = documentService.getAllUsersInDocument(documentId);
+        List<UsersInDocRes> usersInDocRes = usersInDocument.stream().map(u -> new UsersInDocRes(u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
         return ResponseEntity.ok(usersInDocRes);
     }
     @RequestMapping(value="documents", method = RequestMethod.GET)

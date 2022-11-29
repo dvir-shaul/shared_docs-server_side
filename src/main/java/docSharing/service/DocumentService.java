@@ -257,7 +257,7 @@ public class DocumentService implements ServiceInterface {
         userDocument.setId(new UserDocumentPk());
         userDocument.setDocument(savedDoc);
         userDocument.setUser(savedDoc.getUser());
-        userDocument.setPermission(Permission.MODERATOR);
+        userDocument.setPermission(Permission.ADMIN);
         userDocumentRepository.save(userDocument);
         System.out.println("A new doc has been added with an id of " + savedDoc.getId());
         return savedDoc.getId();
@@ -397,6 +397,9 @@ public class DocumentService implements ServiceInterface {
         return userDocument.get().getPermission();
     }
     public UserDocument saveUserInDocument(UserDocument userDocument){
+        System.out.println("in saveUserInDocument");
+
+        System.out.println(userDocument);
         return userDocumentRepository.save(userDocument);
     }
 }

@@ -71,16 +71,20 @@ class FileController {
         Folder parentFolder = null;
         try {
             if (docReq.getParentFolderId() != null) {
-                parentFolder = folderService.findById(docReq.getParentFolderId()).get();
+                parentFolder = folderService.findById(docReq.getParentFolderId());
             }
-            User user = userService.findById(userId).get();
+            User user = userService.findById(userId);
             Document doc = Document.createDocument(user, docReq.getName(), parentFolder, docReq.getContent());
-            UserDocument userDocument=new UserDocument();
-            userDocument.setPermission(Permission.ADMIN);
-            userDocument.setUser(user);
-            userDocument.setDocument(doc);
-            documentService.saveUserInDocument(userDocument);
-
+//            UserDocument userDocument=new UserDocument();
+//            userDocument.setPermission(Permission.ADMIN);
+//            userDocument.setUser(user);
+//            userDocument.setDocument(doc);
+//            UserDocumentPk pk = new UserDocumentPk();
+//            pk.setUserId(userId);
+//            pk.setDocumentId(doc.getId());
+//            userDocument.setId(pk);
+//            documentService.saveUserInDocument(userDocument);
+            return ac.create(doc);
         } catch (AccountNotFoundException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
