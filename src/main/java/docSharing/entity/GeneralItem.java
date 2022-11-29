@@ -76,6 +76,4 @@ public class GeneralItem {
         if (name == null) throw new IllegalArgumentException(ExceptionMessage.NULL_INPUT.toString());
         this.name = name;
     }
-
-
 }

@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 
+import javax.security.auth.login.AccountNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -27,15 +28,33 @@ public class UserService {
     @Autowired
     private DocumentRepository documentRepository;
 
-
-    public Optional<User> findById(Long id) {
-        return userRepository.findById(id);
+    /**
+     * @param id - user's id
+     * @return entity of user that found in database.
+     */
+    public User findById(Long id) throws AccountNotFoundException {
+        if (! userRepository.findById(id).isPresent())
+            throw new AccountNotFoundException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
+        return userRepository.findById(id).get();
     }
-    public User findByEmail(String email) {
-        return userRepository.findByEmail(email);
+
+    /**
+     * @param email - user's email
+     * @return entity of user that found in database.
+     */
+    public User findByEmail(String email) throws AccountNotFoundException {
+        if (! userRepository.findByEmail(email).isPresent())
+            throw new AccountNotFoundException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE + email);
+        return userRepository.findByEmail(email).get();
     }
 
-
+    /**
+     * function called to change a user's permission in database.
+     * if a record with the given parameters isn't found, create a new one.
+     * @param docId - document's id in database
+     * @param userId - user's id in database
+     * @param permission - the new Permission
+     */
     public void updatePermission(Long docId, Long userId, Permission permission) {
         if (!documentRepository.findById(docId).isPresent()) {
             throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
@@ -57,9 +76,16 @@ public class UserService {
         }
     }
 
+    /**
+     * function get called by controller from GET method to get all UserDocument.
+     * @param userId - user's id
+     * @return list of UserDocument
+     */
   public List<UserDocumentRes> documentsOfUser(Long userId){
-        User user=userRepository.findById(userId).get();
-        List<UserDocument> ud= userDocumentRepository.findByUser(user);
+        if(!userRepository.findById(userId).isPresent()) {
+            throw new IllegalArgumentException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
+        }
+        List<UserDocument> ud= userDocumentRepository.findByUser(userRepository.findById(userId).get());
         List<UserDocumentRes> userDocumentResList=new ArrayList<>();
       for (UserDocument userDocument :
               ud) {
