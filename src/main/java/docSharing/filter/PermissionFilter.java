@@ -97,7 +97,7 @@ public class PermissionFilter extends GenericFilterBean {
         }
 //
         if (!flag && list.contains("document")) {
-            if (list.contains("getPath") || list.contains("import")|| list.contains("export")) { // no need of permissions
+            if (list.contains("getPath") || list.contains("import") || list.contains("export")) { // no need of permissions
                 flag = true;
             }
             if (list.contains("file")) {
@@ -105,27 +105,28 @@ public class PermissionFilter extends GenericFilterBean {
                     flag = true;
                 }
             }
+            if (request.getParameter(Params.DOCUMENT_ID.toString()) != null) { // checks if we got any parameters
+                Long docId = Long.valueOf(request.getParameter(Params.DOCUMENT_ID.toString()));
+                Long userId = Validations.validateToken(token);
+                UserDocument userDocument = getUserDocument(docId, userId);
 
-            Long docId = Long.valueOf(request.getParameter(Params.DOCUMENT_ID.toString()));
-            Long userId = Validations.validateToken(token);
-            UserDocument userDocument = getUserDocument(docId, userId);
-
-            if (!flag && list.contains("file")) {
-                if (httpRequest.getMethod().equals(HttpMethod.PATCH.toString())) {// relocate / rename
-                    if (userDocument.getPermission().equals(Permission.MODERATOR)) {
-                        flag = true;
+                if (!flag && list.contains("file")) {
+                    if (httpRequest.getMethod().equals(HttpMethod.PATCH.toString())) {// relocate / rename
+                        if (userDocument.getPermission().equals(Permission.MODERATOR)) {
+                            flag = true;
+                        }
+                    }
+                    if (httpRequest.getMethod().equals(HttpMethod.DELETE.toString()) && !(userDocument.getDocument().getUser().getId().equals(userId))) {// only the creator can delete a file
+                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.UNAUTHORIZED_USER.toString());
                     }
                 }
-                if (httpRequest.getMethod().equals(HttpMethod.DELETE.toString()) && !(userDocument.getDocument().getUser().getId().equals(userId))) {// only the creator can delete a file
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.UNAUTHORIZED_USER.toString());
+                // FIXME: What to do on text edit with logs/getContent/onlineUsers?
+                if (!flag && httpRequest.getMethod().equals(HttpMethod.POST.toString())) {// text edit controller
+                    if (userDocument.getPermission().equals(Permission.VIEWER)) {//viewer can't add logs on a document
+                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.UNAUTHORIZED_USER.toString());
+                    }
+                    flag = true;
                 }
-            }
-            // FIXME: What to do on text edit with logs/getContent/onlineUsers?
-            if (!flag && httpRequest.getMethod().equals(HttpMethod.POST.toString())) {// text edit controller
-                if (userDocument.getPermission().equals(Permission.VIEWER)) {//viewer can't add logs on a document
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.UNAUTHORIZED_USER.toString());
-                }
-                flag = true;
             }
         }
 
@@ -140,7 +141,6 @@ public class PermissionFilter extends GenericFilterBean {
             }
         }
         if(! flag) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ExceptionMessage.WRONG_SEARCH.toString());
-
         chain.doFilter(request, response);
     }
 

@@ -1,5 +1,8 @@
 package docSharing.utils;
 
+/**
+ * enum class with Exception Messages to send more accurate errors.
+ */
 public enum ExceptionMessage {
 
     MULTIPLE_PRIMARY_KEY("A table can not contain multiple primary keys."),
