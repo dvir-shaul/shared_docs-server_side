@@ -9,14 +9,13 @@ import docSharing.requests.Method;
 import docSharing.utils.ExceptionMessage;
 import docSharing.utils.debounce.Debouncer;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import javax.security.auth.login.AccountNotFoundException;
 import java.util.*;
 
 @Service
 public class DocumentService implements ServiceInterface {
-
     static Map<Long, String> documentsContentLiveChanges = new HashMap<>(); // current content in cache
     static Map<Long, String> databaseDocumentsCurrentContent = new HashMap<>(); // current content in database
     static Map<Long, Log> chainedLogs = new HashMap<>(); // logs history until storing to database
@@ -34,16 +33,12 @@ public class DocumentService implements ServiceInterface {
     @Autowired
     UserRepository userRepository;
 
-//    @Scheduled(fixedDelay = 10000)
-//    public void updateDatabaseWithNewContent() {
-//        for (Map.Entry<Long, String> entry : documentsContentLiveChanges.entrySet()) {
-//            if (!entry.getValue().equals(databaseDocumentsCurrentContent.get(entry.getKey()))) {
-//                documentRepository.updateContent(entry.getValue(), entry.getKey());
-//                databaseDocumentsCurrentContent.put(entry.getKey(), entry.getValue());
-//            }
-//        }
-//    }
-
+    /**
+     * This function called every time we get a new log,
+     * checks if a new data that was written to document was written before
+     * the logs that are online in chainedLogs map, if it ws before we will update the offsets accordingly.
+     * @param log - changes from
+     */
     private void updateLogsOffset(Log log) {
 
         chainedLogs.replaceAll((userId, _log) -> {
@@ -87,9 +82,19 @@ public class DocumentService implements ServiceInterface {
         });
     }
 
+    /**
+     * the goal of this function is to present all live users that are using a specific document.
+     * this function gets called when we want to add a new user to a document or delete the user from document,
+     * @param userId - user's id in database.
+     * @param documentId - document's id in database.
+     * @param method - ADD/ REMOVE
+     * @return set of current users that viewing the document.
+     */
     public Set<User> addUserToDocActiveUsers(Long userId, Long documentId, Method method) {
         onlineUsersPerDoc.putIfAbsent(documentId, new HashSet<>());
-        // FIXME: check if this user id even exists in the db
+        if(! userRepository.findById(userId).isPresent()) {
+            throw new IllegalArgumentException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
+        }
         User user = userRepository.findById(userId).get();
         switch (method) {
             case ADD:
@@ -101,6 +106,13 @@ public class DocumentService implements ServiceInterface {
         return onlineUsersPerDoc.get(documentId);
     }
 
+    /**
+     * main function that deals with new logs,
+     * the goal is to make order in all the data that was entered to the document,
+     * and to save / chain logs accordingly to who it was changed from.
+     * send all data to inner functions to deal with new data and build the logs appropriately.
+     * @param log - log with new data.
+     */
     public void updateContent(Log log) {
 
         debouncer.call(log.getUserId());
@@ -119,6 +131,11 @@ public class DocumentService implements ServiceInterface {
         updateLogsOffset(log);
     }
 
+    /**
+     * the goal of this function is to update the cached documentsContentLiveChanges map with new changes.
+     * the new log is sent to inner functions called concatenateStrings/truncateString according to if it was insert/delete.
+     * @param log - log with new data.
+     */
     private void updateCurrentContentCache(Log log) {
         switch (log.getAction()) {
             case "delete":
@@ -131,6 +148,18 @@ public class DocumentService implements ServiceInterface {
         }
     }
 
+    /**
+     * this function goal is to connect 2 logs to 1 log according to the user that was written the new data
+     * and the offset that the data was entered.
+     * checking order is:
+     * 1. if such a log doesn't exist in the cache, create a new entry for it in the map
+     * 2. if the new log is not a sequel to current log, store the current one in the db and start a new one instead.
+     * 3. if the current log was attempting to delete and how we want to insert,push the deleted one and create a new log
+     * 4. if the new log is in the middle of the current log, it must be concatenated.
+     * saves the concatenated logs to chainedLogs map.
+     * @param currentLog - the log that is chainedLogs maps.
+     * @param newLog - new data that needed to chain to old log.
+     */
     private void chainLogs(Log currentLog, Log newLog) {
 
         // if such a log doesn't exist in the cache, create a new entry for it in the map
@@ -160,14 +189,19 @@ public class DocumentService implements ServiceInterface {
         }
     }
 
-
-    public Optional<Document> findById(Long id) {
-        return documentRepository.findById(id);
+    /**
+     * @param id - document id.
+     * @return entity of Document from database
+     * @throws AccountNotFoundException - no document in database with given id.
+     */
+    public Document findById(Long id) throws AccountNotFoundException {
+        if(! documentRepository.findById(id).isPresent())
+            throw new AccountNotFoundException(ExceptionMessage.NO_DOCUMENT_IN_DATABASE.toString());
+        return documentRepository.findById(id).get();
     }
 
     /**
-     * addToMap used when create a new document
-     *
+     * addToMap used when a new document was created and needed to add to the cached maps of logs of documents.
      * @param id - of document
      */
     void addToMap(long id) {
@@ -175,15 +209,36 @@ public class DocumentService implements ServiceInterface {
         databaseDocumentsCurrentContent.put(id, "");
     }
 
-    public Document getDocById(Long id) {
-        // FIXME: it is optional so we need to check if it exists
+    /**
+     * @param id - document id
+     * @return - Document entity
+     * @throws AccountNotFoundException - Could not locate this document in the database.
+     */
+    public Document getDocById(Long id) throws AccountNotFoundException {
+        if(! documentRepository.findById(id).isPresent())
+            throw new AccountNotFoundException(ExceptionMessage.NO_DOCUMENT_IN_DATABASE.toString());
         return documentRepository.findById(id).get();
     }
 
+    /**
+     * this function gets called when we want to show to te client all the documents that in a specific folder.
+     * @param folderId - parent folder
+     * @param userId - current user
+     * @return list with all the document entities.
+     */
     public List<Document> get(Long folderId, Long userId) {
         return documentRepository.findAllByUserIdAndParentFolderId(folderId, userId);
     }
 
+    /**
+     * function get an item of kind document and uses the logics to create and save a new folder to database.
+     * first check if we have a folder to create the document into.
+     * then create the document and add to the folder the new document in the database,
+     * same as the user is needed to be assigned to the new document.
+     * set Permission of the creator as an MODERATOR.
+     * @param generalItem - document.
+     * @return id of document.
+     */
     public Long create(GeneralItem generalItem) {
         if (generalItem.getParentFolder() != null) {
             Optional<Folder> folder = folderRepository.findById(generalItem.getParentFolder().getId());
@@ -206,37 +261,77 @@ public class DocumentService implements ServiceInterface {
         return savedDoc.getId();
     }
 
-    public int rename(Long id, String name) {
-        if (documentRepository.findById(id).isPresent()) {
-            return documentRepository.updateName(name, id);
+    /**
+     * this function goal is to change name of a document to a new one.
+     * @param docId - document id in database
+     * @param name - new document name to change to.
+     * @return - rows that was affected in database (1).
+     */
+    public int rename(Long docId, String name) {
+        if (documentRepository.findById(docId).isPresent()) {
+            return documentRepository.updateName(name, docId);
         }
         throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
     }
 
+    /**
+     * this function goal is to show the live content of a document to the client.
+     * @param id - document id
+     * @return content in documentsContentLiveChanges
+     */
     public String getContent(Long id) {
         String content = documentsContentLiveChanges.get(id);
         if (content == null) documentsContentLiveChanges.put(id, "");
         return documentsContentLiveChanges.get(id);
     }
 
+    /**
+     * this function gets called from updateCurrentContentCache when the document content was changed.
+     * the goal is to put the log in the correct offset we have and update the string accordingly.
+     * @param text - document content
+     * @param log - log with new data
+     * @return updated content
+     */
     private String concatenateStrings(String text, Log log) {
         String beforeCut = text.substring(0, log.getOffset());
         String afterCut = text.substring(log.getOffset());
         return beforeCut + log.getData() + afterCut;
     }
 
+    /**
+     * this function gets called from chainLogs when the logs are needed to concatenate.
+     * change the newLog offset to put him according to the current log.
+     * it comes from that idea that we want to make the currentLog offset as our absolute zero.
+     * @param currentLog - log that is in the cached map of logs.
+     * @param newLog - log with changes from the client.
+     * @return - updated content that was concatenated from the 2 logs we have.
+     */
     private String concatenateLogs(Log currentLog, Log newLog) {
         newLog.setOffset(newLog.getOffset() - (currentLog.getOffset()));
         if (currentLog.getData() == null) currentLog.setData(""); // CONSULT: shouldn't happen, so why did I write it?
         return concatenateStrings(currentLog.getData(), newLog);
     }
 
+    /**
+     * this function gets called from updateCurrentContentCache when the document content was changed.
+     * the goal is to delete the data that is in the log and to apply it on the correct offset in the content at the doc.
+     * @param text - document content.
+     * @param log - log with new data.
+     * @return updated content.
+     */
     private String truncateString(String text, Log log) {
         String beforeCut = text.substring(0, log.getOffset());
         String afterCut = text.substring(log.getOffset() + log.getData().length());
         return beforeCut.concat(afterCut);
     }
-
+    /**
+     * this function gets called from chainLogs when the logs are needed to truncate.
+     * change the newLog offset to put him according to the current log.
+     * it comes from that idea that we want to make the currentLog offset as our absolute zero.
+     * @param currentLog - log that is in the cached map of logs.
+     * @param newLog - log with changes from the client.
+     * @return - updated content that was truncated from the 2 logs we have.
+     */
     private String truncateLogs(Log currentLog, Log newLog) {
         newLog.setOffset(newLog.getOffset() - (currentLog.getOffset()));
         if (currentLog.getData() == null) currentLog.setData("");
@@ -245,7 +340,6 @@ public class DocumentService implements ServiceInterface {
 
     /**
      * relocate is to change the document's location.
-     *
      * @param newParentFolder - the folder that document is located.
      * @param id              - document id.
      * @return rows affected in mysql.
@@ -270,12 +364,14 @@ public class DocumentService implements ServiceInterface {
     /**
      * delete file by getting the document id,
      * also remove from the maps of content we have on service.
-     *
      * @param docId - gets document id .
      */
     public void delete(Long docId) {
         databaseDocumentsCurrentContent.remove(docId);
         documentsContentLiveChanges.remove(docId);
+        if(! documentRepository.findById(docId).isPresent()) {
+            throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
+        }
         userDocumentRepository.deleteDocument(documentRepository.findById(docId).get());
         documentRepository.deleteById(docId);
     }

@@ -14,10 +14,12 @@ import docSharing.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import javax.security.auth.login.AccountNotFoundException;
 import java.util.*;
 
 @Controller
@@ -50,24 +52,34 @@ class FileController {
 
     @RequestMapping(value = "folder", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<?> create(@RequestBody CreateFolderReq folderReq, @RequestAttribute Long userId) {
+        System.out.println("hi");
         Folder parentFolder = null;
-        if (folderReq.getParentFolderId() != null) {
-            parentFolder = folderService.findById(folderReq.getParentFolderId()).get();
+        try {
+            if (folderReq.getParentFolderId() != null) {
+                parentFolder = folderService.findById(folderReq.getParentFolderId());
+            }
+            User user = userService.findById(userId);
+            Folder folder = Folder.createFolder(folderReq.getName(), parentFolder, user);
+            return ac.create(folder);
+        } catch (AccountNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
-        User user = userService.findById(userId).get();
-        Folder folder = Folder.createFolder(folderReq.getName(), parentFolder, user);
-        return ac.create(folder);
+
     }
 
     @RequestMapping(value = "document", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<?> create(@RequestBody CreateDocumentReq docReq, @RequestAttribute Long userId) {
         Folder parentFolder = null;
-        if (docReq.getParentFolderId() != null) {
-            parentFolder = folderService.findById(docReq.getParentFolderId()).get();
+        try {
+            if (docReq.getParentFolderId() != null) {
+                parentFolder = folderService.findById(docReq.getParentFolderId());
+            }
+            User user = userService.findById(userId);
+            Document doc = Document.createDocument(user, docReq.getName(), parentFolder);
+            return ac.create(doc);
+        } catch (AccountNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
-        User user = userService.findById(userId).get();
-        Document doc = Document.createDocument(user, docReq.getName(), parentFolder);
-        return ac.create(doc);
     }
 
     @RequestMapping(value = "folder/rename", method = RequestMethod.PATCH, consumes = "application/json")
@@ -92,58 +104,81 @@ class FileController {
 
     @RequestMapping(value = "folder/relocate", method = RequestMethod.PATCH, consumes = "application/json")
     public ResponseEntity<?> relocate(@RequestBody RelocateFolderReq folderReq, @RequestAttribute Long userId) {
-        Folder folder = folderService.findById(folderReq.getId()).get();
-        return ac.relocate(folderReq.getNewParentId(), folder);
+        try {
+            Folder folder = folderService.findById(folderReq.getId());
+            return ac.relocate(folderReq.getNewParentId(), folder);
+        } catch (AccountNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     @RequestMapping(value = "document/relocate", method = RequestMethod.PATCH, consumes = "application/json")
     public ResponseEntity<?> relocate(@RequestBody RelocateDocReq docReq, @RequestAttribute Long userId) {
-        Document doc = documentService.findById(docReq.getId()).get();
-        return ac.relocate(docReq.getNewParentId(), doc);
+        try {
+            Document doc = documentService.findById(docReq.getId());
+            return ac.relocate(docReq.getNewParentId(), doc);
+        } catch (AccountNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     @RequestMapping(value = "document/import", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<?> importDoc(@RequestBody ImportDocReq importDocReq, @RequestAttribute Long userId) {
-        User user = userService.findById(userId).get();
-        Folder parentFolder = null;
-        if (importDocReq.getParentFolderId() != null)
-            parentFolder = folderService.findById(importDocReq.getParentFolderId()).get();
-        Document document = Document.createDocument(user, importDocReq.getName(), parentFolder);
-        document.setContent(importDocReq.getContent());
-        return ResponseEntity.ok().body(documentService.create(document));
+        try {
+            User user = userService.findById(userId);
+            Folder parentFolder = null;
+            if (importDocReq.getParentFolderId() != null)
+                parentFolder = folderService.findById(importDocReq.getParentFolderId());
+            Document document = Document.createDocument(user, importDocReq.getName(), parentFolder);
+            document.setContent(importDocReq.getContent());
+            return ResponseEntity.ok().body(documentService.create(document));
+        } catch (AccountNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     @RequestMapping(value = "document/export", method = RequestMethod.GET)
     public ResponseEntity<?> export(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        Document document = documentService.findById(documentId).get();
-        ExportDoc exportDoc = new ExportDoc(document.getName(), document.getContent());
-        return ResponseEntity.ok().body(exportDoc);
+        try {
+            Document document = documentService.findById(documentId);
+            ExportDoc exportDoc = new ExportDoc(document.getName(), document.getContent());
+            return ResponseEntity.ok().body(exportDoc);
+        } catch (AccountNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     @RequestMapping(value = "getPath", method = RequestMethod.GET)
     public ResponseEntity<?> getPath(@RequestParam Type type, @RequestParam Long fileId, @RequestAttribute Long userId) {
         List<FileRes> path = new ArrayList<>();
         GeneralItem generalItem = null;
-        switch (type) {
-            case FOLDER:
-                generalItem = folderService.findById(fileId).get();
-                break;
-            case DOCUMENT:
-                generalItem = documentService.findById(fileId).get();
-                break;
+        try {
+            switch (type) {
+                case FOLDER:
+                    generalItem = folderService.findById(fileId);
+                    break;
+                case DOCUMENT:
+                    generalItem = documentService.findById(fileId);
+                    break;
+            }
+            Folder parentFolder = generalItem.getParentFolder();
+            path.add(0, new FileRes(generalItem.getName(), generalItem.getId(), type));
+            do {
+                path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER));
+                parentFolder = parentFolder.getParentFolder();
+            } while (parentFolder != null);
+            return ResponseEntity.ok(path);
+        } catch (AccountNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
-        Folder parentFolder = generalItem.getParentFolder();
-        path.add(0, new FileRes(generalItem.getName(), generalItem.getId(), type));
-        do {
-            path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER));
-            parentFolder = parentFolder.getParentFolder();
-        } while (parentFolder != null);
-        return ResponseEntity.ok(path);
     }
 
     @RequestMapping(value = "document/isExists", method = RequestMethod.GET)
     public ResponseEntity<?> documentExists(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        return ResponseEntity.ok(documentService.findById(documentId).isPresent());
+        try {
+            return ResponseEntity.ok(documentService.findById(documentId));
+        } catch (AccountNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
-
 }

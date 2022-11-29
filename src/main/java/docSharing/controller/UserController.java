@@ -15,8 +15,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.security.auth.login.AccountNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 
 @RestController
@@ -48,20 +50,22 @@ public class UserController {
         if (permissionReq.getDocumentId() == null || permissionReq.getUserId() == null || permissionReq.getPermission() == null) {
             return ResponseEntity.badRequest().build();
         }
-        if (documentService.findById(permissionReq.getDocumentId()).get().getUser().getId() != userId) {
-            return ResponseEntity.badRequest().body(ExceptionMessage.USER_IS_NOT_THE_ADMIN);
-        }
+
         try {
+            if (!Objects.equals(documentService.findById(permissionReq.getDocumentId()).getUser().getId(), userId)) {
+                return ResponseEntity.badRequest().body(ExceptionMessage.USER_IS_NOT_THE_ADMIN);
+            }
             userService.updatePermission(permissionReq.getDocumentId(), permissionReq.getUserId(), permissionReq.getPermission());
             return ResponseEntity.ok().body("permission added successfully!");
+        }catch (AccountNotFoundException e) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (IllegalArgumentException exception) {
             return ResponseEntity.badRequest().body(exception.getMessage());
-
         }
     }
 
     @RequestMapping(value = "/share", method = RequestMethod.PATCH, consumes = "application/json")
-    public ResponseEntity<?> givePermissionToAll(@RequestBody List<String> emails, @RequestParam Long documentId, @RequestAttribute Long userId) {
+    public ResponseEntity<?> givePermissionToAll(@RequestBody List<String> emails, @RequestParam Long documentId, @RequestAttribute Long userId) throws AccountNotFoundException {
        List<String> unregisteredUsers=new ArrayList<>();
         for (String email :
                 emails) {
@@ -70,15 +74,16 @@ public class UserController {
                 unregisteredUsers.add(email);
                 continue;
             }
-            Document document = documentService.findById(documentId).get();
-            userService.updatePermission(documentId, user.getId(), Permission.VIEWER);
-            String body = Share.buildEmail(user.getName(), "HERE SHOULD BE THE DOC URL", document.getName());
             try {
+                Document document = documentService.findById(documentId);
+                userService.updatePermission(documentId, user.getId(), Permission.VIEWER);
+                String body = Share.buildEmail(user.getName(), "HERE SHOULD BE THE DOC URL", document.getName());
                 emailService.send(user.getEmail(), body,"You have been invited to view the document");
+            }catch (AccountNotFoundException e) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-
         }
 
         for (String unregisteredEmail :

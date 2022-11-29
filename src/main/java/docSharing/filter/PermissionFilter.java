@@ -8,12 +8,14 @@ import docSharing.repository.FolderRepository;
 import docSharing.repository.UserDocumentRepository;
 import docSharing.repository.UserRepository;
 import docSharing.utils.ExceptionMessage;
+import docSharing.utils.Params;
 import docSharing.utils.Validations;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.apache.tomcat.util.json.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -23,6 +25,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.GenericFilterBean;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -48,138 +51,122 @@ public class PermissionFilter extends GenericFilterBean {
     @Autowired
     FolderRepository folderRepository;
 
+    /**
+     * this doFilter function is set to check if the user has the permission to do the action he
+     * wanted, according to his role that saved in the userDocumentRepository, this repo has the information
+     * about all document and all the users that watch each document and his role.
+     * @param request - request from client
+     * @param response - response if the action can be done or not.
+     * @param chain - chain of filters to go through
+     * @throws IOException -
+     * @throws ServletException -
+     */
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        System.out.println("----------PermissionFilter-----------");
         boolean flag = false;
         HttpServletRequest httpRequest = (HttpServletRequest) request;
-        // Permission//
         String token = httpRequest.getHeader("authorization");
         List<String> list = List.of(httpRequest.getRequestURI().split("/"));
+
         if (list.contains("auth")) {
-            // we are in auth controller
-            flag= true;
+            flag = true;
         }
-        Long Id = getId(httpRequest);
-        Long userId = Validations.validateToken(token);
-        System.out.println(userId);
-        System.out.println(Id);
 
         if (!flag && list.contains("folder")) {
-            Optional<Folder> optFolder = folderRepository.findById(Id);
-            if (!optFolder.isPresent())
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
-            Folder folder = optFolder.get();
 
-            if (httpRequest.getMethod().equals("PATCH") || httpRequest.getMethod().equals("DELETE")) {
+            if (httpRequest.getMethod().equals(HttpMethod.PATCH.toString()) || httpRequest.getMethod().equals(HttpMethod.DELETE.toString())) {
+                Long FolderId = Long.valueOf(request.getParameter(Params.FOLDER_ID.toString()));
+                Long userId = Validations.validateToken(token);
+                Optional<Folder> optFolder = folderRepository.findById(FolderId);
+                if (!optFolder.isPresent())
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
+                Folder folder = optFolder.get();
                 if (folder.getUser().getId().equals(userId)) {
-                    System.out.println("work");
-                    flag= true;
+                    flag = true;
                 } else {
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.UNAUTHORIZED_USER.toString());
                 }
             }
-            if (httpRequest.getMethod().equals("POST") || httpRequest.getMethod().equals("GET")) {
-                flag= true;
+            if (httpRequest.getMethod().equals(HttpMethod.POST.toString()) || httpRequest.getMethod().equals(HttpMethod.GET.toString())) {
+                Long parentFolderId = Long.valueOf(request.getParameter(Params.PARENT_FOLDER_ID.toString()));
+                Optional<Folder> optFolder = folderRepository.findById(parentFolderId);
+                if (!optFolder.isPresent())
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
+                Folder folder = optFolder.get();
+                flag = true;
             }
-            chain.doFilter(request, response);
-            return;
         }
-
+//
         if (!flag && list.contains("document")) {
+            if (list.contains("getPath") || list.contains("import")|| list.contains("export")) { // no need of permissions
+                flag = true;
+            }
             if (list.contains("file")) {
-                if (httpRequest.getMethod().equals("POST")) {
-                    flag= true;
+                if (httpRequest.getMethod().equals(HttpMethod.POST.toString())) {// create new document
+                    flag = true;
                 }
             }
-            UserDocument userDocument = getUserDocument(Id, userId);
+
+            Long docId = Long.valueOf(request.getParameter(Params.DOCUMENT_ID.toString()));
+            Long userId = Validations.validateToken(token);
+            UserDocument userDocument = getUserDocument(docId, userId);
 
             if (!flag && list.contains("file")) {
-                if (httpRequest.getMethod().equals("PATCH")) {
+                if (httpRequest.getMethod().equals(HttpMethod.PATCH.toString())) {// relocate / rename
                     if (userDocument.getPermission().equals(Permission.MODERATOR)) {
-                        flag= true;;
+                        flag = true;
                     }
                 }
-                if (httpRequest.getMethod().equals("DELETE") && !(userDocument.getPermission().equals(Permission.MODERATOR))) {
+                if (httpRequest.getMethod().equals(HttpMethod.DELETE.toString()) && !(userDocument.getDocument().getUser().getId().equals(userId))) {// only the creator can delete a file
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.UNAUTHORIZED_USER.toString());
                 }
             }
-            if (!flag && httpRequest.getMethod().equals("POST")) {
-                // text edit controller
-                if (userDocument.getPermission().equals(Permission.VIEWER)) {
+            // FIXME: What to do on text edit with logs/getContent/onlineUsers?
+            if (!flag && httpRequest.getMethod().equals(HttpMethod.POST.toString())) {// text edit controller
+                if (userDocument.getPermission().equals(Permission.VIEWER)) {//viewer can't add logs on a document
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.UNAUTHORIZED_USER.toString());
                 }
-                flag= true;
+                flag = true;
             }
         }
 
-
-        if(!flag && list.contains("permission")){//in permissions
-            UserDocument userDocument = getUserDocument(Id, userId);
-            System.out.println("................................");
-            if(userDocument.getPermission().equals(Permission.MODERATOR)){
-                System.out.println("................................");
-                chain.doFilter(request, response);
-                flag= true;
-            }
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.UNAUTHORIZED_USER.toString());
-        }
-
-    }
-
-    public static String getBody(ServletRequest request) throws IOException {
-        String body = null;
-        StringBuilder stringBuilder = new StringBuilder();
-        BufferedReader bufferedReader = null;
-        try {
-            InputStream inputStream = request.getInputStream();
-            if (inputStream != null) {
-                bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-                char[] charBuffer = new char[128];
-                int bytesRead = -1;
-                while ((bytesRead = bufferedReader.read(charBuffer)) > 0) {
-                    stringBuilder.append(charBuffer, 0, bytesRead);
-                }
+        if (!flag && list.contains("permission")) {//in permissions
+            Long docId = Long.valueOf(request.getParameter(Params.DOCUMENT_ID.toString()));
+            Long userId = Validations.validateToken(token);
+            UserDocument userDocument = getUserDocument(docId, userId);
+            if (userDocument.getPermission().equals(Permission.MODERATOR) || userDocument.getDocument().getUser().getId().equals(userId)) {
+                flag = true;
             } else {
-                stringBuilder.append("");
-            }
-        } finally {
-            if (bufferedReader != null) {
-                bufferedReader.close();
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.UNAUTHORIZED_USER.toString());
             }
         }
+        if(! flag) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ExceptionMessage.WRONG_SEARCH.toString());
 
-        body = stringBuilder.toString();
-        return body;
-    }
-
-
-    public Long getId(ServletRequest request) throws IOException {
-        Long docId = null;
-        String payloadRequest = getBody(request);
-        List<String> list1 = List.of(payloadRequest.split(","));
-        for (String s : list1) {
-            if (s.contains("id")) {
-                String tempId = s.split(":")[1].split("}")[0].trim();
-                docId = Long.parseLong(tempId);
-            }
-        }
-        return docId;
+        chain.doFilter(request, response);
     }
 
     public UserDocument getUserDocument(Long docId, Long userId) throws IOException {
-        Optional<Document> optDocument = documentRepository.findById(docId);
-        Optional<User> optUser = userRepository.findById(userId);
-        if (!optUser.isPresent())
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ExceptionMessage.NO_USER_IN_DATABASE.toString());
-        if (!optDocument.isPresent())
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ExceptionMessage.NO_DOCUMENT_IN_DATABASE.toString());
-        Document document = optDocument.get();
-        User user = optUser.get();
+        Document document = getDocument(docId);
+        User user = getUser(userId);
         Optional<UserDocument> optUserDocument = userDocumentRepository.find(document, user);
         if (!optUserDocument.isPresent())
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ExceptionMessage.NO_USER_IN_DOCUMENT_IN_DATABASE.toString());
         return optUserDocument.get();
+    }
+
+
+    public Document getDocument(Long docId) throws IOException {
+        Optional<Document> optDocument = documentRepository.findById(docId);
+        if (!optDocument.isPresent())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ExceptionMessage.NO_DOCUMENT_IN_DATABASE.toString());
+        return optDocument.get();
+    }
+
+    public User getUser(Long userId) throws IOException {
+        Optional<User> optUser = userRepository.findById(userId);
+        if (!optUser.isPresent())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ExceptionMessage.NO_USER_IN_DATABASE.toString());
+        return optUser.get();
     }
 }
 
@@ -189,9 +176,48 @@ public class PermissionFilter extends GenericFilterBean {
  * eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIxIiwiaWF0IjoxNjY5NjI5Mzk5LCJzdWIiOiJsb2dpbiIsImlzcyI6ImRvY3MgYXBwIn0.4Qcz2o6NzXVzJXLl0IdJec6-vCRGnzBLM11H2bmsaPQ
  * user2
  * eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIyIiwiaWF0IjoxNjY5NjM4MzYyLCJzdWIiOiJsb2dpbiIsImlzcyI6ImRvY3MgYXBwIn0.QQtT3liScCSUqleIBVbTNw232MNExjK4b196i9w09ak
- * user2
- * eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIyIiwiaWF0IjoxNjY5NjM4MzYyLCJzdWIiOiJsb2dpbiIsImlzcyI6ImRvY3MgYXBwIn0.QQtT3liScCSUqleIBVbTNw232MNExjK4b196i9w09ak
  */
-/** user2
- *eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIyIiwiaWF0IjoxNjY5NjM4MzYyLCJzdWIiOiJsb2dpbiIsImlzcyI6ImRvY3MgYXBwIn0.QQtT3liScCSUqleIBVbTNw232MNExjK4b196i9w09ak
- */
+//public static String getBody(ServletRequest request) throws IOException {
+//        System.out.println("getbody");
+//        StringBuilder stringBuilder = new StringBuilder();
+//        BufferedReader bufferedReader = null;
+////        String body = request.getReader().lines()
+////                .reduce("", (accumulator, actual) -> accumulator + actual);
+//        String test = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
+////        try {
+////            InputStream inputStream = request.getInputStream();
+////            if (inputStream != null) {
+////                bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+////                char[] charBuffer = new char[128];
+////                int bytesRead = -1;
+////                while ((bytesRead = bufferedReader.read(charBuffer)) > 0) {
+////                    stringBuilder.append(charBuffer, 0, bytesRead);
+////                }
+////            } else {
+////                stringBuilder.append("");
+////            }
+////        } finally {
+////            if (bufferedReader != null) {
+////                bufferedReader.close();
+////            }
+////        }
+//
+////        body = stringBuilder.toString();
+//        System.out.println(test);
+//        return test;
+//    }
+//
+//
+//    public Long getId(ServletRequest request) throws IOException {
+//        Long id = null;
+//        String payloadRequest = getBody(request);
+//        List<String> list1 = List.of(payloadRequest.split(","));
+//        for (String s : list1) {
+//            if (s.contains("Id") || s.contains("id")) {
+//                String tempId = s.split(":")[1].split("}")[0].trim();
+//                id = Long.parseLong(tempId);
+//            }
+//        }
+//        System.out.println(id);
+//        return id;
+//    }

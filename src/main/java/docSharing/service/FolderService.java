@@ -10,6 +10,7 @@ import docSharing.utils.ExceptionMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.security.auth.login.AccountNotFoundException;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,15 +22,31 @@ public class FolderService implements ServiceInterface {
     @Autowired
     DocumentRepository documentRepository;
 
-    public Optional<Folder> findById(Long id) {
-        System.out.println("looking for a folder " + id);
-        return folderRepository.findById(id);
+    /**
+     * @param id - id of folder in database
+     * @return - Folder entity from database.
+     * @throws AccountNotFoundException - no such folder in database.
+     */
+    public Folder findById(Long id) throws AccountNotFoundException {
+        if(! folderRepository.findById(id).isPresent())
+            throw new AccountNotFoundException(ExceptionMessage.NO_FOLDER_IN_DATABASE.toString());
+        return folderRepository.findById(id).get();
     }
 
+    /**
+     * @param parentFolderId - parent folder to search and bring all items from.
+     * @param userId - current user that ask for the list of folders
+     * @return - list of inner folders in parent folder.
+     */
     public List<Folder> get(Long parentFolderId, Long userId) {
         return folderRepository.findAllByParentFolderIdAndUserId(parentFolderId, userId);
     }
 
+    /**
+     * function get an item of kind folder and uses the logics to create and save a new folder to database.
+     * @param generalItem - create item
+     * @return id of the item that was saved to database.
+     */
     public Long create(GeneralItem generalItem) {
         if (generalItem.getParentFolder() != null) {
             Optional<Folder> folder = folderRepository.findById(generalItem.getParentFolder().getId());
@@ -46,7 +63,6 @@ public class FolderService implements ServiceInterface {
 
     /**
      * rename function gets an id of folder and new name to change the folder's name.
-     *
      * @param id   - document id.
      * @param name - new name of the document.
      * @return rows affected in mysql.
@@ -60,7 +76,6 @@ public class FolderService implements ServiceInterface {
 
     /**
      * relocate is to change the document's location.
-     *
      * @param newParentFolder - the folder that folder is located.
      * @param id              - document id.
      * @return rows affected in mysql.

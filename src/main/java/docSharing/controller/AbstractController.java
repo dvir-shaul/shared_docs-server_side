@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+import javax.security.auth.login.AccountNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -30,19 +31,23 @@ public class AbstractController {
 
     public ResponseEntity<List<FileRes>> get(Long parentFolderId, Long userId) {
         //FIXME: check if parent folder exists
-        Folder parentFolder=folderService.findById(parentFolderId).get();
-        Set<Folder> folderSet = parentFolder.getFolders();
-        Set<Document> documentSet=parentFolder.getDocuments();
-        List<FileRes> files=new ArrayList<>();
-        for (Folder folder:
-             folderSet) {
-            files.add(new FileRes(folder.getName(), folder.getId(), Type.FOLDER));
+        try {
+            Folder parentFolder = folderService.findById(parentFolderId);
+            Set<Folder> folderSet = parentFolder.getFolders();
+            Set<Document> documentSet = parentFolder.getDocuments();
+            List<FileRes> files = new ArrayList<>();
+            for (Folder folder :
+                    folderSet) {
+                files.add(new FileRes(folder.getName(), folder.getId(), Type.FOLDER));
+            }
+            for (Document document :
+                    documentSet) {
+                files.add(new FileRes(document.getName(), document.getId(), Type.DOCUMENT));
+            }
+            return ResponseEntity.ok().body(files);
+        } catch (AccountNotFoundException e) {
+            throw new RuntimeException(e);
         }
-        for (Document document:
-             documentSet) {
-            files.add(new FileRes(document.getName(), document.getId(), Type.DOCUMENT));
-        }
-        return ResponseEntity.ok().body(files);
     }
 
     public ResponseEntity<String> create(GeneralItem item) {
@@ -81,14 +86,18 @@ public class AbstractController {
 
     public ResponseEntity<Object> relocate(Long newParentId, GeneralItem item) {
         Folder parentFolder = null;
-        if (newParentId != null) {
-            parentFolder = folderService.findById(newParentId).get();
-        }
-        Long folderId = item.getId();
-        if (folderId == null)
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        try {
+            if (newParentId != null) {
+                parentFolder = folderService.findById(newParentId);
+            }
+            Long folderId = item.getId();
+            if (folderId == null)
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
 
-        return ResponseEntity.ok().body(convertFromItemToService(item).relocate(parentFolder, folderId));
+            return ResponseEntity.ok().body(convertFromItemToService(item).relocate(parentFolder, folderId));
+        }catch (AccountNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     /**

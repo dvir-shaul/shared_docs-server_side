@@ -25,6 +25,9 @@ public enum ExceptionMessage {
     NO_USER_IN_DATABASE("Could not locate this user in the database."),
     NO_ACCOUNT_IN_DATABASE("Could not locate this email in the database."),
     NO_DOCUMENT_IN_DATABASE("Could not locate this document in the database."),
+
+    NO_FOLDER_IN_DATABASE("Could not locate this folder in the database."),
+
     NO_USER_IN_DOCUMENT_IN_DATABASE("Could not locate the find the user that uses this document in the database."),
     UNAUTHORIZED("You are unauthorized to create such a action"),
     FOLDER_EXISTS("This folder ID already exist in the database: "),
@@ -32,7 +35,7 @@ public enum ExceptionMessage {
 
     VALIDATION_FAILED("Could not approve the given information: "),
     UNAUTHORIZED_USER("You don't have the permission to do that action: "),
-
+    WRONG_SEARCH("Something in the request wasn't properly written, try again"),
 
     CIRCULAR_FOLDERS("The destination folder is subfolder of the source folder"),
     CANT_ASSIGN_PERMISSION("Document ID or user ID or Permission does not exist in the database: "),
