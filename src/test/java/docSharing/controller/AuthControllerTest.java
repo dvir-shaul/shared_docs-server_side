@@ -48,7 +48,7 @@ public class AuthControllerTest {
 
     @Test
     public void createUser_Returns201() {
-        User user = User.createUser("test@test.com", "abcd123%", "test");
+        User user = User.createUser("test@test.com", "abcd1234", "test");
         ResponseEntity<String> response = authController.register(user);
         assertEquals(201, response.getStatusCodeValue());
     }

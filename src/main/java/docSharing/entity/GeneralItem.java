@@ -2,6 +2,7 @@ package docSharing.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import docSharing.utils.ExceptionMessage;
+import net.bytebuddy.implementation.bytecode.Throw;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
@@ -64,6 +65,8 @@ public class GeneralItem {
     }
 
     public void setUser(User user) {
+        if(user==null)
+            throw new IllegalArgumentException("user must not be null");
         this.user = user;
     }
 
