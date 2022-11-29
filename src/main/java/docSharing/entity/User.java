@@ -117,13 +117,22 @@ public class User{
         return Objects.equals(password, user.password);
     }
 
+    @Override
+    public int hashCode() {
+        int result = Math.toIntExact(id);
+        result = 31 * result + (name != null ? name.hashCode() : 0);
+        result = 31 * result + (email != null ? email.hashCode() : 0);
+        result = 31 * result + (password != null ? password.hashCode() : 0);
+        return result;
+    }
+
 //    @Override
 //    public int hashCode() {
-//        Long result = id;
-//        result = 31 * result + (name != null ? name.hashCode() : 0);
-//        result = 31 * result + (email != null ? email.hashCode() : 0);
-//        result = 31 * result + (password != null ? password.hashCode() : 0);
-//        return Math.toIntExact(result);
+//        final int prime = 31;
+//        int result = 1;
+//        result = prime * result
+//                + ((importantField == null) ? 0 : importantField.hashCode());
+//        return result;
 //    }
 
 //    @Override

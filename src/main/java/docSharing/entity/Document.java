@@ -29,12 +29,12 @@ public class Document extends GeneralItem {
         return document;
     }
 
-    public static Document createDocument(User user, String name, Folder folder) {
+    public static Document createDocument(User user, String name, Folder folder, String content) {
         Document doc = new Document();
         doc.setName(name);
         doc.setParentFolder(folder);
-        doc.setContent("");
         doc.setUser(user);
+        doc.setContent(content == null ? "" : content);
         return doc;
     }
 
