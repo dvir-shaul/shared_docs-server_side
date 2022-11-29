@@ -75,15 +75,6 @@ class FileController {
             }
             User user = userService.findById(userId);
             Document doc = Document.createDocument(user, docReq.getName(), parentFolder, docReq.getContent());
-//            UserDocument userDocument=new UserDocument();
-//            userDocument.setPermission(Permission.ADMIN);
-//            userDocument.setUser(user);
-//            userDocument.setDocument(doc);
-//            UserDocumentPk pk = new UserDocumentPk();
-//            pk.setUserId(userId);
-//            pk.setDocumentId(doc.getId());
-//            userDocument.setId(pk);
-//            documentService.saveUserInDocument(userDocument);
             return ac.create(doc);
         } catch (AccountNotFoundException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -179,8 +170,12 @@ class FileController {
     }
     @RequestMapping(value = "document/getUser", method = RequestMethod.POST)
     public ResponseEntity<?> getUser(@RequestParam Long documentId,  @RequestAttribute Long userId) {
-        Permission permission = documentService.getUserPermissionInDocument(userId, documentId);
-        return ResponseEntity.ok(new JoinRes(userId, permission));
+        try {
+            Permission permission = documentService.getUserPermissionInDocument(userId, documentId);
+            return ResponseEntity.ok(new JoinRes(userId, permission));
+        } catch (AccountNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
     @RequestMapping("/document/getContent/{documentId}")
     public String getContent(@DestinationVariable Long documentId, @RequestAttribute Long userId) {

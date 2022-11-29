@@ -226,7 +226,11 @@ public class DocumentService implements ServiceInterface {
      * @param userId - current user
      * @return list with all the document entities.
      */
-    public List<Document> get(Long parentFolderId, Long userId) {
+    public List<Document> get(Long parentFolderId, Long userId) throws AccountNotFoundException {
+        if(! folderRepository.findById(parentFolderId).isPresent())
+            throw new AccountNotFoundException(ExceptionMessage.NO_FOLDER_IN_DATABASE.toString());
+        if(! userRepository.findById(userId).isPresent())
+            throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
         User user = userRepository.findById(userId).get();
         Folder parentFolder = folderRepository.findById(parentFolderId).get();
         return documentRepository.findAllByUserIdAndParentFolderId(parentFolder, user);
@@ -377,17 +381,25 @@ public class DocumentService implements ServiceInterface {
         documentRepository.deleteById(docId);
     }
 
-    public List<Document> getAllWhereParentFolderIsNull(Long userId) {
+    public List<Document> getAllWhereParentFolderIsNull(Long userId) throws AccountNotFoundException {
+        if(! userRepository.findById(userId).isPresent())
+            throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
         User user = userRepository.findById(userId).get();
         return documentRepository.findAllByParentFolderIsNull(user);
     }
 
-    public List<UserDocument> getAllUsersInDocument(Long documentId) {
+    public List<UserDocument> getAllUsersInDocument(Long documentId) throws AccountNotFoundException {
+        if(! documentRepository.findById(documentId).isPresent())
+            throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
         Document document = documentRepository.findById(documentId).get();
         return userDocumentRepository.findAllUsersInDocument(document);
     }
 
-    public Permission getUserPermissionInDocument(Long userId, Long documentId){
+    public Permission getUserPermissionInDocument(Long userId, Long documentId) throws AccountNotFoundException {
+        if(! documentRepository.findById(documentId).isPresent())
+            throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
+        if(! userRepository.findById(userId).isPresent())
+            throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
         User user=userRepository.findById(userId).get();
         Document document=documentRepository.findById(documentId).get();
         Optional<UserDocument> userDocument=userDocumentRepository.find(document, user);

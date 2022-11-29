@@ -98,10 +98,15 @@ public class UserController {
                 throw new RuntimeException(e);
             }
         }
-        List<UserDocument> usersInDocument = documentService.getAllUsersInDocument(documentId);
-        List<UsersInDocRes> usersInDocRes = usersInDocument.stream().map(u -> new UsersInDocRes(u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
-        return ResponseEntity.ok(usersInDocRes);
+        try {
+            List<UserDocument> usersInDocument = documentService.getAllUsersInDocument(documentId);
+            List<UsersInDocRes> usersInDocRes = usersInDocument.stream().map(u -> new UsersInDocRes(u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
+            return ResponseEntity.ok(usersInDocRes);
+        }catch (AccountNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
+
     @RequestMapping(value="documents", method = RequestMethod.GET)
     public ResponseEntity<?> getDocuments(@RequestAttribute Long userId){
         return ResponseEntity.ok(userService.documentsOfUser(userId));
