@@ -60,7 +60,7 @@ public class UserController {
         }
     }
 
-    @RequestMapping(value = "/share", method = RequestMethod.PATCH, consumes = "application/json")
+    @RequestMapping(value = "/share", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<?> givePermissionToAll(@RequestBody List<String> emails, @RequestParam Long documentId, @RequestAttribute Long userId) {
        List<String> unregisteredUsers=new ArrayList<>();
         for (String email :
