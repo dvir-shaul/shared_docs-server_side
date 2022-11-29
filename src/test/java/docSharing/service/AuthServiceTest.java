@@ -22,7 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.security.auth.login.AccountNotFoundException;
-
+import java.util.Optional;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -50,7 +50,7 @@ public class AuthServiceTest {
     @Test
     @DisplayName("??")
     public void givenExistingEmail_whenRegisterUser_thenThrowsException() {
-        given(userRepository.findByEmail(user.getEmail())).willReturn(user);
+//        given(userRepository.findByEmail(user.getEmail())).willReturn(Optional.ofNullable(user));
         Assertions.assertThrows(RuntimeException.class, () -> {
             authService.register(user.getEmail(), user.getPassword(), user.getName());
         });
@@ -61,7 +61,7 @@ public class AuthServiceTest {
     @DisplayName("Get back a token once any user logs in")
     public void givenExistingEmail_whenLoginUser_thenReturnsToken() {
         try {
-            given(userRepository.findByEmail(user.getEmail())).willReturn(user);
+//            given(userRepository.findByEmail(user.getEmail()).get()).willReturn(user);
             String token = authService.login(user.getEmail(), user.getPassword());
             assertThat(token).isNotNull();
         } catch (AccountNotFoundException e) {

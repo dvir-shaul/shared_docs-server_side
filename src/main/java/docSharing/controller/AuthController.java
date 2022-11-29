@@ -121,7 +121,7 @@ public class AuthController {
      * @return
      */
     @RequestMapping(value = "activate", method = RequestMethod.POST)
-    public ResponseEntity<String> activate(@RequestParam String token) {
+    public ResponseEntity<String> activate(@RequestParam String token) throws AccountNotFoundException {
         String parsedToken = null;
         try {
             parsedToken = URLDecoder.decode(token, StandardCharsets.UTF_8.toString()).replaceAll(" ", ".");
@@ -132,7 +132,7 @@ public class AuthController {
         try {
             claims = ConfirmationToken.decodeJWT(parsedToken);
             if (claims.getExpiration().after(new Date())) {
-                if (userService.findById(Long.valueOf(claims.getId())).get().getActivated()) {
+                if (userService.findById(Long.valueOf(claims.getId())).getActivated()) {
                     return ResponseEntity.status(HttpStatus.CONFLICT).body("account already activated");
                 }
                 authService.activate(Long.valueOf(claims.getId()));
@@ -140,14 +140,11 @@ public class AuthController {
 
         } catch (ExpiredJwtException e) {
             String id=e.getClaims().getId();
-            Optional<User> u = userService.findById(Long.valueOf(id));
-            User user=null;
-            if(u.isPresent()){
-                user=u.get();
-                emailService.reactivateLink(user);
-                return ResponseEntity.status(200).body("the link expired, new activation link has been sent");
-            }
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("something went wrong");
+            User user = userService.findById(Long.valueOf(id));
+            emailService.reactivateLink(user);
+            return ResponseEntity.status(200).body("the link expired, new activation link has been sent");
+        } catch (AccountNotFoundException e) {
+            throw new RuntimeException(e);
         }
         return ResponseEntity.status(200).body("account activated successfully!");
     }

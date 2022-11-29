@@ -16,7 +16,6 @@ public interface UserDocumentRepository extends JpaRepository<UserDocument, Long
     Optional<UserDocument> find(Document doc, User user);
 
 
-
     @Query("SELECT u FROM UserDocument u WHERE u.user = ?1")
     List<UserDocument> findByUser(User user);
 
