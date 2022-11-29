@@ -13,8 +13,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+import javax.security.auth.login.AccountNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Component
 public class AbstractController {
@@ -26,30 +28,23 @@ public class AbstractController {
 
     public ResponseEntity<List<FileRes>> getAll(Long parentFolderId, Long userId) {
         //FIXME: check if parent folder exists
-        List<Folder> folders;
-        List<Document> documents;
-        if(parentFolderId!=null) {
-            folders = folderService.get(parentFolderId, userId);
-            documents = documentService.get(parentFolderId, userId);
+        try {
+            Folder parentFolder = folderService.findById(parentFolderId);
+            Set<Folder> folderSet = parentFolder.getFolders();
+            Set<Document> documentSet = parentFolder.getDocuments();
+            List<FileRes> files = new ArrayList<>();
+            for (Folder folder :
+                    folderSet) {
+                files.add(new FileRes(folder.getName(), folder.getId(), Type.FOLDER));
+            }
+            for (Document document :
+                    documentSet) {
+                files.add(new FileRes(document.getName(), document.getId(), Type.DOCUMENT));
+            }
+            return ResponseEntity.ok().body(files);
+        } catch (AccountNotFoundException e) {
+            throw new RuntimeException(e);
         }
-        else{
-            folders = folderService.getAllWhereParentFolderIsNull(userId);
-            documents = documentService.getAllWhereParentFolderIsNull(userId);
-        }
-        return ResponseEntity.ok().body(convertToFileRes(folders, documents));
-    }
-
-    private List<FileRes> convertToFileRes(List<Folder> folders, List<Document> documents) {
-        List<FileRes> fileResList = new ArrayList<>();
-        for (Folder folder :
-                folders) {
-            fileResList.add(new FileRes(folder.getName(), folder.getId(), Type.FOLDER));
-        }
-        for (Document document :
-                documents) {
-            fileResList.add(new FileRes(document.getName(), document.getId(), Type.DOCUMENT));
-        }
-        return fileResList;
     }
 
     public ResponseEntity<String> create(GeneralItem item) {
@@ -88,21 +83,24 @@ public class AbstractController {
 
     public ResponseEntity<Object> relocate(Long newParentId, GeneralItem item) {
         Folder parentFolder = null;
-        if (newParentId != null) {
-            parentFolder = folderService.findById(newParentId).get();
-        }
-        Long folderId = item.getId();
-        if (folderId == null)
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+        try {
+            if (newParentId != null) {
+                parentFolder = folderService.findById(newParentId);
+            }
+            Long folderId = item.getId();
+            if (folderId == null)
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
 
-        return ResponseEntity.ok().body(convertFromItemToService(item).relocate(parentFolder, folderId));
+            return ResponseEntity.ok().body(convertFromItemToService(item).relocate(parentFolder, folderId));
+        }catch (AccountNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     /**
      * This function gets an item as a parameter and extracts its class in order to return the correct service.
-     *
-     * @param item
-     * @return
+     * @param item - of kind folder/document
+     * @return the service we need to use according to what file it is.
      */
     private ServiceInterface convertFromItemToService(GeneralItem item) {
         if (item instanceof Document) return documentService;

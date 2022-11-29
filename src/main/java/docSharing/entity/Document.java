@@ -33,8 +33,8 @@ public class Document extends GeneralItem {
         Document doc = new Document();
         doc.setName(name);
         doc.setParentFolder(folder);
-        doc.setContent(content == null ? "" : content);
         doc.setUser(user);
+        doc.setContent(content == null ? "" : content);
         return doc;
     }
 

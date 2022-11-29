@@ -18,34 +18,29 @@ public class AuthService {
 
     /**
      * register function method is used to register users to the  app with given inputs
-     *
      * @param email    - mail of user
      * @param password - password of user
      * @param name     - name of user
      */
     public User register(String email, String password, String name) {
-        if (userRepository.findByEmail(email) != null)
+        if (userRepository.findByEmail(email).isPresent())
             throw new IllegalArgumentException(ExceptionMessage.ACCOUNT_EXISTS + email);
         return userRepository.save(User.createUser(email, password, name));
     }
 
     /**
      * login to app and check if inputs was correct according to database
-     *
      * @param email    - mail of user
      * @param password - password
      * @return token for user to be unique on app
      */
     public String login(String email, String password) throws AccountNotFoundException {
-        User user = userRepository.findByEmail(email);
-        if (user == null)
+        if (! userRepository.findByEmail(email).isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE + email);
-
-        if (user.getPassword().equals(password)) {
-            String token = generateToken(user);
-            return token;
+        User user = userRepository.findByEmail(email).get();
+        if (userRepository.findByEmail(email).get().getPassword().equals(password)) {
+            return generateToken(user);
         }
-
         throw new IllegalArgumentException(ExceptionMessage.NOT_MATCH.toString());
     }
 
@@ -53,7 +48,6 @@ public class AuthService {
      * activate function meant to change the user column isActivated from originated value false to true.
      * Repository go to the unique row that has user email and changed that value.
      * Method used after a user clicks on the link he got on email.
-     *
      * @param id - user email
      */
     public int activate(Long id) {
@@ -61,6 +55,10 @@ public class AuthService {
         return userRepository.updateIsActivated(true, id);
     }
 
+    /**
+     * @param user - user
+     * @return generated token according to: io.jsonwebtoken.Jwts library
+     */
     private String generateToken(User user) {
         return ConfirmationToken.createJWT(String.valueOf(user.getId()), "docs app", "login", 0);
     }

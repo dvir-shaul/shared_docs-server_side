@@ -6,11 +6,13 @@ import docSharing.entity.Folder;
 import docSharing.entity.User;
 import docSharing.repository.DocumentRepository;
 import docSharing.repository.FolderRepository;
+import docSharing.repository.UserDocumentRepository;
 import docSharing.repository.UserRepository;
 import docSharing.utils.ExceptionMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.security.auth.login.AccountNotFoundException;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,23 +25,46 @@ public class FolderService implements ServiceInterface {
     DocumentRepository documentRepository;
     @Autowired
     UserRepository userRepository;
+    @Autowired
+    UserDocumentRepository userDocumentRepository;
 
-    public Optional<Folder> findById(Long id) {
-        System.out.println("looking for a folder " + id);
-        return folderRepository.findById(id);
+    /**
+     * @param id - id of folder in database
+     * @return - Folder entity from database.
+     * @throws AccountNotFoundException - no such folder in database.
+     */
+    public Folder findById(Long id) throws AccountNotFoundException {
+        if(! folderRepository.findById(id).isPresent())
+            throw new AccountNotFoundException(ExceptionMessage.NO_FOLDER_IN_DATABASE.toString());
+        return folderRepository.findById(id).get();
     }
 
-    public List<Folder> get(Long parentFolderId, Long userId) {
-        User user=userRepository.findById(userId).get();
-        Folder parentFolder=folderRepository.findById(parentFolderId).get();
+    /**
+     * @param parentFolderId - parent folder to search and bring all items from.
+     * @param userId - current user that ask for the list of folders
+     * @return - list of inner folders in parent folder.
+     */
+    public List<Folder> get(Long parentFolderId, Long userId) throws AccountNotFoundException {
+        if(! folderRepository.findById(parentFolderId).isPresent())
+            throw new AccountNotFoundException(ExceptionMessage.NO_FOLDER_IN_DATABASE.toString());
+        if(! userRepository.findById(userId).isPresent())
+            throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
+        Folder parentFolder = folderRepository.findById(parentFolderId).get();User user=userRepository.findById(userId).get();
         return folderRepository.findAllByParentFolderIdAndUserId(parentFolder, user);
     }
 
-    public List<Folder> getAllWhereParentFolderIsNull(Long userId) {
+    public List<Folder> getAllWhereParentFolderIsNull(Long userId) throws AccountNotFoundException {
+        if(! userRepository.findById(userId).isPresent())
+            throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
         User user = userRepository.findById(userId).get();
         return folderRepository.findAllByParentFolderIsNull(user);
     }
 
+    /**
+     * function get an item of kind folder and uses the logics to create and save a new folder to database.
+     * @param generalItem - create item
+     * @return id of the item that was saved to database.
+     */
     public Long create(GeneralItem generalItem) {
         if (generalItem.getParentFolder() != null) {
             Optional<Folder> folder = folderRepository.findById(generalItem.getParentFolder().getId());
@@ -56,7 +81,6 @@ public class FolderService implements ServiceInterface {
 
     /**
      * rename function gets an id of folder and new name to change the folder's name.
-     *
      * @param id   - document id.
      * @param name - new name of the document.
      * @return rows affected in mysql.
@@ -70,7 +94,6 @@ public class FolderService implements ServiceInterface {
 
     /**
      * relocate is to change the document's location.
-     *
      * @param newParentFolder - the folder that folder is located.
      * @param id              - document id.
      * @return rows affected in mysql.
@@ -98,15 +121,8 @@ public class FolderService implements ServiceInterface {
         return documentRepository.updateParentFolderId(newParentFolder, id);
     }
 
-    /**
-     * delete folder by getting the document id, and deleting all it's content by recursively
-     * going through the folder files and folders in it.
-     *
-     * @param id - gets folder id to start delete the content.
-     */
-    public void delete(Long id) {
-        folderRepository.deleteById(id);
-    }
+
+
 
     private boolean newParentIsChild(Folder targetFolder, Folder destinationFolder) {
         if (destinationFolder.getFolders().isEmpty()) {
@@ -122,5 +138,17 @@ public class FolderService implements ServiceInterface {
             }
         }
         return false;
+    }
+
+    public void delete(Long folderId) {
+        Folder folder = folderRepository.findById(folderId).get();
+        folder.getDocuments().forEach(document -> {
+            userDocumentRepository.deleteDocument(document);
+            documentRepository.delete(document);
+        });
+        folder.getFolders().forEach(f -> {
+            delete(f.getId());
+        });
+        folderRepository.delete(folder);
     }
 }
