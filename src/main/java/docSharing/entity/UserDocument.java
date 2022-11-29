@@ -17,18 +17,18 @@ public class UserDocument {
     @EmbeddedId
     private UserDocumentPk id = new UserDocumentPk();
 
-    @ManyToOne
+    @ManyToOne()
     @MapsId("documentId")
-    @Cascade(CascadeType.DELETE)
+    @Cascade(CascadeType.ALL)
     private Document document;
 
     @ManyToOne
     @MapsId("userId")
-    @Cascade(CascadeType.DELETE)
+    @Cascade(CascadeType.ALL)
     private User user;
 
     @Enumerated
     @Column(name = "permission")
-    @Cascade(CascadeType.DELETE)
+    @Cascade(CascadeType.ALL)
     private Permission permission;
 }
