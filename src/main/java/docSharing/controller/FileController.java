@@ -6,7 +6,6 @@ import docSharing.entity.GeneralItem;
 import docSharing.entity.User;
 import docSharing.requests.*;
 import docSharing.response.FileRes;
-import docSharing.response.PathItem;
 import docSharing.response.ExportDoc;
 import docSharing.service.DocumentService;
 import docSharing.service.FolderService;
@@ -43,9 +42,9 @@ class FileController {
     }
 
     @RequestMapping(value = "getAll", method = RequestMethod.GET)
-    public ResponseEntity<List<FileRes>> get(@RequestParam Long parentFolderId, @RequestAttribute Long userId) {
+    public ResponseEntity<List<FileRes>> getAll(@RequestParam(required = false) Long parentFolderId, @RequestAttribute Long userId) {
         System.out.println("userId: " + userId);
-        return ac.get(parentFolderId, userId);
+            return ac.getAll(parentFolderId, userId);
     }
 
     @RequestMapping(value = "folder", method = RequestMethod.POST, consumes = "application/json")

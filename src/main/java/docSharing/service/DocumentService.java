@@ -9,7 +9,6 @@ import docSharing.requests.Method;
 import docSharing.utils.ExceptionMessage;
 import docSharing.utils.debounce.Debouncer;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -87,7 +86,7 @@ public class DocumentService implements ServiceInterface {
         });
     }
 
-    public Set<User> addUserToDocActiveUsers(Long userId, Long documentId, Method method) {
+    public Set<User> updateActiveUsersOfDoc(Long userId, Long documentId, Method method) {
         onlineUsersPerDoc.putIfAbsent(documentId, new HashSet<>());
         // FIXME: check if this user id even exists in the db
         User user = userRepository.findById(userId).get();
@@ -102,6 +101,7 @@ public class DocumentService implements ServiceInterface {
             }
         return onlineUsersPerDoc.get(documentId);
     }
+
 
     public void updateContent(Log log) {
 
@@ -182,8 +182,10 @@ public class DocumentService implements ServiceInterface {
         return documentRepository.findById(id).get();
     }
 
-    public List<Document> get(Long folderId, Long userId) {
-        return documentRepository.findAllByUserIdAndParentFolderId(folderId, userId);
+    public List<Document> get(Long parentFolderId, Long userId) {
+        User user=userRepository.findById(userId).get();
+        Folder parentFolder=folderRepository.findById(parentFolderId).get();
+        return documentRepository.findAllByUserIdAndParentFolderId(parentFolder, user);
     }
 
     public Long create(GeneralItem generalItem) {
@@ -282,7 +284,7 @@ public class DocumentService implements ServiceInterface {
         documentRepository.deleteById(docId);
     }
 
-    public Set<User> getOnlineUsers(Long documentId) {
-        return onlineUsersPerDoc.get(documentId);
-    }
-}
+    public List<Document> getAllWhereParentFolderIsNull(Long userId) {
+        User user=userRepository.findById(userId).get();
+        return documentRepository.findAllByParentFolderIsNull(user);
+    }}

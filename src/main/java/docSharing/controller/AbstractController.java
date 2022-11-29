@@ -3,12 +3,9 @@ package docSharing.controller;
 import docSharing.entity.Document;
 import docSharing.entity.GeneralItem;
 import docSharing.entity.Folder;
-import docSharing.entity.User;
 import docSharing.requests.Type;
 import docSharing.response.FileRes;
 import docSharing.service.*;
-import docSharing.utils.Action;
-import docSharing.utils.ExceptionMessage;
 import docSharing.utils.Regex;
 import docSharing.utils.Validations;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +15,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Component
 public class AbstractController {
@@ -28,21 +24,32 @@ public class AbstractController {
     @Autowired
     FolderService folderService;
 
-    public ResponseEntity<List<FileRes>> get(Long parentFolderId, Long userId) {
+    public ResponseEntity<List<FileRes>> getAll(Long parentFolderId, Long userId) {
         //FIXME: check if parent folder exists
-        Folder parentFolder=folderService.findById(parentFolderId).get();
-        Set<Folder> folderSet = parentFolder.getFolders();
-        Set<Document> documentSet=parentFolder.getDocuments();
-        List<FileRes> files=new ArrayList<>();
-        for (Folder folder:
-             folderSet) {
-            files.add(new FileRes(folder.getName(), folder.getId(), Type.FOLDER));
+        List<Folder> folders;
+        List<Document> documents;
+        if(parentFolderId!=null) {
+            folders = folderService.get(parentFolderId, userId);
+            documents = documentService.get(parentFolderId, userId);
         }
-        for (Document document:
-             documentSet) {
-            files.add(new FileRes(document.getName(), document.getId(), Type.DOCUMENT));
+        else{
+            folders = folderService.getAllWhereParentFolderIsNull(userId);
+            documents = documentService.getAllWhereParentFolderIsNull(userId);
         }
-        return ResponseEntity.ok().body(files);
+        return ResponseEntity.ok().body(convertToFileRes(folders, documents));
+    }
+
+    private List<FileRes> convertToFileRes(List<Folder> folders, List<Document> documents) {
+        List<FileRes> fileResList = new ArrayList<>();
+        for (Folder folder :
+                folders) {
+            fileResList.add(new FileRes(folder.getName(), folder.getId(), Type.FOLDER));
+        }
+        for (Document document :
+                documents) {
+            fileResList.add(new FileRes(document.getName(), document.getId(), Type.DOCUMENT));
+        }
+        return fileResList;
     }
 
     public ResponseEntity<String> create(GeneralItem item) {
