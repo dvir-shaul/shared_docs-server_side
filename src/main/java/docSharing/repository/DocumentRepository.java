@@ -33,9 +33,9 @@ public interface DocumentRepository extends CrudRepository<Document, Long> {
     @Query("SELECT d FROM Document d WHERE d.parentFolder IS NULL and d.user=?1")
     List<Document> findAllByParentFolderIsNull(User user);
 
-//    @Transactional
-//    @Modifying
-//    @Query("SELECT * FROM Document d WHERE d.parentFolderId = ?1 and d.userId = ?2")
-@Query("SELECT d FROM Document d WHERE d.parentFolder=?1 and d.user=?2")
-List<Document> findAllByUserIdAndParentFolderId(Folder parentFolder, User user);
+
+    @Query("SELECT d FROM Document d WHERE d.parentFolder=?1 and d.user=?2")
+    List<Document> findAllByUserIdAndParentFolderId(Folder parentFolder, User user);
+
+
 }

@@ -1,12 +1,11 @@
 package docSharing.controller;
 
-import docSharing.entity.Document;
-import docSharing.entity.Folder;
-import docSharing.entity.GeneralItem;
-import docSharing.entity.User;
+import docSharing.entity.*;
 import docSharing.requests.*;
 import docSharing.response.FileRes;
 import docSharing.response.ExportDoc;
+import docSharing.response.JoinRes;
+import docSharing.service.AuthService;
 import docSharing.service.DocumentService;
 import docSharing.service.FolderService;
 import docSharing.service.UserService;
@@ -14,9 +13,14 @@ import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.file.Files;
 import java.util.*;
 
 @Controller
@@ -35,11 +39,8 @@ class FileController {
     @Autowired
     UserService userService;
 
-    @RequestMapping(value = "/**", method = RequestMethod.OPTIONS)
-    public ResponseEntity handle() {
-        System.out.println("Do I get to OPTIONS ?");
-        return ResponseEntity.ok().build();
-    }
+
+
 
     @RequestMapping(value = "getAll", method = RequestMethod.GET)
     public ResponseEntity<List<FileRes>> getAll(@RequestParam(required = false) Long parentFolderId, @RequestAttribute Long userId) {
@@ -65,9 +66,15 @@ class FileController {
             parentFolder = folderService.findById(docReq.getParentFolderId()).get();
         }
         User user = userService.findById(userId).get();
-        Document doc = Document.createDocument(user, docReq.getName(), parentFolder);
+        Document doc = Document.createDocument(user, docReq.getName(), parentFolder, docReq.getContent());
+        UserDocument userDocument=new UserDocument();
+        userDocument.setPermission(Permission.ADMIN);
+        userDocument.setUser(user);
+        userDocument.setDocument(doc);
+        documentService.saveUserInDocument(userDocument);
         return ac.create(doc);
     }
+
 
     @RequestMapping(value = "folder/rename", method = RequestMethod.PATCH, consumes = "application/json")
     public ResponseEntity<?> rename(@RequestBody Folder folder, @RequestAttribute Long userId) {
@@ -101,16 +108,7 @@ class FileController {
         return ac.relocate(docReq.getNewParentId(), doc);
     }
 
-    @RequestMapping(value = "document/import", method = RequestMethod.POST, consumes = "application/json")
-    public ResponseEntity<?> importDoc(@RequestBody ImportDocReq importDocReq, @RequestAttribute Long userId) {
-        User user = userService.findById(userId).get();
-        Folder parentFolder = null;
-        if (importDocReq.getParentFolderId() != null)
-            parentFolder = folderService.findById(importDocReq.getParentFolderId()).get();
-        Document document = Document.createDocument(user, importDocReq.getName(), parentFolder);
-        document.setContent(importDocReq.getContent());
-        return ResponseEntity.ok().body(documentService.create(document));
-    }
+
 
     @RequestMapping(value = "document/export", method = RequestMethod.GET)
     public ResponseEntity<?> export(@RequestParam Long documentId, @RequestAttribute Long userId) {
@@ -144,5 +142,14 @@ class FileController {
     public ResponseEntity<?> documentExists(@RequestParam Long documentId, @RequestAttribute Long userId) {
         return ResponseEntity.ok(documentService.findById(documentId).isPresent());
     }
-
+    @RequestMapping(value = "document/getUser", method = RequestMethod.POST)
+    public ResponseEntity<?> getUser(@RequestParam Long documentId,  @RequestAttribute Long userId) {
+        Permission permission = documentService.getUserPermissionInDocument(userId, documentId);
+        return ResponseEntity.ok(new JoinRes(userId, permission));
+    }
+    @RequestMapping("/document/getContent/{documentId}")
+    public String getContent(@DestinationVariable Long documentId, @RequestAttribute Long userId) {
+        String content = documentService.getContent(documentId);
+        return content;
+    }
 }

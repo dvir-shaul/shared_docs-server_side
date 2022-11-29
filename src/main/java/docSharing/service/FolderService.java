@@ -6,6 +6,7 @@ import docSharing.entity.Folder;
 import docSharing.entity.User;
 import docSharing.repository.DocumentRepository;
 import docSharing.repository.FolderRepository;
+import docSharing.repository.UserDocumentRepository;
 import docSharing.repository.UserRepository;
 import docSharing.utils.ExceptionMessage;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,8 @@ public class FolderService implements ServiceInterface {
     DocumentRepository documentRepository;
     @Autowired
     UserRepository userRepository;
+    @Autowired
+    UserDocumentRepository userDocumentRepository;
 
     public Optional<Folder> findById(Long id) {
         System.out.println("looking for a folder " + id);

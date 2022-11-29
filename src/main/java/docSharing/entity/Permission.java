@@ -8,7 +8,9 @@ import javax.persistence.*;
 public enum Permission {
     VIEWER,
     EDITOR,
-    MODERATOR
+    MODERATOR,
+    ADMIN,
+    UNAUTORIZED
 //    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
 //    private Long id;
 }
