@@ -40,6 +40,7 @@ public class AuthorizationFilter extends GenericFilterBean {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Could not find a token in the request");
             }
         }
+
         chain.doFilter(request, response);
     }
 }

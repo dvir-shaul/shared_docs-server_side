@@ -56,7 +56,7 @@ public class TextEditController {
     public List<String> getOnlineUsers(@DestinationVariable Long documentId, @Payload OnlineUsersReq onlineUsersReq) {
         System.out.println("Looking for online users for document id:" + onlineUsersReq.getDocumentId());
         Long userId = Validations.validateToken("Bearer " + onlineUsersReq.getToken());
-        Set<User> onlineUsers = documentService.updateActiveUsersOfDoc(userId, onlineUsersReq.getDocumentId(), onlineUsersReq.getMethod());
+        Set<User> onlineUsers = documentService.addUserToDocActiveUsers(userId, onlineUsersReq.getDocumentId(), onlineUsersReq.getMethod());
         return onlineUsers.stream().map(u -> u.getName()).collect(Collectors.toList());
     }
 

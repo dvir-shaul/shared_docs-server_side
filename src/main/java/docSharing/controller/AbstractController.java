@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import javax.security.auth.login.AccountNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Component
 public class AbstractController {
@@ -98,9 +99,8 @@ public class AbstractController {
 
     /**
      * This function gets an item as a parameter and extracts its class in order to return the correct service.
-     *
-     * @param item
-     * @return
+     * @param item - of kind folder/document
+     * @return the service we need to use according to what file it is.
      */
     private ServiceInterface convertFromItemToService(GeneralItem item) {
         if (item instanceof Document) return documentService;

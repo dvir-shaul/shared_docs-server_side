@@ -67,7 +67,6 @@ public class PermissionFilter extends GenericFilterBean {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         String token = httpRequest.getHeader("authorization");
         List<String> list = List.of(httpRequest.getRequestURI().split("/"));
-
         if (list.contains("auth")) {
             flag = true;
         }
