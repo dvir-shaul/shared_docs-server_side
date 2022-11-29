@@ -1,7 +1,5 @@
 package docSharing.filter;
 
-import com.google.api.client.json.Json;
-import com.google.gson.Gson;
 import docSharing.entity.*;
 import docSharing.repository.DocumentRepository;
 import docSharing.repository.FolderRepository;
@@ -10,23 +8,14 @@ import docSharing.repository.UserRepository;
 import docSharing.utils.ExceptionMessage;
 import docSharing.utils.Params;
 import docSharing.utils.Validations;
-import lombok.AllArgsConstructor;
-import org.apache.tomcat.util.http.fileupload.IOUtils;
-import org.apache.tomcat.util.json.JSONParser;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.servlet.configuration.EnableWebMvcSecurity;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.GenericFilterBean;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -34,14 +23,10 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Component
 public class PermissionFilter extends GenericFilterBean {
-
 
     @Autowired
     UserDocumentRepository userDocumentRepository;
@@ -56,19 +41,22 @@ public class PermissionFilter extends GenericFilterBean {
      * this doFilter function is set to check if the user has the permission to do the action he
      * wanted, according to his role that saved in the userDocumentRepository, this repo has the information
      * about all document and all the users that watch each document and his role.
-     * @param request - request from client
+     *
+     * @param request  - request from client
      * @param response - response if the action can be done or not.
-     * @param chain - chain of filters to go through
-     * @throws IOException -
+     * @param chain    - chain of filters to go through
+     * @throws IOException      -
      * @throws ServletException -
      */
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+
         boolean flag = false;
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         String token = httpRequest.getHeader("authorization");
+
         List<String> list = List.of(httpRequest.getRequestURI().split("/"));
-        if (list.contains("auth") ||list.contains("getAll")  ) {
+        if (list.contains("auth") || list.contains("getAll") || list.contains("getPath") || list.contains("ws") || list.contains("getUser") || list.contains("getContent") || httpRequest.getMethod().equals(HttpMethod.OPTIONS.toString())) {
             flag = true;
         }
 
@@ -95,7 +83,7 @@ public class PermissionFilter extends GenericFilterBean {
 //                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
 //                    Folder folder = optFolder.get();
 //                }
-                flag=true;
+                flag = true;
             }
         }
 //
@@ -108,6 +96,7 @@ public class PermissionFilter extends GenericFilterBean {
                     flag = true;
                 }
             }
+
             if (request.getParameter(Params.DOCUMENT_ID.toString()) != null) { // checks if we got any parameters
                 Long docId = Long.valueOf(request.getParameter(Params.DOCUMENT_ID.toString()));
                 Long userId = Validations.validateToken(token);
@@ -122,6 +111,7 @@ public class PermissionFilter extends GenericFilterBean {
                     if (httpRequest.getMethod().equals(HttpMethod.DELETE.toString()) && !(userDocument.getDocument().getUser().getId().equals(userId))) {// only the creator can delete a file
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.UNAUTHORIZED_USER.toString());
                     }
+                    flag = true;
                 }
                 // FIXME: What to do on text edit with logs/getContent/onlineUsers?
                 if (!flag && httpRequest.getMethod().equals(HttpMethod.POST.toString())) {// text edit controller
@@ -143,7 +133,7 @@ public class PermissionFilter extends GenericFilterBean {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.UNAUTHORIZED_USER.toString());
             }
         }
-        if(! flag) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ExceptionMessage.WRONG_SEARCH.toString());
+        if (!flag) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ExceptionMessage.WRONG_SEARCH.toString());
         chain.doFilter(request, response);
     }
 

@@ -3,10 +3,6 @@ package docSharing.entity;
 import docSharing.utils.ExceptionMessage;
 
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 @Entity(name = "Document")
 @Table(name = "documents")
@@ -22,12 +18,12 @@ public class Document extends GeneralItem {
         this.isPrivate = true;
     }
 
-    public static Document createDocument(String name, Folder parentFolder) {
-        Document document = new Document();
-        document.setName(name);
-        document.setParentFolder(parentFolder);
-        return document;
-    }
+//    public static Document createDocument(String name, Folder parentFolder) {
+//        Document document = new Document();
+//        document.setName(name);
+//        document.setParentFolder(parentFolder);
+//        return document;
+//    }
 
     public static Document createDocument(User user, String name, Folder folder, String content) {
         Document doc = new Document();
