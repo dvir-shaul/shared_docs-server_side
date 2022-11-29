@@ -3,6 +3,7 @@ package docSharing.filter;
 import docSharing.utils.Validations;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.GenericFilterBean;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -14,6 +15,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.stream.Collectors;
 
+@Component
 public class AuthorizationFilter extends GenericFilterBean {
 
     @Override
