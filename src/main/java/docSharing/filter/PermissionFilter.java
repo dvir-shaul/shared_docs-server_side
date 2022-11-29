@@ -10,6 +10,7 @@ import docSharing.repository.UserRepository;
 import docSharing.utils.ExceptionMessage;
 import docSharing.utils.Params;
 import docSharing.utils.Validations;
+import lombok.AllArgsConstructor;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.apache.tomcat.util.json.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
