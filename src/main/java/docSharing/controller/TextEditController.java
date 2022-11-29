@@ -1,30 +1,25 @@
 package docSharing.controller;
 
-import docSharing.entity.Document;
 import docSharing.entity.Log;
 import docSharing.entity.User;
 import docSharing.requests.OnlineUsersReq;
 import docSharing.service.DocumentService;
 import docSharing.service.UserService;
+import docSharing.utils.ConfirmationToken;
 import docSharing.utils.Validations;
+import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.RequestParam;
-
-import javax.websocket.server.ServerEndpoint;
 
 @Controller
 @CrossOrigin
@@ -61,8 +56,16 @@ public class TextEditController {
     public List<String> getOnlineUsers(@DestinationVariable Long documentId, @Payload OnlineUsersReq onlineUsersReq) {
         System.out.println("Looking for online users for document id:" + onlineUsersReq.getDocumentId());
         Long userId = Validations.validateToken("Bearer " + onlineUsersReq.getToken());
-        Set<User> onlineUsers = documentService.addUserToDocActiveUsers(userId, onlineUsersReq.getDocumentId(), onlineUsersReq.getMethod());
+        Set<User> onlineUsers = documentService.updateActiveUsersOfDoc(userId, onlineUsersReq.getDocumentId(), onlineUsersReq.getMethod());
         return onlineUsers.stream().map(u -> u.getName()).collect(Collectors.toList());
+    }
+
+    @MessageMapping("/document/join/{documentId}")
+    @SendTo("/document/join/{documentId}")
+    public Long join(@DestinationVariable Long documentId, @Payload String token) {
+        System.out.println("Getting user id for token: " + token);
+        Claims claims = ConfirmationToken.decodeJWT(token);
+        return Long.valueOf(claims.getId());
     }
 
 }
