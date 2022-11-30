@@ -91,6 +91,7 @@ public class UserService {
         List<UserDocumentRes> userDocumentResList = new ArrayList<>();
         for (UserDocument userDocument :
                 ud) {
+            if(userDocument.getPermission()!=Permission.ADMIN)
             userDocumentResList.add(new UserDocumentRes(userDocument.getDocument().getId(), userDocument.getPermission()));
         }
         return userDocumentResList;
