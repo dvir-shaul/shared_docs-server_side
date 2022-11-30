@@ -45,15 +45,6 @@ class FileController {
 
     @RequestMapping(value = "getAll", method = RequestMethod.GET)
     public ResponseEntity<List<FileRes>> getAll(@RequestParam(required = false) Long parentFolderId, @RequestAttribute Long userId) throws AccountNotFoundException {
-        System.out.println("userId: " + userId);
-        if (parentFolderId == null) {
-            List<Folder> folders = folderService.getAllWhereParentFolderIsNull(userId);
-            List<FileRes> files = new ArrayList<>();
-            for (Folder folder : folders) {
-                files.add(new FileRes(folder.getName(), folder.getId(), Type.FOLDER));
-            }
-            return ResponseEntity.ok().body(files);
-        }
         return ac.getAll(parentFolderId, userId);
     }
 

@@ -27,23 +27,40 @@ public class AbstractController {
     FolderService folderService;
 
     public ResponseEntity<List<FileRes>> getAll(Long parentFolderId, Long userId) {
-        //FIXME: check if parent folder exists
-        try {
-            Folder parentFolder = folderService.findById(parentFolderId);
-            Set<Folder> folderSet = parentFolder.getFolders();
-            Set<Document> documentSet = parentFolder.getDocuments();
-            List<FileRes> files = new ArrayList<>();
-            for (Folder folder : folderSet) {
-                files.add(new FileRes(folder.getName(), folder.getId(), Type.FOLDER));
+        List<Folder> folders;
+        List<Document> documents;
+        if (parentFolderId != null) {
+            try {
+                folders = folderService.get(parentFolderId, userId);
+                documents = documentService.get(parentFolderId, userId);
+            } catch (AccountNotFoundException e) {
+                throw new RuntimeException(e);
             }
-            for (Document document : documentSet) {
-                files.add(new FileRes(document.getName(), document.getId(), Type.DOCUMENT));
+        } else {
+            try {
+                folders = folderService.getAllWhereParentFolderIsNull(userId);
+                documents = documentService.getAllWhereParentFolderIsNull(userId);
+
+            } catch (AccountNotFoundException e) {
+                throw new RuntimeException(e);
             }
-            return ResponseEntity.ok().body(files);
-        } catch (AccountNotFoundException e) {
-            throw new RuntimeException(e);
         }
+        return ResponseEntity.ok().body(convertToFileRes(folders, documents));
     }
+
+    private List<FileRes> convertToFileRes(List<Folder> folders, List<Document> documents) {
+        List<FileRes> fileResList = new ArrayList<>();
+        for (Folder folder :
+                folders) {
+            fileResList.add(new FileRes(folder.getName(), folder.getId(), Type.FOLDER));
+        }
+        for (Document document :
+                documents) {
+            fileResList.add(new FileRes(document.getName(), document.getId(), Type.DOCUMENT));
+        }
+        return fileResList;
+    }
+
 
     public ResponseEntity<String> create(GeneralItem item, Class c) {
         // make sure we got all the data from the client
@@ -83,13 +100,14 @@ public class AbstractController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
 
             return ResponseEntity.ok().body(convertFromClassToService(c).relocate(parentFolder, id));
-        }catch (AccountNotFoundException e) {
+        } catch (AccountNotFoundException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
     /**
      * This function gets an item as a parameter and extracts its class in order to return the correct service.
+     *
      * @param c - class of folder/document
      * @return the service we need to use according to what file it is.
      */
