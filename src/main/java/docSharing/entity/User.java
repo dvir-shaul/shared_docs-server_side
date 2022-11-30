@@ -18,7 +18,7 @@ public class User{
     private Boolean isActivated;
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Document> documents=new HashSet<>();
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Folder> folders=new HashSet<>();
 
     public void addDocument(Document document){
@@ -48,22 +48,18 @@ public class User{
     }
 
     public static User createUser(String email, String password, String name) {
-        if (email == null || email.length() == 0) {
-            throw new IllegalArgumentException("email can not be null or empty");
-        }
-        if (password == null || password.length() == 0) {
-            throw new IllegalArgumentException("password can not be null or empty");
-        }
-        if (name == null || name.length() == 0) {
-            throw new IllegalArgumentException("name can not be null or empty");
-        }
         User user = new User();
         user.setName(name);
         user.setPassword(password);
         user.setEmail(email);
         return user;
     }
-
+    public static User createUserForLoginTest(String email, String password) {
+        User user = new User();
+        user.setPassword(password);
+        user.setEmail(email);
+        return user;
+    }
     public Boolean getActivated() {
         return isActivated;
     }
@@ -85,6 +81,9 @@ public class User{
     }
 
     public void setName(String name) {
+        if (name == null || name.length() == 0) {
+            throw new IllegalArgumentException("name can not be null or empty");
+        }
         this.name = name;
     }
 
@@ -93,6 +92,9 @@ public class User{
     }
 
     public void setEmail(String email) {
+        if (email == null || email.length() == 0) {
+            throw new IllegalArgumentException("email can not be null or empty");
+        }
         this.email = email;
     }
 
@@ -101,6 +103,9 @@ public class User{
     }
 
     public void setPassword(String password) {
+        if (password == null || password.length() == 0) {
+            throw new IllegalArgumentException("password can not be null or empty");
+        }
         this.password = password;
     }
 

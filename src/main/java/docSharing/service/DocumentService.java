@@ -8,6 +8,8 @@ import docSharing.repository.UserRepository;
 import docSharing.requests.Method;
 import docSharing.utils.ExceptionMessage;
 import docSharing.utils.debounce.Debouncer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +18,8 @@ import java.util.*;
 
 @Service
 public class DocumentService implements ServiceInterface {
+    private static Logger logger = LogManager.getLogger(DocumentService.class.getName());
+
     static Map<Long, String> documentsContentLiveChanges = new HashMap<>(); // current content in cache
     static Map<Long, String> databaseDocumentsCurrentContent = new HashMap<>(); // current content in database
     static Map<Long, Log> chainedLogs = new HashMap<>(); // logs history until storing to database
@@ -40,6 +44,7 @@ public class DocumentService implements ServiceInterface {
      * @param log - changes from
      */
     private void updateLogsOffset(Log log) {
+        logger.info("in DocumentService -> updateLogsOffset");
 
         chainedLogs.replaceAll((userId, _log) -> {
             // create a copy of the log in case we need to modify it
@@ -91,8 +96,11 @@ public class DocumentService implements ServiceInterface {
      * @return set of current users that viewing the document.
      */
     public Set<User> addUserToDocActiveUsers(Long userId, Long documentId, Method method) {
+        logger.info("in DocumentService -> addUserToDocActiveUsers");
+
         onlineUsersPerDoc.putIfAbsent(documentId, new HashSet<>());
         if(! userRepository.findById(userId).isPresent()) {
+            logger.error("in DocumentService -> addUserToDocActiveUsers -> "+ExceptionMessage.NO_USER_IN_DATABASE.toString());
             throw new IllegalArgumentException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
         }
         User user = userRepository.findById(userId).get();
@@ -114,10 +122,13 @@ public class DocumentService implements ServiceInterface {
      * @param log - log with new data.
      */
     public void updateContent(Log log) {
+        logger.info("in DocumentService -> updateContent");
+
 
         debouncer.call(log.getUserId());
 
         if (!documentRepository.findById(log.getDocumentId()).isPresent()) {
+            logger.error("in DocumentService -> addUserToDocActiveUsers -> "+ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS + log.getDocumentId());
             throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString() + log.getDocumentId());
         }
         if (!documentsContentLiveChanges.containsKey(log.getDocumentId())) {
@@ -137,6 +148,8 @@ public class DocumentService implements ServiceInterface {
      * @param log - log with new data.
      */
     private void updateCurrentContentCache(Log log) {
+        logger.info("in DocumentService -> updateCurrentContentCache");
+        logger.debug(log.getAction());
         switch (log.getAction()) {
             case "delete":
                 log.setData(String.valueOf(documentsContentLiveChanges.get(log.getDocumentId()).charAt(log.getOffset())));
@@ -161,6 +174,7 @@ public class DocumentService implements ServiceInterface {
      * @param newLog - new data that needed to chain to old log.
      */
     private void chainLogs(Log currentLog, Log newLog) {
+        logger.info("in DocumentService -> chainLogs");
 
         // if such a log doesn't exist in the cache, create a new entry for it in the map
         if (!chainedLogs.containsKey(newLog.getUserId())) {
@@ -195,8 +209,12 @@ public class DocumentService implements ServiceInterface {
      * @throws AccountNotFoundException - no document in database with given id.
      */
     public Document findById(Long id) throws AccountNotFoundException {
-        if(! documentRepository.findById(id).isPresent())
+        logger.info("in DocumentService -> findById");
+
+        if(! documentRepository.findById(id).isPresent()) {
+            logger.error("in DocumentService -> findById -> "+ExceptionMessage.NO_DOCUMENT_IN_DATABASE);
             throw new AccountNotFoundException(ExceptionMessage.NO_DOCUMENT_IN_DATABASE.toString());
+        }
         return documentRepository.findById(id).get();
     }
 
@@ -205,6 +223,8 @@ public class DocumentService implements ServiceInterface {
      * @param id - of document
      */
     void addToMap(long id) {
+        logger.info("in DocumentService -> addToMap");
+
         documentsContentLiveChanges.put(id, "");
         databaseDocumentsCurrentContent.put(id, "");
     }
@@ -215,6 +235,8 @@ public class DocumentService implements ServiceInterface {
      * @throws AccountNotFoundException - Could not locate this document in the database.
      */
     public Document getDocById(Long id) throws AccountNotFoundException {
+        logger.info("in DocumentService -> getDocById");
+
         if(! documentRepository.findById(id).isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_DOCUMENT_IN_DATABASE.toString());
         return documentRepository.findById(id).get();
@@ -227,6 +249,8 @@ public class DocumentService implements ServiceInterface {
      * @return list with all the document entities.
      */
     public List<Document> get(Long parentFolderId, Long userId) throws AccountNotFoundException {
+        logger.info("in DocumentService -> get");
+
         if(! folderRepository.findById(parentFolderId).isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_FOLDER_IN_DATABASE.toString());
         if(! userRepository.findById(userId).isPresent())
@@ -246,6 +270,8 @@ public class DocumentService implements ServiceInterface {
      * @return id of document.
      */
     public Long create(GeneralItem generalItem) {
+        logger.info("in DocumentService -> create");
+
         if (generalItem.getParentFolder() != null) {
             Optional<Folder> folder = folderRepository.findById(generalItem.getParentFolder().getId());
             if (!folder.isPresent())
@@ -256,6 +282,8 @@ public class DocumentService implements ServiceInterface {
         if (savedDoc.getParentFolder() != null) {
             savedDoc.getParentFolder().addDocument(savedDoc);
         }
+        System.out.println("++++++++++++++++++++++++++++++++++++");
+        System.out.println(savedDoc.getName());
         savedDoc.getUser().addDocument(savedDoc);
         UserDocument userDocument = new UserDocument();
         userDocument.setId(new UserDocumentPk());
@@ -274,6 +302,8 @@ public class DocumentService implements ServiceInterface {
      * @return - rows that was affected in database (1).
      */
     public int rename(Long docId, String name) {
+        logger.info("in DocumentService -> rename");
+
         if (documentRepository.findById(docId).isPresent()) {
             return documentRepository.updateName(name, docId);
         }
@@ -285,6 +315,8 @@ public class DocumentService implements ServiceInterface {
      * @return content in documentsContentLiveChanges
      */
     public String getContent(Long documentId) {
+        logger.info("in DocumentService -> getContent");
+
         String content = documentsContentLiveChanges.get(documentId);
         if (content == null) documentsContentLiveChanges.put(documentId, "");
         return documentsContentLiveChanges.get(documentId);
@@ -298,6 +330,8 @@ public class DocumentService implements ServiceInterface {
      * @return updated content
      */
     private String concatenateStrings(String text, Log log) {
+        logger.info("in DocumentService -> concatenateStrings");
+
         String beforeCut = text.substring(0, log.getOffset());
         String afterCut = text.substring(log.getOffset());
         return beforeCut + log.getData() + afterCut;
@@ -312,6 +346,8 @@ public class DocumentService implements ServiceInterface {
      * @return - updated content that was concatenated from the 2 logs we have.
      */
     private String concatenateLogs(Log currentLog, Log newLog) {
+        logger.info("in DocumentService -> concatenateLogs");
+
         newLog.setOffset(newLog.getOffset() - (currentLog.getOffset()));
         if (currentLog.getData() == null) currentLog.setData(""); // CONSULT: shouldn't happen, so why did I write it?
         return concatenateStrings(currentLog.getData(), newLog);
@@ -325,6 +361,8 @@ public class DocumentService implements ServiceInterface {
      * @return updated content.
      */
     private String truncateString(String text, Log log) {
+        logger.info("in DocumentService -> truncateString");
+
         String beforeCut = text.substring(0, log.getOffset());
         String afterCut = text.substring(log.getOffset() + log.getData().length());
         return beforeCut.concat(afterCut);
@@ -338,6 +376,8 @@ public class DocumentService implements ServiceInterface {
      * @return - updated content that was truncated from the 2 logs we have.
      */
     private String truncateLogs(Log currentLog, Log newLog) {
+        logger.info("in DocumentService -> truncateLogs");
+
         newLog.setOffset(newLog.getOffset() - (currentLog.getOffset()));
         if (currentLog.getData() == null) currentLog.setData("");
         return truncateString(currentLog.getData(), newLog);
@@ -350,6 +390,8 @@ public class DocumentService implements ServiceInterface {
      * @return rows affected in mysql.
      */
     public int relocate(Folder newParentFolder, Long id) {
+        logger.info("in DocumentService -> relocate");
+
         if (newParentFolder != null && !folderRepository.findById(newParentFolder.getId()).isPresent()) {
             throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
         }
@@ -372,6 +414,8 @@ public class DocumentService implements ServiceInterface {
      * @param docId - gets document id .
      */
     public void delete(Long docId) {
+        logger.info("in DocumentService -> delete");
+
         databaseDocumentsCurrentContent.remove(docId);
         documentsContentLiveChanges.remove(docId);
         if(! documentRepository.findById(docId).isPresent()) {
@@ -382,6 +426,8 @@ public class DocumentService implements ServiceInterface {
     }
 
     public List<Document> getAllWhereParentFolderIsNull(Long userId) throws AccountNotFoundException {
+        logger.info("in DocumentService -> getAllWhereParentFolderIsNull");
+
         if(! userRepository.findById(userId).isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
         User user = userRepository.findById(userId).get();
@@ -389,6 +435,8 @@ public class DocumentService implements ServiceInterface {
     }
 
     public List<UserDocument> getAllUsersInDocument(Long documentId) throws AccountNotFoundException {
+        logger.info("in DocumentService -> getAllUsersInDocument");
+
         if(! documentRepository.findById(documentId).isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
         Document document = documentRepository.findById(documentId).get();
@@ -396,6 +444,8 @@ public class DocumentService implements ServiceInterface {
     }
 
     public Permission getUserPermissionInDocument(Long userId, Long documentId) throws AccountNotFoundException {
+        logger.info("in DocumentService -> getUserPermissionInDocument");
+
         if(! documentRepository.findById(documentId).isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
         if(! userRepository.findById(userId).isPresent())
@@ -409,6 +459,8 @@ public class DocumentService implements ServiceInterface {
         return userDocument.get().getPermission();
     }
     public UserDocument saveUserInDocument(UserDocument userDocument){
+        logger.info("in DocumentService -> saveUserInDocument");
+
         System.out.println("in saveUserInDocument");
         System.out.println(userDocument);
         return userDocumentRepository.save(userDocument);
