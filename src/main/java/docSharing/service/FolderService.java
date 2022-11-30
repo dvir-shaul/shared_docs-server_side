@@ -55,7 +55,7 @@ public class FolderService implements ServiceInterface {
     }
 
     public List<Folder> getAllWhereParentFolderIsNull(Long userId) throws AccountNotFoundException {
-        Optional<User> isUser = userRepository.findById(userId);
+        Optional<User> isUser =userRepository.findById(userId);
         if (!isUser.isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
         User user = isUser.get();
@@ -64,7 +64,6 @@ public class FolderService implements ServiceInterface {
 
     /**
      * function get an item of kind folder and uses the logics to create and save a new folder to database.
-     *
      * @param generalItem - create item
      * @return id of the item that was saved to database.
      */
@@ -84,7 +83,6 @@ public class FolderService implements ServiceInterface {
 
     /**
      * rename function gets an id of folder and new name to change the folder's name.
-     *
      * @param id   - document id.
      * @param name - new name of the document.
      * @return rows affected in mysql.
@@ -98,7 +96,6 @@ public class FolderService implements ServiceInterface {
 
     /**
      * relocate is to change the document's location.
-     *
      * @param newParentFolder - the folder that folder is located.
      * @param id              - document id.
      * @return rows affected in mysql.
@@ -153,5 +150,18 @@ public class FolderService implements ServiceInterface {
             delete(f.getId());
         });
         folderRepository.delete(folder);
+    }
+
+    public void createRootFolders(User user) {
+        Folder general = Folder.createFolder("General", null, user);
+        folderRepository.save(general);
+        Folder personal = Folder.createFolder("Personal", null, user);
+        folderRepository.save(personal);
+        Folder programming = Folder.createFolder("Programming", null, user);
+        folderRepository.save(programming);
+        Folder design = Folder.createFolder("Design", null, user);
+        folderRepository.save(design);
+        Folder business = Folder.createFolder("Business", null, user);
+        folderRepository.save(business);
     }
 }
