@@ -36,10 +36,7 @@ public class UserController {
     @Autowired
     private EmailService emailService;
 
-    @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<User> getUserById(@RequestParam int id) {
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-    }
+
 
     @RequestMapping(value = "/delete/{id}")
     public ResponseEntity<?> deleteUserById(@PathVariable("id") int id) {
@@ -72,14 +69,17 @@ public class UserController {
         try {
             for (String email :
                     emails) {
-                User user = userService.findByEmail(email);
-                if (user == null) {
+                User user=null;
+                try{
+                user = userService.findByEmail(email);}
+                catch (AccountNotFoundException exception){
                     unregisteredUsers.add(email);
                     continue;
                 }
                 Document document = documentService.findById(documentId);
                 userService.updatePermission(documentId, user.getId(), Permission.VIEWER);
-                String body = Share.buildEmail(user.getName(), "HERE SHOULD BE THE DOC URL", document.getName());
+                String link="http://localhost:3000/document/share/documentId="+documentId+"&userId="+user.getId();
+                String body = Share.buildEmail(user.getName(), link, document.getName());
                 emailService.send(user.getEmail(), body, "You have been invited to view the document");
             }
         } catch (AccountNotFoundException e) {
@@ -92,7 +92,7 @@ public class UserController {
                 unregisteredUsers) {
             String inviteUserString = Invite.emailBody;
             try {
-                emailService.send(unregisteredEmail, inviteUserString, "A personal invitation");
+                emailService.send(unregisteredEmail, inviteUserString, "Personal invitation");
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
