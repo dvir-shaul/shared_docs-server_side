@@ -29,22 +29,23 @@ class DocumentTest {
     void setup(){
         user = User.createUser("test@test.com", "Abcd1234", "test");
         parentFolder = Folder.createFolder("parent", null);
+        doc = Document.createDocument(user,"docs", parentFolder,"");
+
     }
 
 
 
     @Test
     void createDocument_GoodValues_successfulCreation() {
-        Document doc = Document.createDocument(user,"docs", parentFolder);
         assertNotNull(doc, "The document was not created");
     }
     @Test
     void createDocument_setUserNull_throwsException() {
-        assertThrows(IllegalArgumentException.class, () ->  Document.createDocument(null,"docs", parentFolder), "set content with null value did not throw the correct exception");
+        assertThrows(IllegalArgumentException.class, () ->  Document.createDocument(null,"docs", parentFolder,""), "set content with null value did not throw the correct exception");
     }
     @Test
     void createDocument_setDocsNameNull_throwsException() {
-        assertThrows(IllegalArgumentException.class, () ->  Document.createDocument(user,null, parentFolder), "set content with null value did not throw the correct exception");
+        assertThrows(IllegalArgumentException.class, () ->  Document.createDocument(user,null, parentFolder,""), "set content with null value did not throw the correct exception");
     }
 
 
@@ -68,7 +69,7 @@ class DocumentTest {
 
     @Test
     void getContent_EmptyDocument_AssertEmpty() {
-        assertEquals(doc.getContent(),"","the content is no equals to actual content");
+        assertEquals(doc.getContent(),"","the content is not equals to actual content");
     }
 
     @Test
