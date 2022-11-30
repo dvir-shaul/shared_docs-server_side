@@ -50,11 +50,10 @@ public class AuthServiceTest {
     @Test
     @DisplayName("??")
     public void givenExistingEmail_whenRegisterUser_thenThrowsException() {
-//        given(userRepository.findByEmail(user.getEmail())).willReturn(Optional.ofNullable(user));
+       given(userRepository.findByEmail(user.getEmail())).willReturn(Optional.ofNullable(user));
         Assertions.assertThrows(RuntimeException.class, () -> {
             authService.register(user.getEmail(), user.getPassword(), user.getName());
         });
-        verify(userRepository, never()).save(any(User.class)); // What's that?
     }
 
     @Test
@@ -72,7 +71,7 @@ public class AuthServiceTest {
     @Test
     @DisplayName("Check if authService throws exception when a user logs in with the wrong email")
     public void givenNotExistingEmail_whenLoginUser_thenThrowsException() {
-        given(userRepository.findByEmail(user.getEmail())).willReturn(null);
+        given(userRepository.findByEmail(user.getEmail())).willReturn(Optional.ofNullable(user));
         Assertions.assertThrows(AccountNotFoundException.class, () -> {
             authService.login(user.getEmail(), user.getPassword());
         });

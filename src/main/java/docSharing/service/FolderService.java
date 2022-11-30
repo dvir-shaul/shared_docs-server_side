@@ -34,27 +34,29 @@ public class FolderService implements ServiceInterface {
      * @throws AccountNotFoundException - no such folder in database.
      */
     public Folder findById(Long id) throws AccountNotFoundException {
-        if(! folderRepository.findById(id).isPresent())
+        if (!folderRepository.findById(id).isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_FOLDER_IN_DATABASE.toString());
         return folderRepository.findById(id).get();
     }
 
     /**
      * @param parentFolderId - parent folder to search and bring all items from.
-     * @param userId - current user that ask for the list of folders
+     * @param userId         - current user that ask for the list of folders
      * @return - list of inner folders in parent folder.
      */
+
     public List<Folder> get(Long parentFolderId, Long userId) throws AccountNotFoundException {
-        if(! folderRepository.findById(parentFolderId).isPresent())
+        if (!folderRepository.findById(parentFolderId).isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_FOLDER_IN_DATABASE.toString());
-        if(! userRepository.findById(userId).isPresent())
+        if (!userRepository.findById(userId).isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
-        Folder parentFolder = folderRepository.findById(parentFolderId).get();User user=userRepository.findById(userId).get();
+        Folder parentFolder = folderRepository.findById(parentFolderId).get();
+        User user = userRepository.findById(userId).get();
         return folderRepository.findAllByParentFolderIdAndUserId(parentFolder, user);
     }
 
     public List<Folder> getAllWhereParentFolderIsNull(Long userId) throws AccountNotFoundException {
-        if(! userRepository.findById(userId).isPresent())
+        if (!userRepository.findById(userId).isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
         User user = userRepository.findById(userId).get();
         return folderRepository.findAllByParentFolderIsNull(user);
@@ -62,6 +64,7 @@ public class FolderService implements ServiceInterface {
 
     /**
      * function get an item of kind folder and uses the logics to create and save a new folder to database.
+     *
      * @param generalItem - create item
      * @return id of the item that was saved to database.
      */
@@ -81,6 +84,7 @@ public class FolderService implements ServiceInterface {
 
     /**
      * rename function gets an id of folder and new name to change the folder's name.
+     *
      * @param id   - document id.
      * @param name - new name of the document.
      * @return rows affected in mysql.
@@ -94,6 +98,7 @@ public class FolderService implements ServiceInterface {
 
     /**
      * relocate is to change the document's location.
+     *
      * @param newParentFolder - the folder that folder is located.
      * @param id              - document id.
      * @return rows affected in mysql.
@@ -122,8 +127,6 @@ public class FolderService implements ServiceInterface {
     }
 
 
-
-
     private boolean newParentIsChild(Folder targetFolder, Folder destinationFolder) {
         if (destinationFolder.getFolders().isEmpty()) {
             return false;
@@ -150,5 +153,18 @@ public class FolderService implements ServiceInterface {
             delete(f.getId());
         });
         folderRepository.delete(folder);
+    }
+
+    public void createRootFolders(User user) {
+        Folder general = Folder.createFolder("General", null, user);
+        folderRepository.save(general);
+        Folder personal = Folder.createFolder("Personal", null, user);
+        folderRepository.save(personal);
+        Folder programming = Folder.createFolder("Programming", null, user);
+        folderRepository.save(programming);
+        Folder design = Folder.createFolder("Design", null, user);
+        folderRepository.save(design);
+        Folder business = Folder.createFolder("Business", null, user);
+        folderRepository.save(business);
     }
 }

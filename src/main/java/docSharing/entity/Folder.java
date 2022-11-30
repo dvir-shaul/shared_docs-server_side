@@ -52,6 +52,8 @@ public class Folder extends GeneralItem {
     }
 
     public static Folder createFolder(String name, Folder parentFolder) {
+        if(name==null||name.equals(""))
+            throw new IllegalArgumentException("Folder name must not be null or empty");
         Folder folder = new Folder();
         folder.setName(name);
         folder.setParentFolder(parentFolder);

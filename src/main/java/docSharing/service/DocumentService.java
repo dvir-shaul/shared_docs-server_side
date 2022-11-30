@@ -128,7 +128,6 @@ public class DocumentService implements ServiceInterface {
         debouncer.call(log.getUserId());
 
         if (!documentRepository.findById(log.getDocumentId()).isPresent()) {
-            logger.error("in DocumentService -> addUserToDocActiveUsers -> "+ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS + log.getDocumentId());
             throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString() + log.getDocumentId());
         }
         if (!documentsContentLiveChanges.containsKey(log.getDocumentId())) {
@@ -246,7 +245,7 @@ public class DocumentService implements ServiceInterface {
     /**
      * this function gets called when we want to show to te client all the documents that in a specific folder.
      * @param parentFolderId - parent folder
-     * @param userId - current user
+     * @param userId         - current user
      * @return list with all the document entities.
      */
     public List<Document> get(Long parentFolderId, Long userId) throws AccountNotFoundException {
@@ -272,6 +271,7 @@ public class DocumentService implements ServiceInterface {
      * then create the document and add to the folder the new document in the database,
      * same as the user is needed to be assigned to the new document.
      * set Permission of the creator as an MODERATOR.
+     *
      * @param generalItem - document.
      * @return id of document.
      */
@@ -302,8 +302,9 @@ public class DocumentService implements ServiceInterface {
 
     /**
      * this function goal is to change name of a document to a new one.
+     *
      * @param docId - document id in database
-     * @param name - new document name to change to.
+     * @param name  - new document name to change to.
      * @return - rows that was affected in database (1).
      */
     public int rename(Long docId, String name) {
@@ -315,8 +316,10 @@ public class DocumentService implements ServiceInterface {
         logger.error("in DocumentService -> rename -> "+ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS);
         throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
     }
+
     /**
      * this function goal is to show the live content of a document to the client.
+     *
      * @param documentId - document id
      * @return content in documentsContentLiveChanges
      */
@@ -324,7 +327,11 @@ public class DocumentService implements ServiceInterface {
         logger.info("in DocumentService -> getContent");
 
         String content = documentsContentLiveChanges.get(documentId);
-        if (content == null) documentsContentLiveChanges.put(documentId, "");
+        if (content == null) {
+            String databaseContent = documentRepository.getContentFromDocument(documentId);
+            documentsContentLiveChanges.put(documentId, databaseContent);
+            databaseDocumentsCurrentContent.put(documentId, databaseContent);
+        }
         return documentsContentLiveChanges.get(documentId);
     }
 
@@ -332,7 +339,7 @@ public class DocumentService implements ServiceInterface {
      * this function gets called from updateCurrentContentCache when the document content was changed.
      * the goal is to put the log in the correct offset we have and update the string accordingly.
      * @param text - document content
-     * @param log - log with new data
+     * @param log  - log with new data
      * @return updated content
      */
     private String concatenateStrings(String text, Log log) {
@@ -347,8 +354,9 @@ public class DocumentService implements ServiceInterface {
      * this function gets called from chainLogs when the logs are needed to concatenate.
      * change the newLog offset to put him according to the current log.
      * it comes from that idea that we want to make the currentLog offset as our absolute zero.
+     *
      * @param currentLog - log that is in the cached map of logs.
-     * @param newLog - log with changes from the client.
+     * @param newLog     - log with changes from the client.
      * @return - updated content that was concatenated from the 2 logs we have.
      */
     private String concatenateLogs(Log currentLog, Log newLog) {
@@ -362,8 +370,9 @@ public class DocumentService implements ServiceInterface {
     /**
      * this function gets called from updateCurrentContentCache when the document content was changed.
      * the goal is to delete the data that is in the log and to apply it on the correct offset in the content at the doc.
+     *
      * @param text - document content.
-     * @param log - log with new data.
+     * @param log  - log with new data.
      * @return updated content.
      */
     private String truncateString(String text, Log log) {
@@ -373,12 +382,14 @@ public class DocumentService implements ServiceInterface {
         String afterCut = text.substring(log.getOffset() + log.getData().length());
         return beforeCut.concat(afterCut);
     }
+
     /**
      * this function gets called from chainLogs when the logs are needed to truncate.
      * change the newLog offset to put him according to the current log.
      * it comes from that idea that we want to make the currentLog offset as our absolute zero.
+     *
      * @param currentLog - log that is in the cached map of logs.
-     * @param newLog - log with changes from the client.
+     * @param newLog     - log with changes from the client.
      * @return - updated content that was truncated from the 2 logs we have.
      */
     private String truncateLogs(Log currentLog, Log newLog) {
@@ -391,6 +402,7 @@ public class DocumentService implements ServiceInterface {
 
     /**
      * relocate is to change the document's location.
+     *
      * @param newParentFolder - the folder that document is located.
      * @param id              - document id.
      * @return rows affected in mysql.
@@ -419,6 +431,7 @@ public class DocumentService implements ServiceInterface {
     /**
      * delete file by getting the document id,
      * also remove from the maps of content we have on service.
+     *
      * @param docId - gets document id .
      */
     public void delete(Long docId) {
@@ -476,6 +489,7 @@ public class DocumentService implements ServiceInterface {
         }
         return userDocument.get().getPermission();
     }
+
     public UserDocument saveUserInDocument(UserDocument userDocument){
         logger.info("in DocumentService -> saveUserInDocument");
         return userDocumentRepository.save(userDocument);

@@ -14,15 +14,11 @@ import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.handler.annotation.DestinationVariable;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.handler.annotation.SendTo;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.security.auth.login.AccountNotFoundException;
-import java.nio.file.Files;
 import java.util.*;
 
 @Controller
@@ -44,15 +40,6 @@ class FileController {
 
     @RequestMapping(value = "getAll", method = RequestMethod.GET)
     public ResponseEntity<List<FileRes>> getAll(@RequestParam(required = false) Long parentFolderId, @RequestAttribute Long userId) throws AccountNotFoundException {
-        System.out.println("userId: " + userId);
-        if (parentFolderId == null) {
-            List<Folder> folders = folderService.getAllWhereParentFolderIsNull(userId);
-            List<FileRes> files = new ArrayList<>();
-            for (Folder folder : folders) {
-                files.add(new FileRes(folder.getName(), folder.getId(), Type.FOLDER));
-            }
-            return ResponseEntity.ok().body(files);
-        }
         return ac.getAll(parentFolderId, userId);
     }
 
