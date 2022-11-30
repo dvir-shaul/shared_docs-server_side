@@ -54,7 +54,7 @@ public class Invite {
             "      <td style=\"font-family:Helvetica,Arial,sans-serif;font-size:19px;line-height:1.315789474;max-width:560px\">\n" +
             "        \n" +
             "            <p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\">Hi,</p><p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\"> A user tried to share a document with you, but unfortunately you are not registered to our application :(\n" +
-            "You are welcome to register to use our amazing app, we are sure you will enjoy it!</p><blockquote style=\"Margin:0 0 20px 0;border-left:10px solid #b1b4b6;padding:15px 0 0.1px 15px;font-size:19px;line-height:25px\"><p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\"> <a href=\" LINK TO THE REGISTER PAGE\">register</a>" +
+            "You are welcome to register to use our amazing app, we are sure you will enjoy it!</p><blockquote style=\"Margin:0 0 20px 0;border-left:10px solid #b1b4b6;padding:15px 0 0.1px 15px;font-size:19px;line-height:25px\"><p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\"> <a href=\"http://localhost:3000/register\">register</a>" +
             "        \n" +
             "      </td>\n" +
             "      <td width=\"10\" valign=\"middle\"><br></td>\n" +

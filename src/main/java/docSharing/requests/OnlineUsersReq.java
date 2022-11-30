@@ -1,18 +1,13 @@
 package docSharing.requests;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 @NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
 @ToString
 public class OnlineUsersReq {
     private Long userId;
-    private Long documentId;
     private Method method;
-    private String token;
-
 }

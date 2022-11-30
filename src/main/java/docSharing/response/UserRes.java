@@ -1,18 +1,16 @@
 package docSharing.response;
 
-import docSharing.entity.Permission;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
-public class UsersInDocRes {
-    private Long id;
+public class UserRes {
     private String name;
     private String email;
-    private Permission permission;
+    private Long id;
 }

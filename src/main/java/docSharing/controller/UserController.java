@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-
 @RestController
 @CrossOrigin
 @RequestMapping("/user")
@@ -36,32 +35,25 @@ public class UserController {
     @Autowired
     private EmailService emailService;
 
-    @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<User> getUserById(@RequestParam int id) {
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-    }
-
     @RequestMapping(value = "/delete/{id}")
     public ResponseEntity<?> deleteUserById(@PathVariable("id") int id) {
         return ResponseEntity.noContent().build();
     }
 
-
-
     @RequestMapping(value = "/permission/give", method = RequestMethod.PATCH)
-    public ResponseEntity<?> givePermission(@RequestBody UpdatePermissionReq permissionReq, @RequestAttribute Long userId) {
-        if (permissionReq.getDocumentId() == null || permissionReq.getUserId() == null || permissionReq.getPermission() == null) {
+    public ResponseEntity<?> givePermission(@RequestParam Long documentId, @RequestParam Long uid, @RequestParam Permission permission, @RequestAttribute Long userId) {
+        if (documentId == null || uid == null || permission == null) {
             return ResponseEntity.badRequest().build();
         }
 
         try {
-            if (!Objects.equals(documentService.findById(permissionReq.getDocumentId()).getUser().getId(), userId)) {
+            if (!Objects.equals(documentService.findById(documentId).getUser().getId(), userId)) {
                 return ResponseEntity.badRequest().body(ExceptionMessage.USER_IS_NOT_THE_ADMIN);
             }
-            userService.updatePermission(permissionReq.getDocumentId(), permissionReq.getUserId(), permissionReq.getPermission());
+            userService.updatePermission(documentId, uid, permission);
             return ResponseEntity.ok().body("permission added successfully!");
-        }catch (AccountNotFoundException e) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (AccountNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (IllegalArgumentException exception) {
             return ResponseEntity.badRequest().body(exception.getMessage());
         }
@@ -71,16 +63,18 @@ public class UserController {
     public ResponseEntity<?> givePermissionToAll(@RequestBody List<String> emails, @RequestParam Long documentId, @RequestAttribute Long userId) {
         List<String> unregisteredUsers = new ArrayList<>();
         try {
-            for (String email :
-                    emails) {
-                User user = userService.findByEmail(email);
-                if (user == null) {
+            for (String email : emails) {
+                User user = null;
+                try {
+                    user = userService.findByEmail(email);
+                } catch (AccountNotFoundException exception) {
                     unregisteredUsers.add(email);
                     continue;
                 }
                 Document document = documentService.findById(documentId);
                 userService.updatePermission(documentId, user.getId(), Permission.VIEWER);
-                String body = Share.buildEmail(user.getName(), "HERE SHOULD BE THE DOC URL", document.getName());
+                String link = "http://localhost:3000/document/share/documentId=" + documentId + "&userId=" + user.getId();
+                String body = Share.buildEmail(user.getName(), link, document.getName());
                 emailService.send(user.getEmail(), body, "You have been invited to view the document");
             }
         } catch (AccountNotFoundException e) {
@@ -89,26 +83,30 @@ public class UserController {
             throw new RuntimeException(e);
         }
 
-        for (String unregisteredEmail :
-                unregisteredUsers) {
+        for (String unregisteredEmail : unregisteredUsers) {
             String inviteUserString = Invite.emailBody;
             try {
-                emailService.send(unregisteredEmail, inviteUserString, "A personal invitation");
+                emailService.send(unregisteredEmail, inviteUserString, "Personal invitation");
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
         try {
             List<UserDocument> usersInDocument = documentService.getAllUsersInDocument(documentId);
-            List<UsersInDocRes> usersInDocRes = usersInDocument.stream().map(u -> new UsersInDocRes(u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
+            List<UsersInDocRes> usersInDocRes = usersInDocument.stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
             return ResponseEntity.ok(usersInDocRes);
-        }catch (AccountNotFoundException e) {
+        } catch (AccountNotFoundException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
-    @RequestMapping(value="documents", method = RequestMethod.GET)
-    public ResponseEntity<?> getDocuments(@RequestAttribute Long userId){
+    @RequestMapping(value = "documents", method = RequestMethod.GET)
+    public ResponseEntity<?> getDocuments(@RequestAttribute Long userId) {
         return ResponseEntity.ok(userService.documentsOfUser(userId));
+    }
+
+    @RequestMapping(method = RequestMethod.GET)
+    public ResponseEntity<?> getUser(@RequestAttribute Long userId) {
+        return ResponseEntity.ok(userService.getUser(userId));
     }
 }

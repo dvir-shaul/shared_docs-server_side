@@ -7,11 +7,12 @@ package docSharing.utils;
 public enum Params {
     FOLDER_ID("folderId"),
     PARENT_FOLDER_ID("parentFolderId"),
-    DOCUMENT_ID("documentId");
-//    FOLDER_ID("id");
-
+    DOCUMENT_ID("documentId"),
+    //    FOLDER_ID("id");
+    ITEM_ID("id");
 
     private final String text;
+
     Params(final String text) {
         this.text = text;
     }
@@ -20,4 +21,4 @@ public enum Params {
     public String toString() {
         return text;
     }
-    }
+}
