@@ -2,12 +2,9 @@ package docSharing.controller;
 
 import docSharing.entity.User;
 import docSharing.service.UserService;
-import docSharing.utils.Activation;
-import docSharing.utils.Validations;
-import docSharing.utils.Regex;
+import docSharing.utils.*;
 import docSharing.service.AuthService;
 import docSharing.service.EmailService;
-import docSharing.utils.ConfirmationToken;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import lombok.AllArgsConstructor;
@@ -88,6 +85,15 @@ public class AuthController {
      */
     @RequestMapping(value = "login", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<String> login(@RequestBody User user) {
+        User userInDb=null;
+        try {
+            userInDb=userService.findByEmail(user.getEmail());
+        } catch (AccountNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+        if(!userInDb.getActivated()){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ExceptionMessage.USER_NOT_ACTIVATED.toString());
+        }
         String email = user.getEmail();
         String password = user.getPassword();
 
