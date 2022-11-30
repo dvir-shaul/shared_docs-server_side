@@ -111,4 +111,9 @@ public class UserController {
     public ResponseEntity<?> getDocuments(@RequestAttribute Long userId){
         return ResponseEntity.ok(userService.documentsOfUser(userId));
     }
+
+    @RequestMapping(method = RequestMethod.GET)
+    public ResponseEntity<?> getUser(@RequestAttribute Long userId){
+        return ResponseEntity.ok(userService.getUser(userId));
+    }
 }
