@@ -1,12 +1,10 @@
 package docSharing.controller;
 
-import com.sun.javadoc.Doc;
 import docSharing.entity.*;
 import docSharing.requests.*;
 import docSharing.response.FileRes;
 import docSharing.response.ExportDoc;
 import docSharing.response.JoinRes;
-import docSharing.service.AuthService;
 import docSharing.service.DocumentService;
 import docSharing.service.FolderService;
 import docSharing.service.UserService;
@@ -15,15 +13,11 @@ import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.handler.annotation.DestinationVariable;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.handler.annotation.SendTo;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.security.auth.login.AccountNotFoundException;
-import java.nio.file.Files;
 import java.util.*;
 
 @Controller
@@ -152,7 +146,7 @@ class FileController {
                     break;
             }
             Folder parentFolder = generalItem.getParentFolder();
-            if(type.equals(Type.FOLDER)){
+            if (type.equals(Type.FOLDER)) {
                 path.add(0, new FileRes(generalItem.getName(), generalItem.getId(), Type.FOLDER));
             }
             while (parentFolder != null) {
@@ -190,10 +184,11 @@ class FileController {
         String content = documentService.getContent(documentId);
         return ResponseEntity.ok().body(content);
     }
+
     @RequestMapping(value = "/document/name", method = RequestMethod.GET)
     public ResponseEntity<String> getDocumentName(@RequestParam Long documentId, @RequestAttribute Long userId) {
         try {
-            Document document=documentService.findById(documentId);
+            Document document = documentService.findById(documentId);
             return ResponseEntity.ok(document.getName());
         } catch (AccountNotFoundException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
