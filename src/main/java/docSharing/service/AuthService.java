@@ -35,7 +35,7 @@ public class AuthService {
      * @return token for user to be unique on app
      */
     public String login(String email, String password) throws AccountNotFoundException {
-        if (! userRepository.findByEmail(email).isPresent())
+        if (!userRepository.findByEmail(email).isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE + email);
         User user = userRepository.findByEmail(email).get();
         if (userRepository.findByEmail(email).get().getPassword().equals(password)) {
