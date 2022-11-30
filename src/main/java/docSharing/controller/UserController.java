@@ -47,7 +47,6 @@ public class UserController {
     }
 
 
-
     @RequestMapping(value = "/permission/give", method = RequestMethod.PATCH)
     public ResponseEntity<?> givePermission(@RequestParam Long documentId, @RequestParam Long uid, @RequestParam Permission permission, @RequestAttribute Long userId) {
         if (documentId == null || uid == null || permission == null) {
@@ -60,8 +59,8 @@ public class UserController {
             }
             userService.updatePermission(documentId, uid, permission);
             return ResponseEntity.ok().body("permission added successfully!");
-        }catch (AccountNotFoundException e) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (AccountNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (IllegalArgumentException exception) {
             return ResponseEntity.badRequest().body(exception.getMessage());
         }
@@ -100,20 +99,20 @@ public class UserController {
         }
         try {
             List<UserDocument> usersInDocument = documentService.getAllUsersInDocument(documentId);
-            List<UsersInDocRes> usersInDocRes = usersInDocument.stream().map(u -> new UsersInDocRes(u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
+            List<UsersInDocRes> usersInDocRes = usersInDocument.stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
             return ResponseEntity.ok(usersInDocRes);
-        }catch (AccountNotFoundException e) {
+        } catch (AccountNotFoundException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
-    @RequestMapping(value="documents", method = RequestMethod.GET)
-    public ResponseEntity<?> getDocuments(@RequestAttribute Long userId){
+    @RequestMapping(value = "documents", method = RequestMethod.GET)
+    public ResponseEntity<?> getDocuments(@RequestAttribute Long userId) {
         return ResponseEntity.ok(userService.documentsOfUser(userId));
     }
 
     @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<?> getUser(@RequestAttribute Long userId){
+    public ResponseEntity<?> getUser(@RequestAttribute Long userId) {
         return ResponseEntity.ok(userService.getUser(userId));
     }
 }
