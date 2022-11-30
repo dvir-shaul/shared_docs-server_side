@@ -50,11 +50,14 @@ public class AbstractController {
 
     private List<FileRes> convertToFileRes(List<Folder> folders, List<Document> documents) {
         List<FileRes> fileResList = new ArrayList<>();
-        for (Folder folder : folders) {
-            fileResList.add(new FileRes(folder.getName(), folder.getId(), Type.FOLDER, Permission.ADMIN));
+        for (Folder folder :
+                folders) {
+
+            fileResList.add(new FileRes(folder.getName(), folder.getId(), Type.FOLDER, Permission.ADMIN, folder.getUser().getEmail()));
         }
-        for (Document document : documents) {
-            fileResList.add(new FileRes(document.getName(), document.getId(), Type.DOCUMENT, Permission.ADMIN));
+        for (Document document :
+                documents) {
+            fileResList.add(new FileRes(document.getName(), document.getId(), Type.DOCUMENT, Permission.ADMIN, document.getUser().getEmail()));
         }
         return fileResList;
     }

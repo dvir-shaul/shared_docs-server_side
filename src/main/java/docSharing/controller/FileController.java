@@ -137,10 +137,10 @@ class FileController {
             }
             Folder parentFolder = generalItem.getParentFolder();
             if(type.equals(Type.FOLDER)){
-                path.add(0, new FileRes(generalItem.getName(), generalItem.getId(), Type.FOLDER, Permission.ADMIN));
+                path.add(0, new FileRes(generalItem.getName(), generalItem.getId(), Type.FOLDER, Permission.ADMIN, generalItem.getUser().getEmail()));
             }
             while (parentFolder != null) {
-                path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN));
+                path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, generalItem.getUser().getEmail()));
                 parentFolder = parentFolder.getParentFolder();
             }
             return ResponseEntity.ok(path);
