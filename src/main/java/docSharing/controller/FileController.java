@@ -152,6 +152,9 @@ class FileController {
                     break;
             }
             Folder parentFolder = generalItem.getParentFolder();
+            if(type.equals(Type.FOLDER)){
+                path.add(0, new FileRes(generalItem.getName(), generalItem.getId(), Type.FOLDER));
+            }
             while (parentFolder != null) {
                 path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER));
                 parentFolder = parentFolder.getParentFolder();
