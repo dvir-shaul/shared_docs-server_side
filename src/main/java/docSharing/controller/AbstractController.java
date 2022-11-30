@@ -55,7 +55,6 @@ public class AbstractController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
-
         return ResponseEntity.ok().body(convertFromClassToService(c).create(item).toString());
     }
 
