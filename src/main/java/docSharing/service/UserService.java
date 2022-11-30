@@ -8,6 +8,7 @@ import docSharing.repository.DocumentRepository;
 import docSharing.repository.UserDocumentRepository;
 import docSharing.repository.UserRepository;
 import docSharing.response.UserDocumentRes;
+import docSharing.response.UserRes;
 import docSharing.utils.ExceptionMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,7 +34,7 @@ public class UserService {
      * @return entity of user that found in database.
      */
     public User findById(Long id) throws AccountNotFoundException {
-        if (! userRepository.findById(id).isPresent())
+        if (!userRepository.findById(id).isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
         return userRepository.findById(id).get();
     }
@@ -43,7 +44,7 @@ public class UserService {
      * @return entity of user that found in database.
      */
     public User findByEmail(String email) throws AccountNotFoundException {
-        if (! userRepository.findByEmail(email).isPresent())
+        if (!userRepository.findByEmail(email).isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE + email);
         return userRepository.findByEmail(email).get();
     }
@@ -51,8 +52,9 @@ public class UserService {
     /**
      * function called to change a user's permission in database.
      * if a record with the given parameters isn't found, create a new one.
-     * @param docId - document's id in database
-     * @param userId - user's id in database
+     *
+     * @param docId      - document's id in database
+     * @param userId     - user's id in database
      * @param permission - the new Permission
      */
     public void updatePermission(Long docId, Long userId, Permission permission) {
@@ -66,33 +68,40 @@ public class UserService {
         User user = userRepository.findById(userId).get();
         if (userDocumentRepository.find(doc, user).isPresent()) {
             userDocumentRepository.updatePermission(permission, doc, user);
-        }
-        else{
-            UserDocument userDocument=new UserDocument();
+        } else {
+            UserDocument userDocument = new UserDocument();
             userDocument.setUser(user);
             userDocument.setDocument(doc);
             userDocument.setPermission(permission);
-           userDocumentRepository.save(userDocument);
+            userDocumentRepository.save(userDocument);
         }
     }
 
     /**
      * function get called by controller from GET method to get all UserDocument.
+     *
      * @param userId - user's id
      * @return list of UserDocument
      */
-  public List<UserDocumentRes> documentsOfUser(Long userId){
-        if(!userRepository.findById(userId).isPresent()) {
+    public List<UserDocumentRes> documentsOfUser(Long userId) {
+        if (!userRepository.findById(userId).isPresent()) {
             throw new IllegalArgumentException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
         }
-        List<UserDocument> ud= userDocumentRepository.findByUser(userRepository.findById(userId).get());
-        List<UserDocumentRes> userDocumentResList=new ArrayList<>();
-      for (UserDocument userDocument :
-              ud) {
-          userDocumentResList.add(new UserDocumentRes(userDocument.getDocument().getId(), userDocument.getPermission()));
-      }
+        List<UserDocument> ud = userDocumentRepository.findByUser(userRepository.findById(userId).get());
+        List<UserDocumentRes> userDocumentResList = new ArrayList<>();
+        for (UserDocument userDocument :
+                ud) {
+            userDocumentResList.add(new UserDocumentRes(userDocument.getDocument().getId(), userDocument.getPermission()));
+        }
         return userDocumentResList;
-  }
+    }
 
+    public UserRes getUser(Long userId) {
+        Optional<User> user = userRepository.findById(userId);
+        if (!user.isPresent()) {
+            throw new IllegalArgumentException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
+        }
+        return new UserRes(user.get().getName(), user.get().getEmail(), user.get().getId());
+    }
 
 }
