@@ -37,5 +37,6 @@ public interface DocumentRepository extends CrudRepository<Document, Long> {
     @Query("SELECT d FROM Document d WHERE d.parentFolder=?1 and d.user=?2")
     List<Document> findAllByUserIdAndParentFolderId(Folder parentFolder, User user);
 
-
+    @Query("SELECT d.content FROM Document d WHERE d.id=?1")
+    String getContentFromDocument(Long documentId);
 }

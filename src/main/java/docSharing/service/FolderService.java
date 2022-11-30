@@ -44,6 +44,7 @@ public class FolderService implements ServiceInterface {
      * @param userId         - current user that ask for the list of folders
      * @return - list of inner folders in parent folder.
      */
+
     public List<Folder> get(Long parentFolderId, Long userId) throws AccountNotFoundException {
         if (!folderRepository.findById(parentFolderId).isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_FOLDER_IN_DATABASE.toString());
@@ -155,15 +156,15 @@ public class FolderService implements ServiceInterface {
     }
 
     public void createRootFolders(User user) {
-        Folder general = Folder.createFolder("general", null, user);
+        Folder general = Folder.createFolder("General", null, user);
         folderRepository.save(general);
-        Folder personal = Folder.createFolder("personal", null, user);
+        Folder personal = Folder.createFolder("Personal", null, user);
         folderRepository.save(personal);
-        Folder programming = Folder.createFolder("programming", null, user);
+        Folder programming = Folder.createFolder("Programming", null, user);
         folderRepository.save(programming);
-        Folder design = Folder.createFolder("design", null, user);
+        Folder design = Folder.createFolder("Design", null, user);
         folderRepository.save(design);
-        Folder business = Folder.createFolder("business", null, user);
+        Folder business = Folder.createFolder("Business", null, user);
         folderRepository.save(business);
     }
 }

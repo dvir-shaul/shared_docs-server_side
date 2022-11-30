@@ -30,19 +30,15 @@ public class User{
     public Set<Document> getDocuments() {
         return documents;
     }
-
     public void setDocuments(Set<Document> documents) {
         this.documents = documents;
     }
-
     public Set<Folder> getFolders() {
         return folders;
     }
-
     public void setFolders(Set<Folder> folders) {
         this.folders = folders;
     }
-
     public User() {
         this.isActivated = false;
     }
