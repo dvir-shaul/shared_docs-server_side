@@ -25,7 +25,8 @@ public interface FolderRepository extends JpaRepository<Folder, Long> {
     @Query("UPDATE Folder SET parentFolder = ?1 WHERE id = ?2")
     int updateParentFolderId(Folder parentFolder, Long id);
 
-    @Query("SELECT f FROM Folder f WHERE f.parentFolder IS NULL and f.user=?1")
+    @Query("SELECT f FROM Folder f WHERE f.parentFolder IS NULL")
+//    @Query("SELECT f FROM Folder f WHERE f.parentFolder IS NULL and f.user=?1")
     List<Folder> findAllByParentFolderIsNull(User user);
 
     @Query("SELECT f FROM Folder f WHERE f.parentFolder=?1 and f.user=?2")

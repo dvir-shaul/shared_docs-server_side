@@ -42,12 +42,10 @@ class FileController {
     UserService userService;
 
 
-
-
     @RequestMapping(value = "getAll", method = RequestMethod.GET)
     public ResponseEntity<List<FileRes>> getAll(@RequestParam(required = false) Long parentFolderId, @RequestAttribute Long userId) throws AccountNotFoundException {
         System.out.println("userId: " + userId);
-        if(parentFolderId==null) {
+        if (parentFolderId == null) {
             List<Folder> folders = folderService.getAllWhereParentFolderIsNull(userId);
             List<FileRes> files = new ArrayList<>();
             for (Folder folder : folders) {
@@ -106,7 +104,7 @@ class FileController {
     }
 
     @RequestMapping(value = "document", method = RequestMethod.DELETE, consumes = "application/json")
-    public ResponseEntity<?> delete(@RequestParam Document doc, @RequestAttribute Long userId) {
+    public ResponseEntity<?> delete(@RequestBody Document doc, @RequestAttribute Long userId) {
         return ac.delete(doc);
     }
 
@@ -129,7 +127,6 @@ class FileController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
-
 
 
     @RequestMapping(value = "document/export", method = RequestMethod.GET)
@@ -176,8 +173,9 @@ class FileController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
+
     @RequestMapping(value = "document/getUser", method = RequestMethod.POST)
-    public ResponseEntity<?> getUser(@RequestParam Long documentId,  @RequestAttribute Long userId) {
+    public ResponseEntity<?> getUser(@RequestParam Long documentId, @RequestAttribute Long userId) {
         try {
             Permission permission = documentService.getUserPermissionInDocument(userId, documentId);
             return ResponseEntity.ok(new JoinRes(userId, permission));
@@ -185,6 +183,7 @@ class FileController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
+
     @RequestMapping(value = "/document/getContent", method = RequestMethod.GET)
     public ResponseEntity<String> getContent(@RequestParam Long documentId, @RequestAttribute Long userId) {
         String content = documentService.getContent(documentId);
