@@ -16,4 +16,5 @@ public class FileRes {
     private Long id;
     private Type type;
     private Permission permission;
+    private String adminEmail;
 }
