@@ -1,6 +1,7 @@
 package docSharing.controller;
 
 import docSharing.entity.User;
+import docSharing.service.FolderService;
 import docSharing.service.UserService;
 import docSharing.utils.*;
 import docSharing.service.AuthService;
@@ -34,6 +35,8 @@ public class AuthController {
     private EmailService emailService;
     @Autowired
     private UserService userService;
+    @Autowired
+    private FolderService folderService;
 
     /**
      * Register function is responsible for creating new users and adding them to the database.
@@ -58,7 +61,8 @@ public class AuthController {
             Validations.validate(Regex.PASSWORD.getRegex(), password);
 //            Validations.validate(Regex.NAME.getRegex(), name);
             User emailUser = authService.register(email, password, name);
-            String token = ConfirmationToken.createJWT(Long.toString(emailUser.getId()), "docs-app", "activation email", 5*1000*60);
+            folderService.createRootFolders(emailUser);
+            String token = ConfirmationToken.createJWT(Long.toString(emailUser.getId()), "docs-app", "activation email", 5 * 1000 * 60);
             String link = Activation.buildLink(token);
             String mail = Activation.buildEmail(emailUser.getName(), link);
             try {
@@ -85,13 +89,13 @@ public class AuthController {
      */
     @RequestMapping(value = "login", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<String> login(@RequestBody User user) {
-        User userInDb=null;
+        User userInDb = null;
         try {
-            userInDb=userService.findByEmail(user.getEmail());
+            userInDb = userService.findByEmail(user.getEmail());
         } catch (AccountNotFoundException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
-        if(!userInDb.getActivated()){
+        if (!userInDb.getActivated()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ExceptionMessage.USER_NOT_ACTIVATED.toString());
         }
         String email = user.getEmail();
@@ -103,7 +107,7 @@ public class AuthController {
         }
 
         // validate information
-        String token=null;
+        String token = null;
         try {
             Validations.validate(Regex.EMAIL.getRegex(), email);
             Validations.validate(Regex.PASSWORD.getRegex(), password);
@@ -115,7 +119,7 @@ public class AuthController {
         }
 
         // if correct -> call auth service with parameters -> login function
-        return ResponseEntity.status(200).body("token: "+ token);
+        return ResponseEntity.status(200).body("token: " + token);
     }
 
     /**
@@ -145,7 +149,7 @@ public class AuthController {
             }
 
         } catch (ExpiredJwtException e) {
-            String id=e.getClaims().getId();
+            String id = e.getClaims().getId();
             User user = userService.findById(Long.valueOf(id));
             emailService.reactivateLink(user);
             return ResponseEntity.status(200).body("the link expired, new activation link has been sent");
