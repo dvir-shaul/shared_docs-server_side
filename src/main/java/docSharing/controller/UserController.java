@@ -100,7 +100,7 @@ public class UserController {
         }
     }
 
-    @RequestMapping(value = "documents", method = RequestMethod.GET)
+    @RequestMapping(value = "sharedDocuments", method = RequestMethod.GET)
     public ResponseEntity<?> getDocuments(@RequestAttribute Long userId) {
         return ResponseEntity.ok(userService.documentsOfUser(userId));
     }

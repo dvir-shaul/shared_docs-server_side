@@ -5,7 +5,6 @@ import docSharing.requests.*;
 import docSharing.response.FileRes;
 import docSharing.response.ExportDoc;
 import docSharing.response.JoinRes;
-import docSharing.service.AuthService;
 import docSharing.service.DocumentService;
 import docSharing.service.FolderService;
 import docSharing.service.UserService;
@@ -36,7 +35,6 @@ class FileController {
     DocumentService documentService;
     @Autowired
     UserService userService;
-
 
     @RequestMapping(value = "getAll", method = RequestMethod.GET)
     public ResponseEntity<List<FileRes>> getAll(@RequestParam(required = false) Long parentFolderId, @RequestAttribute Long userId) throws AccountNotFoundException {
