@@ -49,7 +49,6 @@ public class TextEditController {
     }
 
 
-
     @MessageMapping("/document/onlineUsers/{documentId}")
     @SendTo("/document/onlineUsers/{documentId}")
     public AllUsers getOnlineUsers(@DestinationVariable Long documentId, @Payload OnlineUsersReq onlineUsersReq) {
@@ -57,13 +56,12 @@ public class TextEditController {
             System.out.println("Looking for online users for document id:" + documentId);
             Set<User> onlineUsers = documentService.addUserToDocActiveUsers(onlineUsersReq.getUserId(), documentId, onlineUsersReq.getMethod());
             List<String> online = onlineUsers.stream().map(u -> u.getEmail()).collect(Collectors.toList());
-            List<UsersInDocRes> all = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
+            List<UsersInDocRes> all = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
             return new AllUsers(online, all);
-        }catch (AccountNotFoundException e) {
+        } catch (AccountNotFoundException e) {
             return null;
         }
     }
-
 
 
 }
