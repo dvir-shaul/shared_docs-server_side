@@ -50,7 +50,6 @@ public class TextEditController {
     }
 
 
-
     @MessageMapping("/document/onlineUsers/{documentId}")
     @SendTo("/document/onlineUsers/{documentId}")
     public AllUsers getOnlineUsers(@DestinationVariable Long documentId, @Payload OnlineUsersReq onlineUsersReq) {
@@ -59,13 +58,12 @@ public class TextEditController {
             Long userId = Validations.validateToken("Bearer " + onlineUsersReq.getToken());
             Set<User> onlineUsers = documentService.addUserToDocActiveUsers(userId, onlineUsersReq.getDocumentId(), onlineUsersReq.getMethod());
             List<String> online = onlineUsers.stream().map(u -> u.getEmail()).collect(Collectors.toList());
-            List<UsersInDocRes> all = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
+            List<UsersInDocRes> all = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
             return new AllUsers(online, all);
-        }catch (AccountNotFoundException e) {
+        } catch (AccountNotFoundException e) {
             return null;
         }
     }
-
 
 
 }

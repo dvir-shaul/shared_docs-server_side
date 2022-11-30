@@ -1,5 +1,6 @@
 package docSharing.controller;
 
+import com.sun.javadoc.Doc;
 import docSharing.entity.*;
 import docSharing.requests.*;
 import docSharing.response.FileRes;
@@ -185,5 +186,14 @@ class FileController {
     public ResponseEntity<String> getContent(@RequestParam Long documentId, @RequestAttribute Long userId) {
         String content = documentService.getContent(documentId);
         return ResponseEntity.ok().body(content);
+    }
+    @RequestMapping(value = "/document/name", method = RequestMethod.GET)
+    public ResponseEntity<String> getDocumentName(@RequestParam Long documentId, @RequestAttribute Long userId) {
+        try {
+            Document document=documentService.findById(documentId);
+            return ResponseEntity.ok(document.getName());
+        } catch (AccountNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 }
