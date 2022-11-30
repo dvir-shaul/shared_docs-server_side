@@ -5,6 +5,7 @@ import docSharing.requests.*;
 import docSharing.response.FileRes;
 import docSharing.response.ExportDoc;
 import docSharing.response.JoinRes;
+import docSharing.service.AuthService;
 import docSharing.service.DocumentService;
 import docSharing.service.FolderService;
 import docSharing.service.UserService;
@@ -39,15 +40,6 @@ class FileController {
 
     @RequestMapping(value = "getAll", method = RequestMethod.GET)
     public ResponseEntity<List<FileRes>> getAll(@RequestParam(required = false) Long parentFolderId, @RequestAttribute Long userId) throws AccountNotFoundException {
-        System.out.println("userId: " + userId);
-        if (parentFolderId == null) {
-            List<Folder> folders = folderService.getAllWhereParentFolderIsNull(userId);
-            List<FileRes> files = new ArrayList<>();
-            for (Folder folder : folders) {
-                files.add(new FileRes(folder.getName(), folder.getId(), Type.FOLDER));
-            }
-            return ResponseEntity.ok().body(files);
-        }
         return ac.getAll(parentFolderId, userId);
     }
 
@@ -146,7 +138,7 @@ class FileController {
                     break;
             }
             Folder parentFolder = generalItem.getParentFolder();
-            if (type.equals(Type.FOLDER)) {
+            if(type.equals(Type.FOLDER)){
                 path.add(0, new FileRes(generalItem.getName(), generalItem.getId(), Type.FOLDER));
             }
             while (parentFolder != null) {
@@ -184,11 +176,10 @@ class FileController {
         String content = documentService.getContent(documentId);
         return ResponseEntity.ok().body(content);
     }
-
     @RequestMapping(value = "/document/name", method = RequestMethod.GET)
     public ResponseEntity<String> getDocumentName(@RequestParam Long documentId, @RequestAttribute Long userId) {
         try {
-            Document document = documentService.findById(documentId);
+            Document document=documentService.findById(documentId);
             return ResponseEntity.ok(document.getName());
         } catch (AccountNotFoundException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
