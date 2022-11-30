@@ -194,10 +194,6 @@ public class DocumentService implements ServiceInterface {
                 currentLog.setData(concatenateLogs(currentLog, newLog));
             }
             chainedLogs.put(currentLog.getUserId(), currentLog);
-//        } else if (newLog.getAction().equals("insert")) {
-//                currentLog.setData(concatenateLogs(currentLog, newLog));
-//            }
-            // change to concatenateLogs
         }
     }
 
