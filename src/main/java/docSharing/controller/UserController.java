@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-
 @RestController
 @CrossOrigin
 @RequestMapping("/user")
@@ -36,13 +35,10 @@ public class UserController {
     @Autowired
     private EmailService emailService;
 
-
-
     @RequestMapping(value = "/delete/{id}")
     public ResponseEntity<?> deleteUserById(@PathVariable("id") int id) {
         return ResponseEntity.noContent().build();
     }
-
 
     @RequestMapping(value = "/permission/give", method = RequestMethod.PATCH)
     public ResponseEntity<?> givePermission(@RequestParam Long documentId, @RequestParam Long uid, @RequestParam Permission permission, @RequestAttribute Long userId) {
@@ -67,18 +63,17 @@ public class UserController {
     public ResponseEntity<?> givePermissionToAll(@RequestBody List<String> emails, @RequestParam Long documentId, @RequestAttribute Long userId) {
         List<String> unregisteredUsers = new ArrayList<>();
         try {
-            for (String email :
-                    emails) {
-                User user=null;
-                try{
-                user = userService.findByEmail(email);}
-                catch (AccountNotFoundException exception){
+            for (String email : emails) {
+                User user = null;
+                try {
+                    user = userService.findByEmail(email);
+                } catch (AccountNotFoundException exception) {
                     unregisteredUsers.add(email);
                     continue;
                 }
                 Document document = documentService.findById(documentId);
                 userService.updatePermission(documentId, user.getId(), Permission.VIEWER);
-                String link="http://localhost:3000/document/share/documentId="+documentId+"&userId="+user.getId();
+                String link = "http://localhost:3000/document/share/documentId=" + documentId + "&userId=" + user.getId();
                 String body = Share.buildEmail(user.getName(), link, document.getName());
                 emailService.send(user.getEmail(), body, "You have been invited to view the document");
             }
@@ -88,8 +83,7 @@ public class UserController {
             throw new RuntimeException(e);
         }
 
-        for (String unregisteredEmail :
-                unregisteredUsers) {
+        for (String unregisteredEmail : unregisteredUsers) {
             String inviteUserString = Invite.emailBody;
             try {
                 emailService.send(unregisteredEmail, inviteUserString, "Personal invitation");

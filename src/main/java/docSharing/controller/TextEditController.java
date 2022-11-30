@@ -42,7 +42,6 @@ public class TextEditController {
 //        if (log.getData() == null || log.getAction() == null || log.getOffset() == null || log.getDocumentId() == null || log.getUserId() == null || log.getCreationDate() == null)
 //            // FIXME: What to do if anything fails? Do we do anything with the client?
 //            return null;
-        log.setUserId(Validations.validateToken("Bearer " + log.getToken()));
         Log copyOfLog = Log.copy(log);
         documentService.updateContent(log);
         System.out.println("Creating a new log for: " + copyOfLog);
@@ -54,9 +53,8 @@ public class TextEditController {
     @SendTo("/document/onlineUsers/{documentId}")
     public AllUsers getOnlineUsers(@DestinationVariable Long documentId, @Payload OnlineUsersReq onlineUsersReq) {
         try {
-            System.out.println("Looking for online users for document id:" + onlineUsersReq.getDocumentId());
-            Long userId = Validations.validateToken("Bearer " + onlineUsersReq.getToken());
-            Set<User> onlineUsers = documentService.addUserToDocActiveUsers(userId, onlineUsersReq.getDocumentId(), onlineUsersReq.getMethod());
+            System.out.println("Looking for online users for document id:" + documentId);
+            Set<User> onlineUsers = documentService.addUserToDocActiveUsers(onlineUsersReq.getUserId(), documentId, onlineUsersReq.getMethod());
             List<String> online = onlineUsers.stream().map(u -> u.getEmail()).collect(Collectors.toList());
             List<UsersInDocRes> all = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
             return new AllUsers(online, all);
