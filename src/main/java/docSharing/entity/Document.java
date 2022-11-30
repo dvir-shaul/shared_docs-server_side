@@ -1,8 +1,10 @@
 package docSharing.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import docSharing.utils.ExceptionMessage;
 
 import javax.persistence.*;
+import java.util.Set;
 
 @Entity(name = "Document")
 @Table(name = "documents")
@@ -11,7 +13,9 @@ public class Document extends GeneralItem {
     private Boolean isPrivate;
     @Column(name = "content", columnDefinition = "text")
     private String content;
-
+    @JsonManagedReference
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Log> log;
 
     private Document() {
         super();

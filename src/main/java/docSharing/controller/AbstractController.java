@@ -3,6 +3,7 @@ package docSharing.controller;
 import docSharing.entity.Document;
 import docSharing.entity.GeneralItem;
 import docSharing.entity.Folder;
+import docSharing.entity.Permission;
 import docSharing.requests.Type;
 import docSharing.response.FileRes;
 import docSharing.service.*;
@@ -24,6 +25,8 @@ public class AbstractController {
     DocumentService documentService;
     @Autowired
     FolderService folderService;
+    @Autowired
+    UserService userService;
 
     public ResponseEntity<List<FileRes>> getAll(Long parentFolderId, Long userId) {
         List<Folder> folders;
@@ -51,11 +54,12 @@ public class AbstractController {
         List<FileRes> fileResList = new ArrayList<>();
         for (Folder folder :
                 folders) {
-            fileResList.add(new FileRes(folder.getName(), folder.getId(), Type.FOLDER));
+
+            fileResList.add(new FileRes(folder.getName(), folder.getId(), Type.FOLDER, Permission.ADMIN, folder.getUser().getEmail()));
         }
         for (Document document :
                 documents) {
-            fileResList.add(new FileRes(document.getName(), document.getId(), Type.DOCUMENT));
+            fileResList.add(new FileRes(document.getName(), document.getId(), Type.DOCUMENT, Permission.ADMIN, document.getUser().getEmail()));
         }
         return fileResList;
     }

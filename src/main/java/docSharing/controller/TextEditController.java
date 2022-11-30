@@ -1,7 +1,9 @@
 package docSharing.controller;
 
+import docSharing.entity.Document;
 import docSharing.entity.Log;
 import docSharing.entity.User;
+import docSharing.requests.LogReq;
 import docSharing.requests.OnlineUsersReq;
 import docSharing.response.AllUsers;
 import docSharing.response.UsersInDocRes;
@@ -38,14 +40,23 @@ public class TextEditController {
 
     @MessageMapping("/document/{documentId}")
     @SendTo("/document/{documentId}")
-    public Log receiveLog(@DestinationVariable Long documentId, @Payload Log log) {
+//    public Log receiveLog(@DestinationVariable Long documentId, @Payload Log log) {
+    public Log receiveLog(@DestinationVariable Long documentId, @Payload LogReq logReq) {
 //        if (log.getData() == null || log.getAction() == null || log.getOffset() == null || log.getDocumentId() == null || log.getUserId() == null || log.getCreationDate() == null)
 //            // FIXME: What to do if anything fails? Do we do anything with the client?
 //            return null;
-        Log copyOfLog = Log.copy(log);
-        documentService.updateContent(log);
-        System.out.println("Creating a new log for: " + copyOfLog);
-        return copyOfLog;
+        Log log = null;
+        try {
+            User user=userService.findById(logReq.getUserId());
+            Document document=documentService.findById(documentId);
+            log = new Log(user, document, logReq.getOffset(), logReq.getData(), logReq.getAction());
+            Log copyOfLog = Log.copy(log);
+            documentService.updateContent(log);
+            System.out.println("Creating a new log for: " + copyOfLog);
+            return copyOfLog;
+        } catch (AccountNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 

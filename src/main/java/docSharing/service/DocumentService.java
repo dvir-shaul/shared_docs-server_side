@@ -19,7 +19,6 @@ public class DocumentService implements ServiceInterface {
     static Map<Long, String> documentsContentLiveChanges = new HashMap<>(); // current content in cache
     static Map<Long, String> databaseDocumentsCurrentContent = new HashMap<>(); // current content in database
     static Map<Long, Log> chainedLogs = new HashMap<>(); // logs history until storing to database
-    //       userId, changesList
     static Map<Long, Set<User>> onlineUsersPerDoc = new HashMap<>();
 
     Debouncer debouncer = new Debouncer<>(new SendLogsToDatabase(chainedLogs), 5000);
@@ -47,7 +46,8 @@ public class DocumentService implements ServiceInterface {
             Log tempLog = Log.copy(_log);
 
             // make sure not to change the current user's log
-            if (log.getUserId() != userId) {
+//            if (log.getUserId() != userId) {
+            if (log.getUser().getId() != userId) {
 
                 // if the offset is before other logs' offset, decrease its offset by the length of the log
                 if (log.getAction().equals("delete") && log.getOffset() <= _log.getOffset()) {
@@ -118,19 +118,29 @@ public class DocumentService implements ServiceInterface {
      */
     public void updateContent(Log log) {
 
-        debouncer.call(log.getUserId());
+       // debouncer.call(log.getUserId());
+        debouncer.call(log.getUser().getId());
 
-        if (!documentRepository.findById(log.getDocumentId()).isPresent()) {
-            throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString() + log.getDocumentId());
+//        if (!documentRepository.findById(log.getDocumentId()).isPresent()) {
+        if (!documentRepository.findById(log.getDocument().getId()).isPresent()) {
+//            throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString() + log.getDocumentId());
+            throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString() + log.getDocument().getId());
         }
-        if (!documentsContentLiveChanges.containsKey(log.getDocumentId())) {
-            Document doc = documentRepository.findById(log.getDocumentId()).get();
+//        if (!documentsContentLiveChanges.containsKey(log.getDocumentId())) {
+        if (!documentsContentLiveChanges.containsKey(log.getDocument().getId())) {
+           // Document doc = documentRepository.findById(log.getDocumentId()).get();
+            Document doc = documentRepository.findById(log.getDocument().getId()).get();
+
             if (doc.getContent() == null) doc.setContent("");
-            documentsContentLiveChanges.put(log.getDocumentId(), doc.getContent());
+//            documentsContentLiveChanges.put(log.getDocumentId(), doc.getContent());
+            documentsContentLiveChanges.put(log.getDocument().getId(), doc.getContent());
+
         }
 
         updateCurrentContentCache(log);
-        chainLogs(chainedLogs.get(log.getUserId()), log);
+//        chainLogs(chainedLogs.get(log.getUserId()), log);
+        chainLogs(chainedLogs.get(log.getUser().getId()), log);
+
         updateLogsOffset(log);
     }
 
@@ -143,11 +153,16 @@ public class DocumentService implements ServiceInterface {
     private void updateCurrentContentCache(Log log) {
         switch (log.getAction()) {
             case "delete":
-                log.setData(String.valueOf(documentsContentLiveChanges.get(log.getDocumentId()).charAt(log.getOffset())));
-                documentsContentLiveChanges.put(log.getDocumentId(), truncateString(documentsContentLiveChanges.get(log.getDocumentId()), log));
+//                log.setData(String.valueOf(documentsContentLiveChanges.get(log.getDocumentId()).charAt(log.getOffset())));
+                log.setData(String.valueOf(documentsContentLiveChanges.get(log.getDocument().getId()).charAt(log.getOffset())));
+
+//                documentsContentLiveChanges.put(log.getDocumentId(), truncateString(documentsContentLiveChanges.get(log.getDocumentId()), log));
+                documentsContentLiveChanges.put(log.getDocument().getId(), truncateString(documentsContentLiveChanges.get(log.getDocument().getId()), log));
+
                 break;
             case "insert":
-                documentsContentLiveChanges.put(log.getDocumentId(), concatenateStrings(documentsContentLiveChanges.get(log.getDocumentId()), log));
+//                documentsContentLiveChanges.put(log.getDocumentId(), concatenateStrings(documentsContentLiveChanges.get(log.getDocumentId()), log));
+                documentsContentLiveChanges.put(log.getDocument().getId(), concatenateStrings(documentsContentLiveChanges.get(log.getDocument().getId()), log));
                 break;
         }
     }
@@ -168,18 +183,20 @@ public class DocumentService implements ServiceInterface {
     private void chainLogs(Log currentLog, Log newLog) {
 
         // if such a log doesn't exist in the cache, create a new entry for it in the map
-        if (!chainedLogs.containsKey(newLog.getUserId())) {
-            chainedLogs.put(newLog.getUserId(), newLog);
+        if (!chainedLogs.containsKey(newLog.getUser().getId())) {
+            chainedLogs.put(newLog.getUser().getId(), newLog);
             return;
         }
 
         // if the new log is not a sequel to current log, store the current one in the db and start a new one instead.
         if ((currentLog.getOffset() - 1 >= newLog.getOffset() && currentLog.getOffset() + currentLog.getData().length() + 1 <= newLog.getOffset()))
-            chainedLogs.put(currentLog.getUserId(), newLog);
+            chainedLogs.put(currentLog.getUser().getId(), newLog);
+
 
         // if the current log was attempting to delete and how we want to insert, push the delete and create a new log
         if (currentLog.getAction().equals("delete") && newLog.getAction().equals("insert")) {
-            chainedLogs.put(currentLog.getUserId(), newLog);
+            chainedLogs.put(currentLog.getUser().getId(), newLog);
+
         }
 
         // if the new log is in the middle of the current log, it must be concatenated.
@@ -190,7 +207,8 @@ public class DocumentService implements ServiceInterface {
                 currentLog.setData(concatenateLogs(currentLog, newLog));
             }
             // change to concatenateLogs
-            chainedLogs.put(currentLog.getUserId(), currentLog);
+            chainedLogs.put(currentLog.getUser().getId(), currentLog);
+
         }
     }
 
