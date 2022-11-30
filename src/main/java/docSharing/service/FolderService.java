@@ -118,7 +118,7 @@ public class FolderService implements ServiceInterface {
         if (newParentFolder != null) {
             newParentFolder.addFolder(folder);
         }
-        return documentRepository.updateParentFolderId(newParentFolder, id);
+        return folderRepository.updateParentFolderId(newParentFolder, id);
     }
 
 

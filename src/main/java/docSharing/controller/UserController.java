@@ -49,16 +49,16 @@ public class UserController {
 
 
     @RequestMapping(value = "/permission/give", method = RequestMethod.PATCH)
-    public ResponseEntity<?> givePermission(@RequestBody UpdatePermissionReq permissionReq, @RequestAttribute Long userId) {
-        if (permissionReq.getDocumentId() == null || permissionReq.getUserId() == null || permissionReq.getPermission() == null) {
+    public ResponseEntity<?> givePermission(@RequestParam Long documentId, @RequestParam Long uid, @RequestParam Permission permission, @RequestAttribute Long userId) {
+        if (documentId == null || uid == null || permission == null) {
             return ResponseEntity.badRequest().build();
         }
 
         try {
-            if (!Objects.equals(documentService.findById(permissionReq.getDocumentId()).getUser().getId(), userId)) {
+            if (!Objects.equals(documentService.findById(documentId).getUser().getId(), userId)) {
                 return ResponseEntity.badRequest().body(ExceptionMessage.USER_IS_NOT_THE_ADMIN);
             }
-            userService.updatePermission(permissionReq.getDocumentId(), permissionReq.getUserId(), permissionReq.getPermission());
+            userService.updatePermission(documentId, uid, permission);
             return ResponseEntity.ok().body("permission added successfully!");
         }catch (AccountNotFoundException e) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
