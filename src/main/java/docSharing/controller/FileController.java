@@ -2,6 +2,7 @@ package docSharing.controller;
 
 import docSharing.entity.*;
 import docSharing.requests.*;
+import docSharing.response.DocRes;
 import docSharing.response.FileRes;
 import docSharing.response.ExportDoc;
 import docSharing.response.JoinRes;
@@ -174,11 +175,12 @@ class FileController {
         String content = documentService.getContent(documentId);
         return ResponseEntity.ok().body(content);
     }
-    @RequestMapping(value = "/document/name", method = RequestMethod.GET)
-    public ResponseEntity<String> getDocumentName(@RequestParam Long documentId, @RequestAttribute Long userId) {
+    @RequestMapping(value = "/document", method = RequestMethod.GET)
+    public ResponseEntity<?> getDocumentName(@RequestParam Long documentId, @RequestAttribute Long userId) {
         try {
             Document document=documentService.findById(documentId);
-            return ResponseEntity.ok(document.getName());
+            DocRes docRes=new DocRes(document.getName(), document.getUser().getId(), document.getPrivate(), document.getCreationDate(), document.getParentFolder().getId());
+            return ResponseEntity.ok(docRes);
         } catch (AccountNotFoundException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
