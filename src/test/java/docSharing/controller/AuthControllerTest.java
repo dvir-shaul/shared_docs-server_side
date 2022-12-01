@@ -86,7 +86,7 @@ class AuthControllerTest {
     @Test
     void login_noEmailInDB_UNAUTHORIZED(){
         User loginUser = User.createUserForLoginTest("asaf3964@gmail.com","dvir1223");
-        assertEquals(authController.login(loginUser),ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ExceptionMessage.NO_ACCOUNT_IN_DATABASE + loginUser.getEmail()));
+        assertEquals(authController.login(loginUser),ResponseEntity.status(HttpStatus.FORBIDDEN).body(ExceptionMessage.NO_ACCOUNT_IN_DATABASE + loginUser.getEmail()));
     }
 
     @Test

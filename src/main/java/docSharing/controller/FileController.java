@@ -74,11 +74,17 @@ class FileController {
 
     @RequestMapping(value = "folder/rename", method = RequestMethod.PATCH)
     public ResponseEntity<?> renameFolder(@RequestParam Long folderId, @RequestParam String name, @RequestAttribute Long userId) {
+        if(name==null || name.length()==0 ){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ExceptionMessage.VALIDATION_FAILED+"name is empty/null");
+        }
         return ac.rename(folderId, name, Folder.class);
     }
 
     @RequestMapping(value = "document/rename", method = RequestMethod.PATCH)
     public ResponseEntity<?> renameDocument(@RequestParam Long documentId, @RequestParam String name, @RequestAttribute Long userId) {
+        if(name==null || name.length()==0 ){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ExceptionMessage.VALIDATION_FAILED+"name is empty/null");
+        }
         return ac.rename(documentId, name, Document.class);
     }
 
