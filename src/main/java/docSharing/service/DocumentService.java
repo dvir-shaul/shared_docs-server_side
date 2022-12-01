@@ -4,9 +4,9 @@ import docSharing.entity.*;
 import docSharing.repository.*;
 import docSharing.requests.Method;
 import docSharing.utils.ExceptionMessage;
-import docSharing.utils.debounce.Callback;
 import docSharing.utils.debounce.Debouncer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import javax.security.auth.login.AccountNotFoundException;
@@ -30,11 +30,17 @@ public class DocumentService implements ServiceInterface {
     @Autowired
     LogRepository logRepository;
 
-
-
     Debouncer debouncer = new Debouncer<>(new SendLogsToDatabase(chainedLogs), 5000);
 
-
+    @Scheduled(fixedDelay = 10000)
+    public void updateDatabaseWithNewContent() {
+        for (Map.Entry<Long, String> entry : documentsContentLiveChanges.entrySet()) {
+            if (!entry.getValue().equals(databaseDocumentsCurrentContent.get(entry.getKey()))) {
+                documentRepository.updateContent(entry.getValue(), entry.getKey());
+                databaseDocumentsCurrentContent.put(entry.getKey(), entry.getValue());
+            }
+        }
+    }
 
     /**
      * This function called every time we get a new log,
@@ -67,7 +73,7 @@ public class DocumentService implements ServiceInterface {
                     Log firstPartOfLog = Log.copy(_log);
                     firstPartOfLog.setData(_log.getData().substring(0, log.getOffset()));
                     firstPartOfLog.setLastEditDate(_log.getCreationDate());
-                    System.out.println("firstLog" +firstPartOfLog);
+                    System.out.println("firstLog" + firstPartOfLog);
                     // store the first half in the database. for now just print it
                     firstPartOfLog.getUser().addLog(firstPartOfLog);
                     firstPartOfLog.getDocument().addLog(firstPartOfLog);
@@ -80,7 +86,7 @@ public class DocumentService implements ServiceInterface {
                     secondPartOfLog.setOffset(log.getOffset() + 1);
                     secondPartOfLog.setData(_log.getData().substring(log.getOffset()));
                     secondPartOfLog.setLastEditDate(_log.getCreationDate());
-                    System.out.println("secondLog" +secondPartOfLog);
+                    System.out.println("secondLog" + secondPartOfLog);
 
                     // firstPartLog.sendtoDB!!!!
                     tempLog = secondPartOfLog;
@@ -139,17 +145,17 @@ public class DocumentService implements ServiceInterface {
             documentsContentLiveChanges.put(log.getDocument().getId(), doc.getContent());
 
         }
-
+        // update document content string
         updateCurrentContentCache(log);
+
         Map<Long, Log> documentLogs = chainedLogs.get(log.getDocument().getId());
 
         if (documentLogs == null) {
             documentLogs = new HashMap<>();
             chainedLogs.put(log.getDocument().getId(), documentLogs);
         }
+        // update logs
         chainLogs(documentLogs, log);
-        System.out.println("documentLogs: "+documentLogs);
-        System.out.println("chainedLogs : "+ chainedLogs);
         updateLogsOffset(documentLogs, log);
     }
 
@@ -165,7 +171,7 @@ public class DocumentService implements ServiceInterface {
 //                log.setData(String.valueOf(documentsContentLiveChanges.get(log.getDocumentId()).charAt(log.getOffset())));
                 log.setData(String.valueOf(documentsContentLiveChanges.get(log.getDocument().getId()).charAt(log.getOffset())));
                 log.setLastEditDate(log.getCreationDate());
-                System.out.println("log" +log);
+                System.out.println("log" + log);
 
 //                documentsContentLiveChanges.put(log.getDocumentId(), truncateString(documentsContentLiveChanges.get(log.getDocumentId()), log));
                 documentsContentLiveChanges.put(log.getDocument().getId(), truncateString(documentsContentLiveChanges.get(log.getDocument().getId()), log));
@@ -198,21 +204,25 @@ public class DocumentService implements ServiceInterface {
             documentLogs.put(newLog.getUser().getId(), newLog);
             return;
         }
+
         Log currentLog = documentLogs.get(newLog.getUser().getId());
+        currentLog.setLastEditDate(newLog.getCreationDate());
+
+//        System.out.println("Is current log start point greater? " + (currentLog.getOffset() - 1 >= newLog.getOffset()));
+//        System.out.println("Is current log start point greater? " + (currentLog.getOffset() + currentLog.getData().length() + 1 <= newLog.getOffset()));
         // if the new log is not a sequel to current log, store the current one in the db and start a new one instead.
-        if ((currentLog.getOffset() - 1 >= newLog.getOffset() && currentLog.getOffset() + currentLog.getData().length() + 1 <= newLog.getOffset())) {
+        if ((currentLog.getOffset() - 1 >= newLog.getOffset() || currentLog.getOffset() + currentLog.getData().length() + 1 <= newLog.getOffset())) {
+            currentLog.getUser().addLog(currentLog);
+            currentLog.getDocument().addLog(currentLog);
+            logRepository.save(currentLog);
             documentLogs.put(currentLog.getUser().getId(), newLog);
             return;
         }
 
         // if the new log is in the middle of the current log, it must be concatenated.
-        if (!(currentLog.getOffset() - 1 >= newLog.getOffset() && currentLog.getOffset() + currentLog.getData().length() + 1 <= newLog.getOffset())) {
+        else {
             if (currentLog.getAction().equals("insert") && newLog.getAction().equals("delete")) {
-
                 currentLog.setData(truncateLogs(currentLog, newLog));
-                currentLog.setLastEditDate(newLog.getCreationDate());
-
-
                 // if the current log was attempting to delete and now we want to insert, push the delete and create a new log
             } else if (currentLog.getAction().equals("delete") && newLog.getAction().equals("insert")) {
                 currentLog.getUser().addLog(currentLog);
@@ -220,11 +230,11 @@ public class DocumentService implements ServiceInterface {
                 logRepository.save(currentLog); //TODO: save currentLog to db
                 documentLogs.put(currentLog.getUser().getId(), newLog);
                 return;
+
             } else if (newLog.getAction().equals(currentLog.getAction())) {
                 currentLog.setData(concatenateLogs(currentLog, newLog));
-                currentLog.setLastEditDate(newLog.getCreationDate());
             }
-            currentLog.setLastEditDate(newLog.getCreationDate());
+
             documentLogs.put(currentLog.getUser().getId(), currentLog);
         }
     }
@@ -331,7 +341,7 @@ public class DocumentService implements ServiceInterface {
      */
     public String getContent(Long documentId) {
         String content = documentsContentLiveChanges.get(documentId);
-        if (content == null) {
+        if (content == null || content.length() == 0) {
             String databaseContent = documentRepository.getContentFromDocument(documentId);
             documentsContentLiveChanges.put(documentId, databaseContent);
             databaseDocumentsCurrentContent.put(documentId, databaseContent);

@@ -93,7 +93,7 @@ public class UserService {
         for (UserDocument userDocument :
                 ud) {
             if(userDocument.getPermission()!=Permission.ADMIN)
-            userDocumentResList.add(new FileRes(userDocument.getDocument().getName(),userDocument.getDocument().getId(), Type.DOCUMENT, userDocument.getPermission(), userDocument.getUser().getEmail()));
+            userDocumentResList.add(new FileRes(userDocument.getDocument().getName(),userDocument.getDocument().getId(), Type.DOCUMENT, userDocument.getPermission(), userDocument.getDocument().getUser().getEmail()));
         }
         return userDocumentResList;
     }
