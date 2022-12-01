@@ -73,6 +73,12 @@ public class FolderService implements ServiceInterface {
         return folderRepository.findAllByParentFolderIdAndUserId(parentFolder, user);
     }
 
+    /**
+     *
+     * @param userId - user's relation folders
+     * @return list of folders
+     * @throws AccountNotFoundException -
+     */
     public List<Folder> getAllWhereParentFolderIsNull(Long userId) throws AccountNotFoundException {
         logger.info("in FolderService -> getAllWhereParentFolderIsNull");
 
@@ -159,7 +165,12 @@ public class FolderService implements ServiceInterface {
         return folderRepository.updateParentFolderId(newParentFolder, id);
     }
 
-
+    /**
+     * newParentIsChild is  boolean method that check for relocate, deny a folder relocation to inner folder.
+     * @param targetFolder - the new folder location.
+     * @param destinationFolder - the folder we change the location.
+     * @return - true if a folder is inner folder.
+     */
     private boolean newParentIsChild(Folder targetFolder, Folder destinationFolder) {
         logger.info("in FolderService -> newParentIsChild");
         if (destinationFolder.getFolders().isEmpty()) {
@@ -177,6 +188,10 @@ public class FolderService implements ServiceInterface {
         return false;
     }
 
+    /**
+     * delete function called when user want to delete specific folder and all its content
+     * @param folderId - folder to delete.
+     */
     public void delete(Long folderId) {
         logger.info("in FolderService -> delete");
         Folder folder = folderRepository.findById(folderId).get();
@@ -190,6 +205,11 @@ public class FolderService implements ServiceInterface {
         folderRepository.delete(folder);
     }
 
+    /**
+     * createRootFolders is a function that called when a user is signed in,
+     * idea is that a user will have the basics folders and from those he will navigate through his own files.
+     * @param user - given user.
+     */
     public void createRootFolders(User user) {
         logger.info("in FolderService -> createRootFolders");
         Folder general = Folder.createFolder("General", null, user);

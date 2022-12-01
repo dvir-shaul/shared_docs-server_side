@@ -447,6 +447,12 @@ public class DocumentService implements ServiceInterface {
         documentRepository.deleteById(docId);
     }
 
+    /**
+     *
+     * @param userId -
+     * @return -
+     * @throws AccountNotFoundException-
+     */
     public List<Document> getAllWhereParentFolderIsNull(Long userId) throws AccountNotFoundException {
         logger.info("in DocumentService -> getAllWhereParentFolderIsNull");
         logger.debug("userId: "+userId);
@@ -459,6 +465,12 @@ public class DocumentService implements ServiceInterface {
         return documentRepository.findAllByParentFolderIsNull(user);
     }
 
+    /**
+     *
+     * @param documentId -
+     * @return -
+     * @throws AccountNotFoundException -
+     */
     public List<UserDocument> getAllUsersInDocument(Long documentId) throws AccountNotFoundException {
         logger.info("in DocumentService -> getAllUsersInDocument");
 
@@ -470,6 +482,13 @@ public class DocumentService implements ServiceInterface {
         return userDocumentRepository.findAllUsersInDocument(document);
     }
 
+    /**
+     *
+     * @param userId -
+     * @param documentId -
+     * @return -
+     * @throws AccountNotFoundException -
+     */
     public Permission getUserPermissionInDocument(Long userId, Long documentId) throws AccountNotFoundException {
         logger.info("in DocumentService -> getUserPermissionInDocument");
         logger.debug("userId: "+ userId+", documentId: "+documentId);
@@ -490,6 +509,11 @@ public class DocumentService implements ServiceInterface {
         return userDocument.get().getPermission();
     }
 
+    /**
+     *
+     * @param userDocument -
+     * @return - 
+     */
     public UserDocument saveUserInDocument(UserDocument userDocument){
         logger.info("in DocumentService -> saveUserInDocument");
         return userDocumentRepository.save(userDocument);

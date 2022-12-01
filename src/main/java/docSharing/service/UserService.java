@@ -115,6 +115,11 @@ public class UserService {
         return userDocumentResList;
     }
 
+    /**
+     *
+     * @param userId -
+     * @return -
+     */
     public UserRes getUser(Long userId) {
         logger.info("in UserService -> getUser");
 
