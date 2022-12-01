@@ -5,7 +5,6 @@ import docSharing.requests.*;
 import docSharing.response.FileRes;
 import docSharing.response.ExportDoc;
 import docSharing.response.JoinRes;
-import docSharing.service.AuthService;
 import docSharing.service.DocumentService;
 import docSharing.service.FolderService;
 import docSharing.service.UserService;
@@ -241,10 +240,10 @@ class FileController {
             }
             Folder parentFolder = generalItem.getParentFolder();
             if(type.equals(Type.FOLDER)){
-                path.add(0, new FileRes(generalItem.getName(), generalItem.getId(), Type.FOLDER));
+                path.add(0, new FileRes(generalItem.getName(), generalItem.getId(), Type.FOLDER, Permission.ADMIN, generalItem.getUser().getEmail()));
             }
             while (parentFolder != null) {
-                path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER));
+                path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, generalItem.getUser().getEmail()));
                 parentFolder = parentFolder.getParentFolder();
             }
             return ResponseEntity.ok(path);

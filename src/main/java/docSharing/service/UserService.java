@@ -7,7 +7,8 @@ import docSharing.entity.UserDocument;
 import docSharing.repository.DocumentRepository;
 import docSharing.repository.UserDocumentRepository;
 import docSharing.repository.UserRepository;
-import docSharing.response.UserDocumentRes;
+import docSharing.requests.Type;
+import docSharing.response.FileRes;
 import docSharing.response.UserRes;
 import docSharing.utils.ExceptionMessage;
 import org.apache.logging.log4j.LogManager;
@@ -98,19 +99,18 @@ public class UserService {
      * @param userId - user's id
      * @return list of UserDocument
      */
-    public List<UserDocumentRes> documentsOfUser(Long userId) {
+    public List<FileRes> documentsOfUser(Long userId) {
         logger.info("in UserService -> documentsOfUser");
-
         if (!userRepository.findById(userId).isPresent()) {
             logger.error("in UserService -> documentsOfUser --> "+ExceptionMessage.NO_ACCOUNT_IN_DATABASE );
             throw new IllegalArgumentException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
         }
         List<UserDocument> ud = userDocumentRepository.findByUser(userRepository.findById(userId).get());
-        List<UserDocumentRes> userDocumentResList = new ArrayList<>();
+        List<FileRes> userDocumentResList = new ArrayList<>();
         for (UserDocument userDocument :
                 ud) {
             if(userDocument.getPermission()!=Permission.ADMIN)
-            userDocumentResList.add(new UserDocumentRes(userDocument.getDocument().getId(), userDocument.getPermission()));
+            userDocumentResList.add(new FileRes(userDocument.getDocument().getName(),userDocument.getDocument().getId(), Type.DOCUMENT, userDocument.getPermission(), userDocument.getUser().getEmail()));
         }
         return userDocumentResList;
     }

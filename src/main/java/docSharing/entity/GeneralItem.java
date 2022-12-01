@@ -1,6 +1,8 @@
 package docSharing.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import docSharing.utils.ExceptionMessage;
 import net.bytebuddy.implementation.bytecode.Throw;
 import org.hibernate.annotations.GenericGenerator;
@@ -21,11 +23,13 @@ public class GeneralItem {
     @Column(name = "created_on", nullable = false, updatable = false)
     private LocalDate creationDate;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JsonBackReference
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JsonBackReference
+    @ManyToOne(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "parent_folder_id")
     @JsonIgnore
     private Folder parentFolder;
@@ -65,7 +69,7 @@ public class GeneralItem {
     }
 
     public void setUser(User user) {
-        if(user==null)
+        if (user == null)
             throw new IllegalArgumentException("user must not be null");
         this.user = user;
     }

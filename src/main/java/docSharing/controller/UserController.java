@@ -4,7 +4,6 @@ import docSharing.entity.Document;
 import docSharing.entity.Permission;
 import docSharing.entity.User;
 import docSharing.entity.UserDocument;
-import docSharing.requests.UpdatePermissionReq;
 import docSharing.response.UsersInDocRes;
 import docSharing.service.DocumentService;
 import docSharing.service.EmailService;
@@ -23,6 +22,7 @@ import javax.security.auth.login.AccountNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -99,11 +99,14 @@ public class UserController {
                     unregisteredUsers.add(email);
                     continue;
                 }
-                Document document = documentService.findById(documentId);
-                userService.updatePermission(documentId, user.getId(), Permission.VIEWER);
-                String link = "http://localhost:3000/document/share/documentId=" + documentId + "&userId=" + user.getId();
-                String body = Share.buildEmail(user.getName(), link, document.getName());
-                emailService.send(user.getEmail(), body, "You have been invited to view the document");
+                Permission permission=documentService.getUserPermissionInDocument(user.getId(), documentId);
+                if(permission.equals(Permission.UNAUTORIZED)) {
+                    Document document = documentService.findById(documentId);
+                    userService.updatePermission(documentId, user.getId(), Permission.VIEWER);
+                    String link = "http://localhost:3000/document/share/documentId=" + documentId + "&userId=" + user.getId();
+                    String body = Share.buildEmail(user.getName(), link, document.getName());
+                    emailService.send(user.getEmail(), body, "You have been invited to view the document");
+                }
             }
         } catch (AccountNotFoundException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -128,7 +131,7 @@ public class UserController {
         }
     }
 
-    @RequestMapping(value = "documents", method = RequestMethod.GET)
+    @RequestMapping(value = "sharedDocuments", method = RequestMethod.GET)
     public ResponseEntity<?> getDocuments(@RequestAttribute Long userId) {
         logger.info("in UserController -> getDocuments");
 

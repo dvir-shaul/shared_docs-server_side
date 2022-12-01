@@ -1,5 +1,6 @@
 package docSharing.response;
 
+import docSharing.entity.Permission;
 import docSharing.requests.Type;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -14,4 +15,6 @@ public class FileRes {
     private String name;
     private Long id;
     private Type type;
+    private Permission permission;
+    private String adminEmail;
 }

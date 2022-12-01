@@ -1,5 +1,8 @@
 package docSharing.utils.debounce;
 
-public interface Callback<T> {
-    public void call(T t);
+import docSharing.entity.Log;
+import docSharing.repository.LogRepository;
+
+public interface Callback {
+    public void call(Log log, LogRepository logRepository);
 }

@@ -1,12 +1,10 @@
 package docSharing.service;
 
 import docSharing.entity.*;
-import docSharing.repository.DocumentRepository;
-import docSharing.repository.FolderRepository;
-import docSharing.repository.UserDocumentRepository;
-import docSharing.repository.UserRepository;
+import docSharing.repository.*;
 import docSharing.requests.Method;
 import docSharing.utils.ExceptionMessage;
+import docSharing.utils.debounce.Callback;
 import docSharing.utils.debounce.Debouncer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,12 +20,9 @@ public class DocumentService implements ServiceInterface {
 
     static Map<Long, String> documentsContentLiveChanges = new HashMap<>(); // current content in cache
     static Map<Long, String> databaseDocumentsCurrentContent = new HashMap<>(); // current content in database
-    static Map<Long, Log> chainedLogs = new HashMap<>(); // logs history until storing to database
-    //       userId, changesList
+    //<docId,<userId, log>>
+    static Map<Long, Map<Long, Log>> chainedLogs = new HashMap<>(); // logs history until storing to database
     static Map<Long, Set<User>> onlineUsersPerDoc = new HashMap<>();
-
-    Debouncer debouncer = new Debouncer<>(new SendLogsToDatabase(chainedLogs), 5000);
-
     @Autowired
     DocumentRepository documentRepository;
     @Autowired
@@ -36,22 +31,31 @@ public class DocumentService implements ServiceInterface {
     UserDocumentRepository userDocumentRepository;
     @Autowired
     UserRepository userRepository;
+    @Autowired
+    LogRepository logRepository;
+
+
+
+    Debouncer debouncer = new Debouncer<>(new SendLogsToDatabase(chainedLogs), 5000);
+
+
 
     /**
      * This function called every time we get a new log,
      * checks if a new data that was written to document was written before
      * the logs that are online in chainedLogs map, if it ws before we will update the offsets accordingly.
+     *
      * @param log - changes from
      */
-    private void updateLogsOffset(Log log) {
+    private void updateLogsOffset(Map<Long, Log> documentLogs, Log log) {
         logger.info("in DocumentService -> updateLogsOffset");
 
-        chainedLogs.replaceAll((userId, _log) -> {
+        documentLogs.replaceAll((userId, _log) -> {
             // create a copy of the log in case we need to modify it
             Log tempLog = Log.copy(_log);
 
             // make sure not to change the current user's log
-            if (log.getUserId() != userId) {
+            if (log.getUser().getId() != userId) {
 
                 // if the offset is before other logs' offset, decrease its offset by the length of the log
                 if (log.getAction().equals("delete") && log.getOffset() <= _log.getOffset()) {
@@ -68,14 +72,21 @@ public class DocumentService implements ServiceInterface {
                     // cut the _log to half
                     Log firstPartOfLog = Log.copy(_log);
                     firstPartOfLog.setData(_log.getData().substring(0, log.getOffset()));
+                    firstPartOfLog.setLastEditDate(_log.getCreationDate());
+                    System.out.println("firstLog" +firstPartOfLog);
                     // store the first half in the database. for now just print it
-                    System.out.println(firstPartOfLog);
+                    firstPartOfLog.getUser().addLog(firstPartOfLog);
+                    firstPartOfLog.getDocument().addLog(firstPartOfLog);
+                    logRepository.save(firstPartOfLog);
+                    //TODO: save firstPartOfLog to db
 
                     // keep the second half in the cache
                     // there's not a real need to store it in a different log, but for simplicity...
                     Log secondPartOfLog = Log.copy(_log);
                     secondPartOfLog.setOffset(log.getOffset() + 1);
                     secondPartOfLog.setData(_log.getData().substring(log.getOffset()));
+                    secondPartOfLog.setLastEditDate(_log.getCreationDate());
+                    System.out.println("secondLog" +secondPartOfLog);
 
                     // firstPartLog.sendtoDB!!!!
                     tempLog = secondPartOfLog;
@@ -125,20 +136,30 @@ public class DocumentService implements ServiceInterface {
         logger.info("in DocumentService -> updateContent");
 
 
-        debouncer.call(log.getUserId());
+        debouncer.call(log, logRepository);
 
-        if (!documentRepository.findById(log.getDocumentId()).isPresent()) {
-            throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString() + log.getDocumentId());
+        if (!documentRepository.findById(log.getDocument().getId()).isPresent()) {
+            throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString() + log.getDocument().getId());
         }
-        if (!documentsContentLiveChanges.containsKey(log.getDocumentId())) {
-            Document doc = documentRepository.findById(log.getDocumentId()).get();
+        if (!documentsContentLiveChanges.containsKey(log.getDocument().getId())) {
+            Document doc = documentRepository.findById(log.getDocument().getId()).get();
+
             if (doc.getContent() == null) doc.setContent("");
-            documentsContentLiveChanges.put(log.getDocumentId(), doc.getContent());
+            documentsContentLiveChanges.put(log.getDocument().getId(), doc.getContent());
+
         }
 
         updateCurrentContentCache(log);
-        chainLogs(chainedLogs.get(log.getUserId()), log);
-        updateLogsOffset(log);
+        Map<Long, Log> documentLogs = chainedLogs.get(log.getDocument().getId());
+
+        if (documentLogs == null) {
+            documentLogs = new HashMap<>();
+            chainedLogs.put(log.getDocument().getId(), documentLogs);
+        }
+        chainLogs(documentLogs, log);
+        System.out.println("documentLogs: "+documentLogs);
+        System.out.println("chainedLogs : "+ chainedLogs);
+        updateLogsOffset(documentLogs, log);
     }
 
     /**
@@ -151,11 +172,18 @@ public class DocumentService implements ServiceInterface {
         logger.debug(log.getAction());
         switch (log.getAction()) {
             case "delete":
-                log.setData(String.valueOf(documentsContentLiveChanges.get(log.getDocumentId()).charAt(log.getOffset())));
-                documentsContentLiveChanges.put(log.getDocumentId(), truncateString(documentsContentLiveChanges.get(log.getDocumentId()), log));
+//                log.setData(String.valueOf(documentsContentLiveChanges.get(log.getDocumentId()).charAt(log.getOffset())));
+                log.setData(String.valueOf(documentsContentLiveChanges.get(log.getDocument().getId()).charAt(log.getOffset())));
+                log.setLastEditDate(log.getCreationDate());
+                System.out.println("log" +log);
+
+//                documentsContentLiveChanges.put(log.getDocumentId(), truncateString(documentsContentLiveChanges.get(log.getDocumentId()), log));
+                documentsContentLiveChanges.put(log.getDocument().getId(), truncateString(documentsContentLiveChanges.get(log.getDocument().getId()), log));
+
                 break;
             case "insert":
-                documentsContentLiveChanges.put(log.getDocumentId(), concatenateStrings(documentsContentLiveChanges.get(log.getDocumentId()), log));
+//                documentsContentLiveChanges.put(log.getDocumentId(), concatenateStrings(documentsContentLiveChanges.get(log.getDocumentId()), log));
+                documentsContentLiveChanges.put(log.getDocument().getId(), concatenateStrings(documentsContentLiveChanges.get(log.getDocument().getId()), log));
                 break;
         }
     }
@@ -169,36 +197,45 @@ public class DocumentService implements ServiceInterface {
      * 3. if the current log was attempting to delete and how we want to insert,push the deleted one and create a new log
      * 4. if the new log is in the middle of the current log, it must be concatenated.
      * saves the concatenated logs to chainedLogs map.
-     * @param currentLog - the log that is chainedLogs maps.
      * @param newLog - new data that needed to chain to old log.
      */
-    private void chainLogs(Log currentLog, Log newLog) {
+    private void chainLogs(Map<Long, Log> documentLogs, Log newLog) {
         logger.info("in DocumentService -> chainLogs");
 
+
         // if such a log doesn't exist in the cache, create a new entry for it in the map
-        if (!chainedLogs.containsKey(newLog.getUserId())) {
-            chainedLogs.put(newLog.getUserId(), newLog);
+        if (!documentLogs.containsKey(newLog.getUser().getId())) {
+            documentLogs.put(newLog.getUser().getId(), newLog);
+            return;
+        }
+        Log currentLog = documentLogs.get(newLog.getUser().getId());
+        // if the new log is not a sequel to current log, store the current one in the db and start a new one instead.
+        if ((currentLog.getOffset() - 1 >= newLog.getOffset() && currentLog.getOffset() + currentLog.getData().length() + 1 <= newLog.getOffset())) {
+            documentLogs.put(currentLog.getUser().getId(), newLog);
             return;
         }
 
-        // if the new log is not a sequel to current log, store the current one in the db and start a new one instead.
-        if ((currentLog.getOffset() - 1 >= newLog.getOffset() && currentLog.getOffset() + currentLog.getData().length() + 1 <= newLog.getOffset()))
-            chainedLogs.put(currentLog.getUserId(), newLog);
-
-        // if the current log was attempting to delete and how we want to insert, push the delete and create a new log
-        if (currentLog.getAction().equals("delete") && newLog.getAction().equals("insert")) {
-            chainedLogs.put(currentLog.getUserId(), newLog);
-        }
-
         // if the new log is in the middle of the current log, it must be concatenated.
-        else {
-            if (newLog.getAction().equals("delete")) {
+        if (!(currentLog.getOffset() - 1 >= newLog.getOffset() && currentLog.getOffset() + currentLog.getData().length() + 1 <= newLog.getOffset())) {
+            if (currentLog.getAction().equals("insert") && newLog.getAction().equals("delete")) {
+
                 currentLog.setData(truncateLogs(currentLog, newLog));
-            } else if (newLog.getAction().equals("insert")) {
+                currentLog.setLastEditDate(newLog.getCreationDate());
+
+
+                // if the current log was attempting to delete and now we want to insert, push the delete and create a new log
+            } else if (currentLog.getAction().equals("delete") && newLog.getAction().equals("insert")) {
+                currentLog.getUser().addLog(currentLog);
+                currentLog.getDocument().addLog(currentLog);
+                logRepository.save(currentLog); //TODO: save currentLog to db
+                documentLogs.put(currentLog.getUser().getId(), newLog);
+                return;
+            } else if (newLog.getAction().equals(currentLog.getAction())) {
                 currentLog.setData(concatenateLogs(currentLog, newLog));
+                currentLog.setLastEditDate(newLog.getCreationDate());
             }
-            // change to concatenateLogs
-            chainedLogs.put(currentLog.getUserId(), currentLog);
+            currentLog.setLastEditDate(newLog.getCreationDate());
+            documentLogs.put(currentLog.getUser().getId(), currentLog);
         }
     }
 
@@ -362,7 +399,8 @@ public class DocumentService implements ServiceInterface {
     private String concatenateLogs(Log currentLog, Log newLog) {
         logger.info("in DocumentService -> concatenateLogs");
 
-        newLog.setOffset(newLog.getOffset() - (currentLog.getOffset()));
+        int diff = newLog.getOffset() - currentLog.getOffset() < 0 ? 0 : newLog.getOffset() - currentLog.getOffset();
+        newLog.setOffset(diff);
         if (currentLog.getData() == null) currentLog.setData(""); // CONSULT: shouldn't happen, so why did I write it?
         return concatenateStrings(currentLog.getData(), newLog);
     }
@@ -514,7 +552,7 @@ public class DocumentService implements ServiceInterface {
      * @param userDocument -
      * @return -
      */
-    public UserDocument saveUserInDocument(UserDocument userDocument){
+    public UserDocument saveUserInDocument(UserDocument userDocument) {
         logger.info("in DocumentService -> saveUserInDocument");
         return userDocumentRepository.save(userDocument);
     }
