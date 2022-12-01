@@ -21,16 +21,19 @@ public class SendLogsToDatabase implements Callback {
 //    LogRepository logRepository;
 
     @Override
-    public void call(Log log,LogRepository logRepository) {
+    public void call(Log log, LogRepository logRepository) {
 
         logsMap.get(log.getDocument().getId()).get(log.getUser().getId()).setLastEditDate(log.getLastEditDate());
-       logRepository.save(logsMap.get(log.getDocument().getId()).get(log.getUser().getId()));
+//       logRepository.save(logsMap.get(log.getDocument().getId()).get(log.getUser().getId()));
         // if the log's data is not empty or null, store it in the database
-        System.out.println("data: "+logsMap.get(log.getDocument().getId()).get(log.getUser().getId()).getData());
-        if (logsMap.get(log.getDocument().getId()).get(log.getUser().getId()).getData() != null || logsMap.get(log.getDocument().getId()).get(log.getUser().getId()).getData().length() > 0)
-            System.out.println("logsMap: "+logsMap);
-            // finally, remove the log from the map and clear its cache
-            //  logsMap.get(log.getDocument().getId()).remove(log.getUser().getId());
+        System.out.println("data: " + logsMap.get(log.getDocument().getId()).get(log.getUser().getId()).getData());
+        if (logsMap.get(log.getDocument().getId()).get(log.getUser().getId()).getData() != null || logsMap.get(log.getDocument().getId()).get(log.getUser().getId()).getData().length() > 0){
+            System.out.println("logsMap: " + logsMap);
+            logsMap.get(log.getDocument().getId()).remove(log.getUser().getId());
+        }
+
+        // finally, remove the log from the map and clear its cache
+        //  logsMap.get(log.getDocument().getId()).remove(log.getUser().getId());
 
     }
 }

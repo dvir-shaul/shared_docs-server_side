@@ -23,12 +23,10 @@ public class GeneralItem {
     @Column(name = "created_on", nullable = false, updatable = false)
     private LocalDate creationDate;
 
-    @JsonBackReference
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @JsonBackReference
     @ManyToOne(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "parent_folder_id")
     @JsonIgnore

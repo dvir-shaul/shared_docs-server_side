@@ -31,11 +31,9 @@ public class Log {
     private Integer offset;
     private String action;
     private String data;
-    @JsonBackReference
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-    @JsonBackReference
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "document_id", nullable = false)
     private Document document;
