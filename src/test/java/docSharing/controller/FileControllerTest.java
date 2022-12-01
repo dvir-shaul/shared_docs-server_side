@@ -38,13 +38,14 @@ class FileControllerTest {
     DocumentRepository documentRepository;
     @Autowired
     FolderRepository folderRepository;
+
     @BeforeEach
-    void setup(){
+    void setup() {
         userRepository.deleteAll();
         folderRepository.deleteAll();
-        User user = userRepository.save(User.createUser("testUser@gmail.com", "2222222","tester"));
+        User user = userRepository.save(User.createUser("testUser@gmail.com", "2222222", "tester"));
         long userId = userRepository.findByEmail("testUser@gmail.com").get().getId();
-        userRepository.updateIsActivated(true,userId);
+        userRepository.updateIsActivated(true, userId);
         Folder folder = new Folder();
         folder.setName("folder");
         folder.setUser(user);
@@ -53,31 +54,34 @@ class FileControllerTest {
 
     @Test
     void getAll_successfully() throws AccountNotFoundException {
-        ResponseEntity<List<FileRes>> list = fileController.getAll(null,userRepository.findByEmail("testUser@gmail.com").get().getId() );
+        ResponseEntity<List<FileRes>> list = fileController.getAll(null, userRepository.findByEmail("testUser@gmail.com").get().getId());
         assertFalse(Objects.requireNonNull(list.getBody()).isEmpty());
     }
+
     @Test
     void getAll_noParentFolderInDB_successfully() throws AccountNotFoundException {
-        assertThrows(RuntimeException.class,()->fileController.getAll(240000L,userRepository.findByEmail("testUser@gmail.com").get().getId()));
+        assertThrows(RuntimeException.class, () -> fileController.getAll(240000L, userRepository.findByEmail("testUser@gmail.com").get().getId()));
     }
+
     @Test
     void getAll_noUserInDB_RuntimeException() throws AccountNotFoundException {
-        assertThrows(RuntimeException.class,()->fileController.getAll(null,userRepository.findByEmail("tes213tUser@gmail.com").get().getId()));
+        assertThrows(RuntimeException.class, () -> fileController.getAll(null, userRepository.findByEmail("tes213tUser@gmail.com").get().getId()));
     }
 
     @Test
     void createFolder_successFromNullParent() {
-        assertEquals(fileController.createFolder(null,"f1_folder",userRepository.findByEmail("testUser@gmail.com").get().getId()).toString().substring(1,4),"200");
+        assertEquals(fileController.createFolder(null, "f1_folder", userRepository.findByEmail("testUser@gmail.com").get().getId()).toString().substring(1, 4), "200");
     }
-//    @Test
+
+    //    @Test
 //    void createFolder_successWithIdParent() { // nested exception
 //        Folder f = folderRepository.findByNameAndUser("folder",userRepository.findByEmail("testUser@gmail.com").get());
 //        assertEquals(fileController.createFolder(f.getId(),"f1_folder",userRepository.findByEmail("testUser@gmail.com").get().getId()).toString().substring(1,4),"200");
 //    }
     @Test
     void createFolder_badInputFolderName_IllegalArgumentException() {
-        Folder f = folderRepository.findByNameAndUser("folder",userRepository.findByEmail("testUser@gmail.com").get());
-        assertThrows(IllegalArgumentException.class,()->fileController.createFolder(f.getId(),"",userRepository.findByEmail("testUser@gmail.com").get().getId()),"bad folder name input dont throw IllegalArgumentException");
+        Folder f = folderRepository.findByNameAndUser("folder", userRepository.findByEmail("testUser@gmail.com").get());
+        assertThrows(IllegalArgumentException.class, () -> fileController.createFolder(f.getId(), "", userRepository.findByEmail("testUser@gmail.com").get().getId()), "bad folder name input dont throw IllegalArgumentException");
     }
 
 
@@ -91,23 +95,26 @@ class FileControllerTest {
 
     @Test
     void createDocument_noName_BAD_REQUEST() {
-        Folder f = folderRepository.findByNameAndUser("folder",userRepository.findByEmail("testUser@gmail.com").get());
-        assertEquals(fileController.createDocument(f.getId(),"","",userRepository.findByEmail("testUser@gmail.com").get().getId()),
+        Folder f = folderRepository.findByNameAndUser("folder", userRepository.findByEmail("testUser@gmail.com").get());
+        assertEquals(fileController.createDocument(f.getId(), "", "", userRepository.findByEmail("testUser@gmail.com").get().getId()),
                 ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Could not approve the given information: "));
     }
+
     @Test
     void renameFolder_newName_success() {
-        Folder f = folderRepository.findByNameAndUser("folder",userRepository.findByEmail("testUser@gmail.com").get());
-        assertEquals(fileController.renameFolder(f.getId(),"newName",userRepository.findByEmail("testUser@gmail.com").get().getId()).toString().substring(1,4),
+        Folder f = folderRepository.findByNameAndUser("folder", userRepository.findByEmail("testUser@gmail.com").get());
+        assertEquals(fileController.renameFolder(f.getId(), "newName", userRepository.findByEmail("testUser@gmail.com").get().getId()).toString().substring(1, 4),
                 "200");
-        assertEquals(folderRepository.findByNameAndUser("newName",userRepository.findByEmail("testUser@gmail.com").get()).getName(),"newName");
+        assertEquals(folderRepository.findByNameAndUser("newName", userRepository.findByEmail("testUser@gmail.com").get()).getName(), "newName");
     }
+
     @Test
     void renameFolder_noName_BAD_REQUEST() {
-        Folder f = folderRepository.findByNameAndUser("folder",userRepository.findByEmail("testUser@gmail.com").get());
-        assertEquals(fileController.renameFolder(f.getId(),"",userRepository.findByEmail("testUser@gmail.com").get().getId()).toString(),
-                ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ExceptionMessage.VALIDATION_FAILED+"name is empty/null").toString());
+        Folder f = folderRepository.findByNameAndUser("folder", userRepository.findByEmail("testUser@gmail.com").get());
+        assertEquals(fileController.renameFolder(f.getId(), "", userRepository.findByEmail("testUser@gmail.com").get().getId()).toString(),
+                ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ExceptionMessage.VALIDATION_FAILED + "name is empty/null").toString());
     }
+
     @Test
     void renameDocument_newName_success() {
         //org.springframework.dao.InvalidDataAccessApiUsageException: detached entity passed to persist: docSharing.entity.Folder;
@@ -140,110 +147,111 @@ class FileControllerTest {
 //        assertEquals(fileController.deleteFolder(folder.getId(),userRepository.findByEmail("testUser@gmail.com").get().getId()).toString().substring(1,4),
 //                "200");
     }
-    @Test
-    void deleteDocument_givenDoc_success() {
-        User user = userRepository.findByEmail("testUser@gmail.com").get();
-        Folder folder = new Folder();
-        folder.setName("folder");
-        folder.setUser(user);
-        Document document = Document.createDocument(user,"newDoc",folder,"hey");
-        folder.addDocument(document);
-        folderRepository.save(folder);
-        documentRepository.save(document);
-        assertEquals(fileController.deleteDocument(document.getId(),userRepository.findByEmail("testUser@gmail.com").get().getId()).toString().substring(1,4),
-                "200");
-    }
-
-    @Test
-    void relocate() {
-    }
-
-
-    @Test
-    void export() {
-    }
-
-    @Test
-    void getPath() {
-    }
-    @Test
-    void documentExists_wrongValues_NoAccountInDatabase() {
-        User user = userRepository.findByEmail("testUser@gmail.com").get();
-        Folder folder = new Folder();
-        folder.setName("folder");
-        folder.setUser(user);
-        Document document = Document.createDocument(user,"newDoc",folder,"hey");
-        folder.addDocument(document);
-        folderRepository.save(folder);
-        documentRepository.save(document);
-        assertEquals(fileController.documentExists(documentRepository.findByNameAndUser(document.getName(),document.getUser()).getId()+24,user.getId()+15),
-                ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ExceptionMessage.NO_DOCUMENT_IN_DATABASE.toString()));
-    }
-    @Test
-    void documentExists_goodValues_success() {
-        User user = userRepository.findByEmail("testUser@gmail.com").get();
-        Folder folder = new Folder();
-        folder.setName("folder");
-        folder.setUser(user);
-        Document document = Document.createDocument(user,"newDoc",folder,"hey");
-        folder.addDocument(document);
-        folderRepository.save(folder);
-        documentRepository.save(document);
-        assertEquals(fileController.documentExists(documentRepository.findByNameAndUser(document.getName(),document.getUser()).getId(),user.getId()).toString().substring(1,4),
-                "200");
-    }
-    @Test
-    void getUser_WrongValues_NoAccountInDatabase() {
-        User user = userRepository.findByEmail("testUser@gmail.com").get();
-        Folder folder = new Folder();
-        folder.setName("folder");
-        folder.setUser(user);
-        Document document = Document.createDocument(user,"newDoc",folder,"hey");
-        folder.addDocument(document);
-        folderRepository.save(folder);
-        documentRepository.save(document);
-        assertEquals(fileController.getUser(documentRepository.findByNameAndUser(document.getName(),document.getUser()).getId(),user.getId()+15).getBody(),
-                ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
-    }
-    @Test
-    void getUser_goodValues_success() {
-        User user = userRepository.findByEmail("testUser@gmail.com").get();
-        Folder folder = new Folder();
-        folder.setName("folder");
-        folder.setUser(user);
-        Document document = Document.createDocument(user,"newDoc",folder,"hey");
-        folder.addDocument(document);
-        folderRepository.save(folder);
-        documentRepository.save(document);
-        JoinRes joinRes = (JoinRes) fileController.getUser(documentRepository.findByNameAndUser(document.getName(),document.getUser()).getId(),user.getId()).getBody();
-        assertEquals(joinRes.getUserId(),user.getId());
-    }
-
-    @Test
-    void getContent_fromDoc_success() {
-        User user = userRepository.findByEmail("testUser@gmail.com").get();
-        Folder folder = new Folder();
-        folder.setName("folder");
-        folder.setUser(user);
-        Document document = Document.createDocument(user,"newDoc",folder,"hey");
-        folder.addDocument(document);
-        folderRepository.save(folder);
-        documentRepository.save(document);
-        assertEquals(fileController.getContent(documentRepository.findByNameAndUser(document.getName(),document.getUser()).getId(), user.getId()).getBody(),"hey");
-    }
-    @Test
-    void getContent_wrongDoc_nullReturn() {
-        User user = userRepository.findByEmail("testUser@gmail.com").get();
-        Folder folder = new Folder();
-        folder.setName("folder");
-        folder.setUser(user);
-        Document document = Document.createDocument(user,"newDoc",folder,"hey");
-        folder.addDocument(document);
-        folderRepository.save(folder);
-        documentRepository.save(document);
-        assertNull(fileController.getContent(documentRepository.findByNameAndUser(document.getName(), document.getUser()).getId() + 4, user.getId()).getBody());
-    }
 }
+//    @Test
+//    void deleteDocument_givenDoc_success() {
+//        User user = userRepository.findByEmail("testUser@gmail.com").get();
+//        Folder folder = new Folder();
+//        folder.setName("folder");
+//        folder.setUser(user);
+//        Document document = Document.createDocument(user,"newDoc",folder,"hey");
+//        folder.addDocument(document);
+//        folderRepository.save(folder);
+//        documentRepository.save(document);
+//        assertEquals(fileController.deleteDocument(document.getId(),userRepository.findByEmail("testUser@gmail.com").get().getId()).toString().substring(1,4),
+//                "200");
+//    }
+
+//    @Test
+//    void relocate() {
+//    }
 
 
+//    @Test
+//    void export() {
+//    }
 
+//    @Test
+//    void getPath() {
+//    }
+//    @Test
+//    void documentExists_wrongValues_NoAccountInDatabase() {
+//        User user = userRepository.findByEmail("testUser@gmail.com").get();
+//        Folder folder = new Folder();
+//        folder.setName("folder");
+//        folder.setUser(user);
+//        Document document = Document.createDocument(user,"newDoc",folder,"hey");
+//        folder.addDocument(document);
+//        folderRepository.save(folder);
+//        documentRepository.save(document);
+//        assertEquals(fileController.documentExists(documentRepository.findByNameAndUser(document.getName(),document.getUser()).getId()+24,user.getId()+15),
+//                ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ExceptionMessage.NO_DOCUMENT_IN_DATABASE.toString()));
+//    }
+//    @Test
+//    void documentExists_goodValues_success() {
+//        User user = userRepository.findByEmail("testUser@gmail.com").get();
+//        Folder folder = new Folder();
+//        folder.setName("folder");
+//        folder.setUser(user);
+//        Document document = Document.createDocument(user,"newDoc",folder,"hey");
+//        folder.addDocument(document);
+//        folderRepository.save(folder);
+//        documentRepository.save(document);
+//        assertEquals(fileController.documentExists(documentRepository.findByNameAndUser(document.getName(),document.getUser()).getId(),user.getId()).toString().substring(1,4),
+//                "200");
+//    }
+//    @Test
+//    void getUser_WrongValues_NoAccountInDatabase() {
+//        User user = userRepository.findByEmail("testUser@gmail.com").get();
+//        Folder folder = new Folder();
+//        folder.setName("folder");
+//        folder.setUser(user);
+//        Document document = Document.createDocument(user,"newDoc",folder,"hey");
+//        folder.addDocument(document);
+//        folderRepository.save(folder);
+//        documentRepository.save(document);
+//        assertEquals(fileController.getUser(documentRepository.findByNameAndUser(document.getName(),document.getUser()).getId(),user.getId()+15).getBody(),
+//                ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
+//    }
+//    @Test
+//    void getUser_goodValues_success() {
+//        User user = userRepository.findByEmail("testUser@gmail.com").get();
+//        Folder folder = new Folder();
+//        folder.setName("folder");
+//        folder.setUser(user);
+//        Document document = Document.createDocument(user,"newDoc",folder,"hey");
+//        folder.addDocument(document);
+//        folderRepository.save(folder);
+//        documentRepository.save(document);
+//        JoinRes joinRes = (JoinRes) fileController.getUser(documentRepository.findByNameAndUser(document.getName(),document.getUser()).getId(),user.getId()).getBody();
+//        assertEquals(joinRes.getUserId(),user.getId());
+//    }
+//
+//    @Test
+//    void getContent_fromDoc_success() {
+//        User user = userRepository.findByEmail("testUser@gmail.com").get();
+//        Folder folder = new Folder();
+//        folder.setName("folder");
+//        folder.setUser(user);
+//        Document document = Document.createDocument(user,"newDoc",folder,"hey");
+//        folder.addDocument(document);
+//        folderRepository.save(folder);
+//        documentRepository.save(document);
+//        assertEquals(fileController.getContent(documentRepository.findByNameAndUser(document.getName(),document.getUser()).getId(), user.getId()).getBody(),"hey");
+//    }
+//    @Test
+//    void getContent_wrongDoc_nullReturn() {
+//        User user = userRepository.findByEmail("testUser@gmail.com").get();
+//        Folder folder = new Folder();
+//        folder.setName("folder");
+//        folder.setUser(user);
+//        Document document = Document.createDocument(user,"newDoc",folder,"hey");
+//        folder.addDocument(document);
+//        folderRepository.save(folder);
+//        documentRepository.save(document);
+//        assertNull(fileController.getContent(documentRepository.findByNameAndUser(document.getName(), document.getUser()).getId() + 4, user.getId()).getBody());
+//    }
+//}
+//
+//
+//

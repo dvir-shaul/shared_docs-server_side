@@ -1,42 +1,47 @@
-//package docSharing.service;
+package docSharing.service;//package docSharing.service;
 //
-//import static org.assertj.core.api.Assertions.assertThat;
-//
-//import docSharing.entity.User;
-//import docSharing.repository.UserRepository;
-//import org.junit.jupiter.api.Assertions;
-//import org.junit.jupiter.api.BeforeEach;
-//import org.junit.jupiter.api.DisplayName;
-//import org.junit.jupiter.api.Test;
-//import org.junit.jupiter.api.extension.ExtendWith;
-//
-//import static org.mockito.Mockito.never;
-//import static org.mockito.Mockito.verify;
-//
-//import static org.mockito.ArgumentMatchers.any;
-//import static org.mockito.BDDMockito.given;
-//
-//
-//import org.mockito.InjectMocks;
-//import org.mockito.Mock;
-//import org.mockito.junit.jupiter.MockitoExtension;
-//
-//import javax.security.auth.login.AccountNotFoundException;
-//import java.util.Optional;
-//
-//
-//@ExtendWith(MockitoExtension.class)
-//public class AuthServiceTest {
-//    @Mock
-//    private UserRepository userRepository;
-//    @InjectMocks
-//    private AuthService authService;
-//    private User user;
-//
-//    @BeforeEach
-//    public void createUser() {
-//        user = User.createUser("test@test.com", "abcd123", "test user");
-//    }
+import static org.assertj.core.api.Assertions.assertThat;
+
+import docSharing.entity.User;
+import docSharing.repository.UserRepository;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+
+
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import javax.security.auth.login.AccountNotFoundException;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Optional;
+
+
+@ExtendWith(MockitoExtension.class)
+public class AuthServiceTest {
+    @Mock
+    private UserRepository userRepository;
+    @InjectMocks
+    private AuthService authService;
+    private User user;
+
+    @BeforeEach
+    public void createUser() {
+        user = User.createUser("test@test.com", "abcd123", "test user");
+    }
+    }
 //
 //    @Test
 //    @DisplayName("Make sure when we register a user, it adds it to the database correctly")

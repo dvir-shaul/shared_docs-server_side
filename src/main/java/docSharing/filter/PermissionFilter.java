@@ -62,6 +62,7 @@ public class PermissionFilter extends GenericFilterBean {
 
         List<String> list = List.of(httpRequest.getRequestURI().split("/"));
         if (list.contains("sharedDocuments")|| list.contains("share") || list.contains("auth") || list.contains("getAll") || list.contains("getPath") || list.contains("ws") || list.contains("getUser") || list.contains("getContent") || httpRequest.getMethod().equals(HttpMethod.OPTIONS.toString())) {
+            System.out.println("111111111111111111111111111111");
             flag = true;
         }
 
@@ -140,6 +141,9 @@ public class PermissionFilter extends GenericFilterBean {
             }
         }
         if (!flag) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ExceptionMessage.WRONG_SEARCH.toString());
+
+        System.out.println("2222222222222222222222222222");
+
         chain.doFilter(request, response);
     }
 
