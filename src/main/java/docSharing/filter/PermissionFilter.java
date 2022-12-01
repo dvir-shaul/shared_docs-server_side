@@ -56,7 +56,7 @@ public class PermissionFilter extends GenericFilterBean {
         String token = httpRequest.getHeader("authorization");
 
         List<String> list = List.of(httpRequest.getRequestURI().split("/"));
-        if (list.contains("sharedDocuments") || list.contains("share") || list.contains("auth") || list.contains("getAll") || list.contains("getPath") || list.contains("ws") || list.contains("getUser") || list.contains("getContent") || httpRequest.getMethod().equals(HttpMethod.OPTIONS.toString())) {
+        if (list.contains("sharedDocuments")|| list.contains("share") || list.contains("auth") || list.contains("getAll") || list.contains("getPath") || list.contains("ws") || list.contains("getUser") || list.contains("getContent") || httpRequest.getMethod().equals(HttpMethod.OPTIONS.toString())) {
             flag = true;
         }
 

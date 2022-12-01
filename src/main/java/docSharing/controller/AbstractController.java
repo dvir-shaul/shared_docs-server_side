@@ -25,6 +25,8 @@ public class AbstractController {
     DocumentService documentService;
     @Autowired
     FolderService folderService;
+    @Autowired
+    UserService userService;
 
     public ResponseEntity<List<FileRes>> getAll(Long parentFolderId, Long userId) {
         List<Folder> folders;
