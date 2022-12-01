@@ -1,5 +1,8 @@
 package docSharing.utils.debounce;
 
+import docSharing.entity.Log;
+import docSharing.repository.LogRepository;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -7,21 +10,21 @@ import java.util.concurrent.TimeUnit;
 
 public class Debouncer <T> {
     private final ScheduledExecutorService sched = Executors.newScheduledThreadPool(1);
-    private final ConcurrentHashMap<T, TimerTask> delayedMap = new ConcurrentHashMap<T, TimerTask>();
-    private final Callback<T> callback;
+    private final ConcurrentHashMap<Long, TimerTask> delayedMap = new ConcurrentHashMap<Long, TimerTask>();
+    private final Callback callback;
     private final int interval;
 
-    public Debouncer(Callback<T> c, int interval) {
+    public Debouncer(Callback c, int interval) {
         this.callback = c;
         this.interval = interval;
     }
 
-    public void call(T key) {
-        TimerTask task = new TimerTask(key);
+    public void call(Log log, LogRepository logRepository) {
+        TimerTask task = new TimerTask(log, logRepository);
 
         TimerTask prev;
         do {
-            prev = delayedMap.putIfAbsent(key, task);
+            prev = delayedMap.putIfAbsent(log.getUser().getId(), task);
             if (prev == null)
                 sched.schedule(task, interval, TimeUnit.MILLISECONDS);
         } while (prev != null && !prev.extend()); // Exit only if new task was added to map, or existing task was extended successfully
@@ -34,12 +37,14 @@ public class Debouncer <T> {
 
     // The task that wakes up when the wait time elapses
     private class TimerTask implements Runnable {
-        private final T key;
+        private final Log log;
+        private LogRepository logRepository;
         private long dueTime;
         private final Object lock = new Object();
 
-        public TimerTask(T key) {
-            this.key = key;
+        public TimerTask(Log log, LogRepository logRepository) {
+            this.log = log;
+            this.logRepository=logRepository;
             extend();
         }
 
@@ -60,9 +65,9 @@ public class Debouncer <T> {
                 } else { // Mark as terminated and invoke callback
                     dueTime = -1;
                     try {
-                        callback.call(key);
+                        callback.call(log, logRepository);
                     } finally {
-                        delayedMap.remove(key);
+                        delayedMap.remove(log.getUser().getId());
                     }
                 }
             }

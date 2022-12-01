@@ -15,19 +15,22 @@ public class Document extends GeneralItem {
     private String content;
     @JsonManagedReference
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Log> log;
+    private Set<Log> logs;
 
     private Document() {
         super();
         this.isPrivate = true;
     }
 
-//    public static Document createDocument(String name, Folder parentFolder) {
+    //    public static Document createDocument(String name, Folder parentFolder) {
 //        Document document = new Document();
 //        document.setName(name);
 //        document.setParentFolder(parentFolder);
 //        return document;
 //    }
+    public void addLog(Log log) {
+        this.logs.add(log);
+    }
 
     public static Document createDocument(User user, String name, Folder folder, String content) {
         Document doc = new Document();

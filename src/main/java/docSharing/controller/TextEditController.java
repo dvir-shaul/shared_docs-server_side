@@ -41,18 +41,18 @@ public class TextEditController {
     @MessageMapping("/document/{documentId}")
     @SendTo("/document/{documentId}")
 //    public Log receiveLog(@DestinationVariable Long documentId, @Payload Log log) {
-    public Log receiveLog(@DestinationVariable Long documentId, @Payload LogReq logReq) {
+    public LogReq receiveLog(@DestinationVariable Long documentId, @Payload LogReq logReq) {
 //        if (log.getData() == null || log.getAction() == null || log.getOffset() == null || log.getDocumentId() == null || log.getUserId() == null || log.getCreationDate() == null)
 //            // FIXME: What to do if anything fails? Do we do anything with the client?
 //            return null;
         Log log = null;
         try {
-            User user=userService.findById(logReq.getUserId());
-            Document document=documentService.findById(documentId);
+            User user = userService.findById(logReq.getUserId());
+            Document document = documentService.findById(documentId);
             log = new Log(user, document, logReq.getOffset(), logReq.getData(), logReq.getAction());
-            Log copyOfLog = Log.copy(log);
+            LogReq copyOfLog = new LogReq(log.getUser().getId(), log.getDocument().getId(), log.getOffset(), log.getData(), log.getAction());
             documentService.updateContent(log);
-            System.out.println("Creating a new log for: " + copyOfLog);
+            //System.out.println("Creating a new log for: " + copyOfLog);
             return copyOfLog;
         } catch (AccountNotFoundException e) {
             throw new RuntimeException(e);

@@ -9,7 +9,7 @@ import java.util.Set;
 
 @Entity
 @Table(name = "users")
-public class User{
+public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -20,33 +20,43 @@ public class User{
     private Boolean isActivated;
     @JsonManagedReference
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Document> documents=new HashSet<>();
+    private Set<Document> documents = new HashSet<>();
     @JsonManagedReference
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Folder> folders=new HashSet<>();
+    private Set<Folder> folders = new HashSet<>();
 
     @JsonManagedReference
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Log> log;
+    private Set<Log> logs;
 
-    public void addDocument(Document document){
+    public void addDocument(Document document) {
         this.documents.add(document);
     }
-    public void addFolder(Folder folder){
+
+    public void addFolder(Folder folder) {
         this.folders.add(folder);
     }
+
+    public void addLog(Log log) {
+        this.logs.add(log);
+    }
+
     public Set<Document> getDocuments() {
         return documents;
     }
+
     public void setDocuments(Set<Document> documents) {
         this.documents = documents;
     }
+
     public Set<Folder> getFolders() {
         return folders;
     }
+
     public void setFolders(Set<Folder> folders) {
         this.folders = folders;
     }
+
     public User() {
         this.isActivated = false;
     }
