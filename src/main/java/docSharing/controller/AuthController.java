@@ -111,6 +111,7 @@ public class AuthController {
         if (email == null || password == null || user.getId() != null || user.getName() != null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You must include all and exact parameters for such an action: email, name, password");
         }
+        System.out.println("==222222222222222222====");
 
         // validate information
         String token = null;
@@ -125,6 +126,7 @@ public class AuthController {
             logger.error("in AuthController -> login -> "+e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
+        System.out.println("====================");
 
         // if correct -> call auth service with parameters -> login function
         return ResponseEntity.status(200).body("token: " + token);
@@ -157,7 +159,6 @@ public class AuthController {
                 }
                 authService.activate(Long.valueOf(claims.getId()));
             }
-
         } catch (ExpiredJwtException e) {
             String id = e.getClaims().getId();
             User user = userService.findById(Long.valueOf(id));
