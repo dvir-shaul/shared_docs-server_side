@@ -6,6 +6,7 @@ import docSharing.entity.User;
 import docSharing.requests.LogReq;
 import docSharing.requests.OnlineUsersReq;
 import docSharing.response.AllUsers;
+import docSharing.response.UserStatus;
 import docSharing.response.UsersInDocRes;
 import docSharing.service.DocumentService;
 import docSharing.service.UserService;
@@ -21,6 +22,8 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -59,16 +62,21 @@ public class TextEditController {
         }
     }
 
+    //return one map with status
 
     @MessageMapping("/document/onlineUsers/{documentId}")
     @SendTo("/document/onlineUsers/{documentId}")
-    public AllUsers getOnlineUsers(@DestinationVariable Long documentId, @Payload OnlineUsersReq onlineUsersReq) {
+    public List<UsersInDocRes> getOnlineUsers(@DestinationVariable Long documentId, @Payload OnlineUsersReq onlineUsersReq) {
         try {
             System.out.println("Looking for online users for document id:" + documentId);
-            Set<User> onlineUsers = documentService.addUserToDocActiveUsers(onlineUsersReq.getUserId(), documentId, onlineUsersReq.getMethod());
-            List<String> online = onlineUsers.stream().map(u -> u.getEmail()).collect(Collectors.toList());
-            List<UsersInDocRes> all = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
-            return new AllUsers(online, all);
+            Set<Long> onlineUsers = documentService.addUserToDocActiveUsers(onlineUsersReq.getUserId(), documentId, onlineUsersReq.getMethod()).stream().map(u->u.getId()).collect(Collectors.toSet());
+            List<UsersInDocRes> all = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId())? UserStatus.ONLINE:UserStatus.OFFLINE)).collect(Collectors.toList());
+            Collections.sort(all, new Comparator<UsersInDocRes>() {
+                public int compare(UsersInDocRes o1, UsersInDocRes o2) {
+                    return o1.compareTo(o2);
+                }
+            });
+            return all;
         } catch (AccountNotFoundException e) {
             return null;
         }
