@@ -4,6 +4,9 @@ import docSharing.entity.Document;
 import docSharing.entity.Permission;
 import docSharing.entity.User;
 import docSharing.entity.UserDocument;
+import docSharing.requests.OnlineUsersReq;
+import docSharing.response.AllUsers;
+import docSharing.response.UserStatus;
 import docSharing.response.UsersInDocRes;
 import docSharing.service.DocumentService;
 import docSharing.service.EmailService;
@@ -14,13 +17,14 @@ import docSharing.utils.Share;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.web.bind.annotation.*;
 
 import javax.security.auth.login.AccountNotFoundException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -41,6 +45,8 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    //return map with user status
+
     @RequestMapping(value = "/permission/give", method = RequestMethod.PATCH)
     public ResponseEntity<?> givePermission(@RequestParam Long documentId, @RequestParam Long uid, @RequestParam Permission permission, @RequestAttribute Long userId) {
         if (documentId == null || uid == null || permission == null) {
@@ -52,7 +58,9 @@ public class UserController {
                 return ResponseEntity.badRequest().body(ExceptionMessage.USER_IS_NOT_THE_ADMIN);
             }
             userService.updatePermission(documentId, uid, permission);
-            return ResponseEntity.ok().body("permission added successfully!");
+            Set<User> onlineUsers = documentService.getActiveUsersPerDoc(documentId);
+            List<UsersInDocRes> usersInDocRes = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId())? UserStatus.ONLINE:UserStatus.OFFLINE)).collect(Collectors.toList());
+            return ResponseEntity.ok().body(usersInDocRes);
         } catch (AccountNotFoundException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (IllegalArgumentException exception) {
@@ -60,6 +68,7 @@ public class UserController {
         }
     }
 
+    //return map with user status
     @RequestMapping(value = "/share", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<?> givePermissionToAll(@RequestBody List<String> emails, @RequestParam Long documentId, @RequestAttribute Long userId) {
         List<String> unregisteredUsers = new ArrayList<>();
@@ -97,7 +106,10 @@ public class UserController {
         }
         try {
             List<UserDocument> usersInDocument = documentService.getAllUsersInDocument(documentId);
-            List<UsersInDocRes> usersInDocRes = usersInDocument.stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
+            Set<User> onlineUsers = documentService.getActiveUsersPerDoc(documentId);
+            List<UsersInDocRes> usersInDocRes = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId())? UserStatus.ONLINE:UserStatus.OFFLINE)).collect(Collectors.toList());
+
+           // List<UsersInDocRes> usersInDocRes = usersInDocument.stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
             return ResponseEntity.ok(usersInDocRes);
         } catch (AccountNotFoundException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -113,4 +125,6 @@ public class UserController {
     public ResponseEntity<?> getUser(@RequestAttribute Long userId) {
         return ResponseEntity.ok(userService.getUser(userId));
     }
+
+
 }
