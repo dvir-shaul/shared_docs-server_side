@@ -179,7 +179,7 @@ class FileController {
     public ResponseEntity<?> getDocumentName(@RequestParam Long documentId, @RequestAttribute Long userId) {
         try {
             Document document=documentService.findById(documentId);
-            DocRes docRes=new DocRes(document.getName(), document.getUser().getId(), document.getPrivate(), document.getCreationDate(), document.getParentFolder().getId());
+            DocRes docRes=new DocRes(document.getName(), document.getUser().getId(), document.getPrivate(), document.getCreationDate(), document.getParentFolder().getId(), document.getId());
             return ResponseEntity.ok(docRes);
         } catch (AccountNotFoundException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());

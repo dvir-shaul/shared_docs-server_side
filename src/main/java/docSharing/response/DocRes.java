@@ -16,4 +16,5 @@ public class DocRes {
     private boolean isPrivate;
     private LocalDate creationDate;
     private Long parentFolderId;
+    private Long id;
 }
