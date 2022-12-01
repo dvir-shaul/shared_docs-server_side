@@ -36,8 +36,8 @@ public interface UserDocumentRepository extends JpaRepository<UserDocument, Long
 
     @Transactional
     @Modifying
-    @Query("DELETE UserDocument urd WHERE urd.user = ?1")
-    int deleteUser(User user);
+    @Query("DELETE UserDocument urd WHERE urd.user = ?1 AND urd.document = ?2")
+    int deleteUserFromDocument(User user, Document document);
 
 
 }
