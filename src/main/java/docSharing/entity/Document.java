@@ -13,7 +13,6 @@ public class Document extends GeneralItem {
     private Boolean isPrivate;
     @Column(name = "content", columnDefinition = "text")
     private String content;
-    @JsonManagedReference
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Log> logs;
 
