@@ -11,7 +11,13 @@ import java.nio.charset.StandardCharsets;
 @Service
 @AllArgsConstructor
 public class Activation {
-
+    /**
+     * buildEmail is a function that used from the authController and emailService.
+     * build a email to send the user in email to make him activate.
+     * @param name
+     * @param link
+     * @return
+     */
     public static String buildEmail(String name, String link) {
         return "<div dir=\"rtl\" style=\"font-family:Helvetica,Arial,sans-serif;font-size:16px;margin:0;color:#0b0c0c\">\n" +
                 "\n" +
@@ -81,7 +87,12 @@ public class Activation {
                 "</div></div>";
     }
 
-
+    /**
+     * buildLink is a function that used from the authController and emailService.
+     * build a link to send the user in email to make him activate.
+     * @param token - token of a user.
+     * @return - string of a link.
+     */
     public static String buildLink(String token) {
         String encoded = token.replaceAll("\\.", " ");
         try {

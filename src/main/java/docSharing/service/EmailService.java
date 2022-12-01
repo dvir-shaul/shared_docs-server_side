@@ -19,6 +19,8 @@ import docSharing.utils.Activation;
 import docSharing.utils.ConfirmationToken;
 import lombok.AllArgsConstructor;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -38,11 +40,16 @@ import static javax.mail.Message.RecipientType.TO;
 
 @Service
 public class EmailService{
+
+    private static Logger logger = LogManager.getLogger(EmailService.class.getName());
+
     //private final JavaMailSender mailSender;
     private static final String TEST_EMAIL = "shareddocs.app@gmail.com";
     private final Gmail service;
 
     public EmailService() throws Exception {
+        logger.info("in EmailService -> EmailService");
+
         NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
         GsonFactory jsonFactory = GsonFactory.getDefaultInstance();
         service = new Gmail.Builder(httpTransport, jsonFactory, getCredentials(httpTransport, jsonFactory))
@@ -52,6 +59,8 @@ public class EmailService{
 
     private static Credential getCredentials(final NetHttpTransport httpTransport, GsonFactory jsonFactory)
             throws IOException {
+        logger.info("in EmailService -> getCredentials");
+
         GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(jsonFactory, new InputStreamReader(EmailService.class.getResourceAsStream("../../credentials.json")));
 
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
@@ -64,6 +73,8 @@ public class EmailService{
         return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
     }
     public void send(String to, String message, String subject) throws Exception {
+        logger.info("in EmailService -> send");
+
         Properties props = new Properties();
         Session session = Session.getDefaultInstance(props, null);
         MimeMessage email = new MimeMessage(session);
@@ -86,6 +97,8 @@ public class EmailService{
         } catch (GoogleJsonResponseException e) {
             GoogleJsonError error = e.getDetails();
             if (error.getCode() == 403) {
+                logger.warn("Unable to send message: " + e.getDetails());
+
                 System.err.println("Unable to send message: " + e.getDetails());
             } else {
                 throw e;
@@ -94,6 +107,8 @@ public class EmailService{
     }
 
     public void reactivateLink(User user){
+        logger.info("in EmailService -> reactivateLink");
+
         String token = ConfirmationToken.createJWT(Long.toString(user.getId()), "docs-app", "activation email", 300000);
         String link = Activation.buildLink(token);
         String mail = Activation.buildEmail(user.getName(), link);

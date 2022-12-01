@@ -1,14 +1,13 @@
 package docSharing.controller;
 
 import docSharing.entity.User;
-import docSharing.service.FolderService;
-import docSharing.service.UserService;
+import docSharing.service.*;
 import docSharing.utils.*;
-import docSharing.service.AuthService;
-import docSharing.service.EmailService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import lombok.AllArgsConstructor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +27,7 @@ import java.util.Optional;
 @CrossOrigin
 public class AuthController {
 
+    private static Logger logger = LogManager.getLogger(AuthController.class.getName());
 
     @Autowired
     private AuthService authService;
@@ -46,6 +46,8 @@ public class AuthController {
      */
     @RequestMapping(value = "register", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<String> register(@RequestBody User user) {
+        logger.info("in AuthController -> register");
+
         String email = user.getEmail();
         String name = user.getName();
         String password = user.getPassword();
@@ -68,9 +70,11 @@ public class AuthController {
             try {
                 emailService.send(emailUser.getEmail(), mail, "activate account");
             } catch (Exception e) {
+                logger.error("in AuthController -> register -> "+e.getMessage());
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
             }
         } catch (IllegalArgumentException e) {
+            logger.error("in AuthController -> register -> "+e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
 
@@ -89,10 +93,12 @@ public class AuthController {
      */
     @RequestMapping(value = "login", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<String> login(@RequestBody User user) {
+        logger.info("in AuthController -> login");
         User userInDb = null;
         try {
             userInDb = userService.findByEmail(user.getEmail());
         } catch (AccountNotFoundException e) {
+            logger.error("in AuthController -> login -> "+e.getMessage());
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
         if (!userInDb.getActivated()) {
@@ -113,8 +119,10 @@ public class AuthController {
             Validations.validate(Regex.PASSWORD.getRegex(), password);
             token = authService.login(email, password);
         } catch (IllegalArgumentException e) {
+            logger.error("in AuthController -> login -> "+e.getMessage());
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (AccountNotFoundException e) {
+            logger.error("in AuthController -> login -> "+e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
 
@@ -132,10 +140,12 @@ public class AuthController {
      */
     @RequestMapping(value = "activate", method = RequestMethod.POST)
     public ResponseEntity<String> activate(@RequestParam String token) throws AccountNotFoundException {
+        logger.info("in AuthController -> activate");
         String parsedToken = null;
         try {
             parsedToken = URLDecoder.decode(token, StandardCharsets.UTF_8.toString()).replaceAll(" ", ".");
         } catch (UnsupportedEncodingException e) {
+            logger.error("in AuthController -> activate -> "+e.getMessage());
             throw new RuntimeException(e);
         }
         Claims claims = null;
@@ -154,6 +164,7 @@ public class AuthController {
             emailService.reactivateLink(user);
             return ResponseEntity.status(200).body("the link expired, new activation link has been sent");
         } catch (AccountNotFoundException e) {
+            logger.error("in AuthController -> activate -> "+e.getMessage());
             throw new RuntimeException(e);
         }
         return ResponseEntity.status(200).body("account activated successfully!");

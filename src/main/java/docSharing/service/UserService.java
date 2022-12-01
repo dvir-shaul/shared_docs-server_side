@@ -10,6 +10,8 @@ import docSharing.repository.UserRepository;
 import docSharing.response.UserDocumentRes;
 import docSharing.response.UserRes;
 import docSharing.utils.ExceptionMessage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +23,7 @@ import java.util.Optional;
 
 @Service
 public class UserService {
+    private static Logger logger = LogManager.getLogger(UserService.class.getName());
 
     @Autowired
     private UserRepository userRepository;
@@ -34,6 +37,8 @@ public class UserService {
      * @return entity of user that found in database.
      */
     public User findById(Long id) throws AccountNotFoundException {
+        logger.info("in UserService -> findById");
+
         if (!userRepository.findById(id).isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
         return userRepository.findById(id).get();
@@ -44,8 +49,14 @@ public class UserService {
      * @return entity of user that found in database.
      */
     public User findByEmail(String email) throws AccountNotFoundException {
-        if (!userRepository.findByEmail(email).isPresent())
+        logger.info("in UserService -> findByEmail");
+
+        if (!userRepository.findByEmail(email).isPresent()){
+            logger.error("in UserService -> findByEmail --> "+ExceptionMessage.NO_ACCOUNT_IN_DATABASE + email);
+
             throw new AccountNotFoundException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE + email);
+
+        }
         return userRepository.findByEmail(email).get();
     }
 
@@ -58,10 +69,14 @@ public class UserService {
      * @param permission - the new Permission
      */
     public void updatePermission(Long docId, Long userId, Permission permission) {
+        logger.info("in UserService -> updatePermission");
+
         if (!documentRepository.findById(docId).isPresent()) {
+            logger.error("in UserService -> updatePermission --> "+ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS );
             throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
         }
         if (!userRepository.findById(userId).isPresent()) {
+            logger.error("in UserService -> updatePermission --> "+ExceptionMessage.NO_ACCOUNT_IN_DATABASE );
             throw new IllegalArgumentException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
         }
         Document doc = documentRepository.findById(docId).get();
@@ -84,7 +99,10 @@ public class UserService {
      * @return list of UserDocument
      */
     public List<UserDocumentRes> documentsOfUser(Long userId) {
+        logger.info("in UserService -> documentsOfUser");
+
         if (!userRepository.findById(userId).isPresent()) {
+            logger.error("in UserService -> documentsOfUser --> "+ExceptionMessage.NO_ACCOUNT_IN_DATABASE );
             throw new IllegalArgumentException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
         }
         List<UserDocument> ud = userDocumentRepository.findByUser(userRepository.findById(userId).get());
@@ -98,8 +116,11 @@ public class UserService {
     }
 
     public UserRes getUser(Long userId) {
+        logger.info("in UserService -> getUser");
+
         Optional<User> user = userRepository.findById(userId);
         if (!user.isPresent()) {
+            logger.error("in UserService -> getUser --> "+ExceptionMessage.NO_ACCOUNT_IN_DATABASE );
             throw new IllegalArgumentException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
         }
         return new UserRes(user.get().getName(), user.get().getEmail(), user.get().getId());

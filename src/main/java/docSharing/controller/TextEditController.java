@@ -10,6 +10,8 @@ import docSharing.service.UserService;
 import docSharing.utils.ConfirmationToken;
 import docSharing.utils.Validations;
 import io.jsonwebtoken.Claims;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +32,7 @@ import javax.security.auth.login.AccountNotFoundException;
 @Controller
 @CrossOrigin
 public class TextEditController {
+    private static Logger logger = LogManager.getLogger(TextEditController.class.getName());
 
     @Autowired
     DocumentService documentService;
@@ -39,6 +42,8 @@ public class TextEditController {
     @MessageMapping("/document/{documentId}")
     @SendTo("/document/{documentId}")
     public Log receiveLog(@DestinationVariable Long documentId, @Payload Log log) {
+        logger.info("in TextEditController -> receiveLog");
+
 //        if (log.getData() == null || log.getAction() == null || log.getOffset() == null || log.getDocumentId() == null || log.getUserId() == null || log.getCreationDate() == null)
 //            // FIXME: What to do if anything fails? Do we do anything with the client?
 //            return null;
@@ -52,6 +57,8 @@ public class TextEditController {
     @MessageMapping("/document/onlineUsers/{documentId}")
     @SendTo("/document/onlineUsers/{documentId}")
     public AllUsers getOnlineUsers(@DestinationVariable Long documentId, @Payload OnlineUsersReq onlineUsersReq) {
+        logger.info("in TextEditController -> receiveLog");
+
         try {
             System.out.println("Looking for online users for document id:" + documentId);
             Set<User> onlineUsers = documentService.addUserToDocActiveUsers(onlineUsersReq.getUserId(), documentId, onlineUsersReq.getMethod());
@@ -59,6 +66,7 @@ public class TextEditController {
             List<UsersInDocRes> all = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
             return new AllUsers(online, all);
         } catch (AccountNotFoundException e) {
+            logger.debug("in TextEditController -> receiveLog -> no users to get online");
             return null;
         }
     }

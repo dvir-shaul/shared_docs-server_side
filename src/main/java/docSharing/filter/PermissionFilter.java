@@ -5,10 +5,13 @@ import docSharing.repository.DocumentRepository;
 import docSharing.repository.FolderRepository;
 import docSharing.repository.UserDocumentRepository;
 import docSharing.repository.UserRepository;
+import docSharing.service.EmailService;
 import docSharing.utils.ExceptionMessage;
 import docSharing.utils.Params;
 import docSharing.utils.Validations;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.http.HttpMethod;
@@ -27,6 +30,8 @@ import java.util.*;
 
 @Component
 public class PermissionFilter extends GenericFilterBean {
+
+    private static Logger logger = LogManager.getLogger(PermissionFilter.class.getName());
 
     @Autowired
     UserDocumentRepository userDocumentRepository;
@@ -50,13 +55,17 @@ public class PermissionFilter extends GenericFilterBean {
      */
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-
+        logger.info("in PermissionFilter -> doFilter");
         boolean flag = false;
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         String token = httpRequest.getHeader("authorization");
 
         List<String> list = List.of(httpRequest.getRequestURI().split("/"));
-        if (list.contains("share")||list.contains("auth") || list.contains("getAll") || list.contains("getPath") || list.contains("ws") || list.contains("getUser") || list.contains("getContent") || httpRequest.getMethod().equals(HttpMethod.OPTIONS.toString())) {
+        if (list.contains("share")||list.contains("auth") ||
+                list.contains("getAll") || list.contains("getPath") ||
+                list.contains("ws") || list.contains("getUser") ||
+                list.contains("getContent") ||
+                httpRequest.getMethod().equals(HttpMethod.OPTIONS.toString())) {
             flag = true;
         }
 
@@ -65,8 +74,9 @@ public class PermissionFilter extends GenericFilterBean {
                 Long FolderId = Long.valueOf(request.getParameter(Params.FOLDER_ID.toString()));
                 Long userId = Validations.validateToken(token);
                 Optional<Folder> optFolder = folderRepository.findById(FolderId);
-                if (!optFolder.isPresent())
+                if (!optFolder.isPresent()){
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
+                }
                 Folder folder = optFolder.get();
                 if (folder.getUser().getId().equals(userId)) {
                     flag = true;
@@ -161,55 +171,3 @@ public class PermissionFilter extends GenericFilterBean {
         return optUser.get();
     }
 }
-
-
-/**
- * user1
- * eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIxIiwiaWF0IjoxNjY5NzQxMDkxLCJzdWIiOiJsb2dpbiIsImlzcyI6ImRvY3MgYXBwIn0.Uz6NzXGJLu62GHhFBQC36GNB5cAhXCVMGrnzUyzlBVo
- * user2
- * eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIyIiwiaWF0IjoxNjY5NjM4MzYyLCJzdWIiOiJsb2dpbiIsImlzcyI6ImRvY3MgYXBwIn0.QQtT3liScCSUqleIBVbTNw232MNExjK4b196i9w09ak
- */
-//public static String getBody(ServletRequest request) throws IOException {
-//        System.out.println("getbody");
-//        StringBuilder stringBuilder = new StringBuilder();
-//        BufferedReader bufferedReader = null;
-////        String body = request.getReader().lines()
-////                .reduce("", (accumulator, actual) -> accumulator + actual);
-//        String test = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
-////        try {
-////            InputStream inputStream = request.getInputStream();
-////            if (inputStream != null) {
-////                bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-////                char[] charBuffer = new char[128];
-////                int bytesRead = -1;
-////                while ((bytesRead = bufferedReader.read(charBuffer)) > 0) {
-////                    stringBuilder.append(charBuffer, 0, bytesRead);
-////                }
-////            } else {
-////                stringBuilder.append("");
-////            }
-////        } finally {
-////            if (bufferedReader != null) {
-////                bufferedReader.close();
-////            }
-////        }
-//
-////        body = stringBuilder.toString();
-//        System.out.println(test);
-//        return test;
-//    }
-//
-//
-//    public Long getId(ServletRequest request) throws IOException {
-//        Long id = null;
-//        String payloadRequest = getBody(request);
-//        List<String> list1 = List.of(payloadRequest.split(","));
-//        for (String s : list1) {
-//            if (s.contains("Id") || s.contains("id")) {
-//                String tempId = s.split(":")[1].split("}")[0].trim();
-//                id = Long.parseLong(tempId);
-//            }
-//        }
-//        System.out.println(id);
-//        return id;
-//    }

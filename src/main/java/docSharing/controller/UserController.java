@@ -12,6 +12,8 @@ import docSharing.service.UserService;
 import docSharing.utils.ExceptionMessage;
 import docSharing.utils.Invite;
 import docSharing.utils.Share;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +30,8 @@ import java.util.stream.Collectors;
 @RequestMapping("/user")
 public class UserController {
 
+    private static Logger logger = LogManager.getLogger(UserController.class.getName());
+
     @Autowired
     private UserService userService;
     @Autowired
@@ -35,13 +39,28 @@ public class UserController {
     @Autowired
     private EmailService emailService;
 
+    /**
+     * deleteUserById not used
+     * @param id
+     * @return
+     */
     @RequestMapping(value = "/delete/{id}")
     public ResponseEntity<?> deleteUserById(@PathVariable("id") int id) {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * givePermission is a PATCH function for changing the user role.
+     * @param documentId - the document id in database
+     * @param uid - the user id in database that will change his permission
+     * @param permission - the new permission
+     * @param userId - the user id that sent this request
+     * @return ResponseEntity with the message, if it worked or not.
+     */
     @RequestMapping(value = "/permission/give", method = RequestMethod.PATCH)
     public ResponseEntity<?> givePermission(@RequestParam Long documentId, @RequestParam Long uid, @RequestParam Permission permission, @RequestAttribute Long userId) {
+        logger.info("in UserController -> givePermission");
+
         if (documentId == null || uid == null || permission == null) {
             return ResponseEntity.badRequest().build();
         }
@@ -59,8 +78,17 @@ public class UserController {
         }
     }
 
+    /**
+     * givePermissionToAll is a POST function for sharing a document with given a list of emails.
+     * if the user's email is not in our database it will send him an invitation to register the app.
+     * @param emails - list with emails to share the document.
+     * @param documentId - document id in database.
+     * @param userId - the user that sends this request
+     * @return ResponseEntity with a message.
+     */
     @RequestMapping(value = "/share", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<?> givePermissionToAll(@RequestBody List<String> emails, @RequestParam Long documentId, @RequestAttribute Long userId) {
+        logger.info("in UserController -> givePermissionToAll");
         List<String> unregisteredUsers = new ArrayList<>();
         try {
             for (String email : emails) {
@@ -102,11 +130,15 @@ public class UserController {
 
     @RequestMapping(value = "documents", method = RequestMethod.GET)
     public ResponseEntity<?> getDocuments(@RequestAttribute Long userId) {
+        logger.info("in UserController -> getDocuments");
+
         return ResponseEntity.ok(userService.documentsOfUser(userId));
     }
 
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<?> getUser(@RequestAttribute Long userId) {
+        logger.info("in UserController -> getUser");
+
         return ResponseEntity.ok(userService.getUser(userId));
     }
 }
