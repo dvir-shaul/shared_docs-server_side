@@ -123,6 +123,10 @@ public class DocumentService implements ServiceInterface {
         return onlineUsersPerDoc.get(documentId);
     }
 
+    public Set<User> getActiveUsersPerDoc(Long documentId){
+        return onlineUsersPerDoc.get(documentId);
+    }
+
     /**
      * main function that deals with new logs,
      * the goal is to make order in all the data that was entered to the document,
