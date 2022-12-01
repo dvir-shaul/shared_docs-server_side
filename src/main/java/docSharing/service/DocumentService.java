@@ -471,7 +471,7 @@ public class DocumentService implements ServiceInterface {
         Document document = documentRepository.findById(documentId).get();
         Optional<UserDocument> userDocument = userDocumentRepository.find(document, user);
         if (!userDocument.isPresent()) {
-            return Permission.UNAUTORIZED;
+            return Permission.UNAUTHORIZED;
         }
         return userDocument.get().getPermission();
     }

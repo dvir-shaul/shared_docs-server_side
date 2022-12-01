@@ -20,7 +20,6 @@ import javax.security.auth.login.AccountNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -48,11 +47,12 @@ public class UserController {
         }
 
         try {
+            // FIXME: should be in the filter -> permission filter
             if (!Objects.equals(documentService.findById(documentId).getUser().getId(), userId)) {
                 return ResponseEntity.badRequest().body(ExceptionMessage.USER_IS_NOT_THE_ADMIN);
             }
             userService.updatePermission(documentId, uid, permission);
-            return ResponseEntity.ok().body("permission added successfully!");
+            return ResponseEntity.ok().body("permission updated successfully!");
         } catch (AccountNotFoundException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (IllegalArgumentException exception) {
@@ -72,8 +72,8 @@ public class UserController {
                     unregisteredUsers.add(email);
                     continue;
                 }
-                Permission permission=documentService.getUserPermissionInDocument(user.getId(), documentId);
-                if(permission.equals(Permission.UNAUTORIZED)) {
+                Permission permission = documentService.getUserPermissionInDocument(user.getId(), documentId);
+                if (permission.equals(Permission.UNAUTHORIZED)) {
                     Document document = documentService.findById(documentId);
                     userService.updatePermission(documentId, user.getId(), Permission.VIEWER);
                     String link = "http://localhost:3000/document/share/documentId=" + documentId + "&userId=" + user.getId();
@@ -109,7 +109,7 @@ public class UserController {
         return ResponseEntity.ok(userService.documentsOfUser(userId));
     }
 
-    @RequestMapping(method = RequestMethod.GET)
+    @RequestMapping(value = "getUser", method = RequestMethod.GET)
     public ResponseEntity<?> getUser(@RequestAttribute Long userId) {
         return ResponseEntity.ok(userService.getUser(userId));
     }
