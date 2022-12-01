@@ -174,22 +174,25 @@ public class DocumentService implements ServiceInterface {
         }
 
         // if the new log is not a sequel to current log, store the current one in the db and start a new one instead.
-        if ((currentLog.getOffset() - 1 >= newLog.getOffset() && currentLog.getOffset() + currentLog.getData().length() + 1 <= newLog.getOffset()))
+        if ((currentLog.getOffset() - 1 >= newLog.getOffset() && currentLog.getOffset() + currentLog.getData().length() + 1 <= newLog.getOffset())) {
             chainedLogs.put(currentLog.getUserId(), newLog);
-
-        // if the current log was attempting to delete and how we want to insert, push the delete and create a new log
-        if (currentLog.getAction().equals("delete") && newLog.getAction().equals("insert")) {
-            chainedLogs.put(currentLog.getUserId(), newLog);
+            return;
         }
 
         // if the new log is in the middle of the current log, it must be concatenated.
-        else {
-            if (newLog.getAction().equals("delete")) {
+        if (!(currentLog.getOffset() - 1 >= newLog.getOffset() && currentLog.getOffset() + currentLog.getData().length() + 1 <= newLog.getOffset())) {
+            if (currentLog.getAction().equals("insert") && newLog.getAction().equals("delete")) {
+                System.out.println("Current log is insert and now we want to delete!");
                 currentLog.setData(truncateLogs(currentLog, newLog));
-            } else if (newLog.getAction().equals("insert")) {
+                // if the current log was attempting to delete and now we want to insert, push the delete and create a new log
+            } else if (currentLog.getAction().equals("delete") && newLog.getAction().equals("insert")) {
+                System.out.println("Current log is delete and now we want to insert!");
+                chainedLogs.put(currentLog.getUserId(), newLog);
+                return;
+            } else if (newLog.getAction().equals(currentLog.getAction())) {
+                System.out.println("Both logs are doing the same thing: " + currentLog.getAction() + ", " + newLog.getAction());
                 currentLog.setData(concatenateLogs(currentLog, newLog));
             }
-            // change to concatenateLogs
             chainedLogs.put(currentLog.getUserId(), currentLog);
         }
     }
@@ -329,7 +332,8 @@ public class DocumentService implements ServiceInterface {
      * @return - updated content that was concatenated from the 2 logs we have.
      */
     private String concatenateLogs(Log currentLog, Log newLog) {
-        newLog.setOffset(newLog.getOffset() - (currentLog.getOffset()));
+        int diff = newLog.getOffset() - currentLog.getOffset() < 0 ? 0 : newLog.getOffset() - currentLog.getOffset();
+        newLog.setOffset(diff);
         if (currentLog.getData() == null) currentLog.setData(""); // CONSULT: shouldn't happen, so why did I write it?
         return concatenateStrings(currentLog.getData(), newLog);
     }
