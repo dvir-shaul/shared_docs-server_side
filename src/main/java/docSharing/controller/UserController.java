@@ -25,6 +25,9 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.security.auth.login.AccountNotFoundException;
 import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController
@@ -45,8 +48,6 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    //return map with user status
-
     @RequestMapping(value = "/permission/give", method = RequestMethod.PATCH)
     public ResponseEntity<?> givePermission(@RequestParam Long documentId, @RequestParam Long uid, @RequestParam Permission permission, @RequestAttribute Long userId) {
         if (documentId == null || uid == null || permission == null) {
@@ -54,12 +55,13 @@ public class UserController {
         }
 
         try {
+            // FIXME: should be in the filter -> permission filter
             if (!Objects.equals(documentService.findById(documentId).getUser().getId(), userId)) {
                 return ResponseEntity.badRequest().body(ExceptionMessage.USER_IS_NOT_THE_ADMIN);
             }
             userService.updatePermission(documentId, uid, permission);
-            Set<Long> onlineUsers = documentService.getActiveUsersPerDoc(documentId).stream().map(u->u.getId()).collect(Collectors.toSet());;
-            List<UsersInDocRes> usersInDocRes = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId())? UserStatus.ONLINE:UserStatus.OFFLINE)).collect(Collectors.toList());
+            Set<Long> onlineUsers = documentService.getActiveUsersPerDoc(documentId).stream().map(u->u.getId()).collect(Collectors.toSet());
+            List<UsersInDocRes> usersInDocRes = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId()) ? UserStatus.ONLINE : UserStatus.OFFLINE)).collect(Collectors.toList());
             return ResponseEntity.ok().body(usersInDocRes);
         } catch (AccountNotFoundException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -68,7 +70,6 @@ public class UserController {
         }
     }
 
-    //return map with user status
     @RequestMapping(value = "/share", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<?> givePermissionToAll(@RequestBody List<String> emails, @RequestParam Long documentId, @RequestAttribute Long userId) {
         List<String> unregisteredUsers = new ArrayList<>();
@@ -81,8 +82,8 @@ public class UserController {
                     unregisteredUsers.add(email);
                     continue;
                 }
-                Permission permission=documentService.getUserPermissionInDocument(user.getId(), documentId);
-                if(permission.equals(Permission.UNAUTORIZED)) {
+                Permission permission = documentService.getUserPermissionInDocument(user.getId(), documentId);
+                if (permission.equals(Permission.UNAUTHORIZED)) {
                     Document document = documentService.findById(documentId);
                     userService.updatePermission(documentId, user.getId(), Permission.VIEWER);
                     String link = "http://localhost:3000/document/share/documentId=" + documentId + "&userId=" + user.getId();
@@ -107,7 +108,7 @@ public class UserController {
         try {
             List<UserDocument> usersInDocument = documentService.getAllUsersInDocument(documentId);
             Set<Long> onlineUsers = documentService.getActiveUsersPerDoc(documentId).stream().map(u->u.getId()).collect(Collectors.toSet());;
-            List<UsersInDocRes> usersInDocRes = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId())? UserStatus.ONLINE:UserStatus.OFFLINE)).collect(Collectors.toList());
+            List<UsersInDocRes> usersInDocRes = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId()) ? UserStatus.ONLINE : UserStatus.OFFLINE)).collect(Collectors.toList());
 
            // List<UsersInDocRes> usersInDocRes = usersInDocument.stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
             return ResponseEntity.ok(usersInDocRes);
@@ -121,10 +122,8 @@ public class UserController {
         return ResponseEntity.ok(userService.documentsOfUser(userId));
     }
 
-    @RequestMapping(method = RequestMethod.GET)
+    @RequestMapping(value = "getUser", method = RequestMethod.GET)
     public ResponseEntity<?> getUser(@RequestAttribute Long userId) {
         return ResponseEntity.ok(userService.getUser(userId));
     }
-
-
 }

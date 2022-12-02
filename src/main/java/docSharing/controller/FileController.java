@@ -159,7 +159,7 @@ class FileController {
         }
     }
 
-    @RequestMapping(value = "document/getUser", method = RequestMethod.POST)
+    @RequestMapping(value = "document/getUser", method = RequestMethod.GET)
     public ResponseEntity<?> getUser(@RequestParam Long documentId, @RequestAttribute Long userId) {
         try {
             User user = userService.findById(userId);
@@ -170,12 +170,12 @@ class FileController {
         }
     }
 
-    @RequestMapping(value = "/document/getContent", method = RequestMethod.GET)
+    @RequestMapping(value = "document/getContent", method = RequestMethod.GET)
     public ResponseEntity<String> getContent(@RequestParam Long documentId, @RequestAttribute Long userId) {
         String content = documentService.getContent(documentId);
         return ResponseEntity.ok().body(content);
     }
-    @RequestMapping(value = "/document", method = RequestMethod.GET)
+    @RequestMapping(value = "document", method = RequestMethod.GET)
     public ResponseEntity<?> getDocumentName(@RequestParam Long documentId, @RequestAttribute Long userId) {
         try {
             Document document=documentService.findById(documentId);

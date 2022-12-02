@@ -67,7 +67,7 @@ public class UserService {
         }
         Document doc = documentRepository.findById(docId).get();
         User user = userRepository.findById(userId).get();
-        if(permission.equals(Permission.UNAUTORIZED)){
+        if(permission.equals(Permission.UNAUTHORIZED)){
             userDocumentRepository.deleteUserFromDocument(user,doc);
             return;
         }

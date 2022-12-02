@@ -5,5 +5,5 @@ public enum Permission{
     EDITOR,
     MODERATOR,
     ADMIN,
-    UNAUTORIZED
+    UNAUTHORIZED
 }
