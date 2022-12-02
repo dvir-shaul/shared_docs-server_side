@@ -58,7 +58,7 @@ public class UserController {
                 return ResponseEntity.badRequest().body(ExceptionMessage.USER_IS_NOT_THE_ADMIN);
             }
             userService.updatePermission(documentId, uid, permission);
-            Set<User> onlineUsers = documentService.getActiveUsersPerDoc(documentId);
+            Set<Long> onlineUsers = documentService.getActiveUsersPerDoc(documentId).stream().map(u->u.getId()).collect(Collectors.toSet());;
             List<UsersInDocRes> usersInDocRes = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId())? UserStatus.ONLINE:UserStatus.OFFLINE)).collect(Collectors.toList());
             return ResponseEntity.ok().body(usersInDocRes);
         } catch (AccountNotFoundException e) {
@@ -106,7 +106,7 @@ public class UserController {
         }
         try {
             List<UserDocument> usersInDocument = documentService.getAllUsersInDocument(documentId);
-            Set<User> onlineUsers = documentService.getActiveUsersPerDoc(documentId);
+            Set<Long> onlineUsers = documentService.getActiveUsersPerDoc(documentId).stream().map(u->u.getId()).collect(Collectors.toSet());;
             List<UsersInDocRes> usersInDocRes = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId())? UserStatus.ONLINE:UserStatus.OFFLINE)).collect(Collectors.toList());
 
            // List<UsersInDocRes> usersInDocRes = usersInDocument.stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
