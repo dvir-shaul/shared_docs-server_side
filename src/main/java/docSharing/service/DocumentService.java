@@ -63,7 +63,7 @@ public class DocumentService implements ServiceInterface {
 
     // FIXME: Can't this function be included in "addUserToDocActiveUsers"? They both do basically the same thing
     // FIXME: but with a different action...
-    public Set<User> getActiveUsersPerDoc(Long documentId){
+    public Set<User> getActiveUsersPerDoc(Long documentId) {
         return onlineUsersPerDoc.get(documentId);
     }
 
@@ -75,7 +75,7 @@ public class DocumentService implements ServiceInterface {
      *
      * @param log - log with new data.
      */
-    public void updateContent(Log log) {
+    public String updateContent(Log log) {
 
         if (!documentRepository.findById(log.getDocument().getId()).isPresent()) {
             throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString() + log.getDocument().getId());
@@ -88,7 +88,7 @@ public class DocumentService implements ServiceInterface {
 
         }
         // update document content string
-        updateCurrentContentCache(log);
+        return updateCurrentContentCache(log);
 
     }
 
@@ -98,10 +98,10 @@ public class DocumentService implements ServiceInterface {
      *
      * @param log - log with new data.
      */
-    private void updateCurrentContentCache(Log log) {
+    private String updateCurrentContentCache(Log log) {
         switch (log.getAction()) {
             case "delete":
-                log.setData(String.valueOf(documentsContentLiveChanges.get(log.getDocument().getId()).charAt(log.getOffset())));
+                log.setData(documentsContentLiveChanges.get(log.getDocument().getId()).substring(log.getOffset(), log.getOffset() + Integer.valueOf(log.getData())));
                 documentsContentLiveChanges.put(log.getDocument().getId(), truncateString(documentsContentLiveChanges.get(log.getDocument().getId()), log));
 
                 break;
@@ -109,6 +109,8 @@ public class DocumentService implements ServiceInterface {
                 documentsContentLiveChanges.put(log.getDocument().getId(), concatenateStrings(documentsContentLiveChanges.get(log.getDocument().getId()), log));
                 break;
         }
+
+        return documentsContentLiveChanges.get(log.getDocument().getId());
     }
 
 
