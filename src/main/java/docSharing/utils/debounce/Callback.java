@@ -4,5 +4,5 @@ import docSharing.entity.Log;
 import docSharing.repository.LogRepository;
 
 public interface Callback {
-    public void call(Log log, LogRepository logRepository);
+    public void call(Log log);
 }

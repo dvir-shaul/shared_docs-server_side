@@ -9,19 +9,16 @@ import docSharing.response.AllUsers;
 import docSharing.response.UserStatus;
 import docSharing.response.UsersInDocRes;
 import docSharing.service.DocumentService;
+import docSharing.service.LogService;
 import docSharing.service.UserService;
-import docSharing.utils.ConfirmationToken;
-import docSharing.utils.Validations;
-import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -40,6 +37,8 @@ public class TextEditController {
     DocumentService documentService;
     @Autowired
     UserService userService;
+    @Autowired
+    LogService logService;
 
     @MessageMapping("/document/{documentId}")
     @SendTo("/document/{documentId}")
@@ -48,14 +47,16 @@ public class TextEditController {
 //        if (log.getData() == null || log.getAction() == null || log.getOffset() == null || log.getDocumentId() == null || log.getUserId() == null || log.getCreationDate() == null)
 //            // FIXME: What to do if anything fails? Do we do anything with the client?
 //            return null;
-        Log log = null;
         try {
+            // FIXME: what if there's no such a user? Do we handle it?
             User user = userService.findById(logReq.getUserId());
+            // FIXME: what if there's no such a document? Do we check it?
             Document document = documentService.findById(documentId);
-            log = new Log(user, document, logReq.getOffset(), logReq.getData(), logReq.getAction());
+            Log log = new Log(user, document, logReq.getOffset(), logReq.getData(), logReq.getAction(), LocalDateTime.now());
             LogReq copyOfLog = new LogReq(log.getUser().getId(), log.getDocument().getId(), log.getOffset(), log.getData(), log.getAction());
             documentService.updateContent(log);
-            //System.out.println("Creating a new log for: " + copyOfLog);
+            logService.updateLogs(log);
+
             return copyOfLog;
         } catch (AccountNotFoundException e) {
             throw new RuntimeException(e);
@@ -69,8 +70,8 @@ public class TextEditController {
     public List<UsersInDocRes> getOnlineUsers(@DestinationVariable Long documentId, @Payload OnlineUsersReq onlineUsersReq) {
         try {
             System.out.println("Looking for online users for document id:" + documentId);
-            Set<Long> onlineUsers = documentService.addUserToDocActiveUsers(onlineUsersReq.getUserId(), documentId, onlineUsersReq.getMethod()).stream().map(u->u.getId()).collect(Collectors.toSet());
-            List<UsersInDocRes> all = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId())? UserStatus.ONLINE:UserStatus.OFFLINE)).collect(Collectors.toList());
+            Set<Long> onlineUsers = documentService.addUserToDocActiveUsers(onlineUsersReq.getUserId(), documentId, onlineUsersReq.getMethod()).stream().map(u -> u.getId()).collect(Collectors.toSet());
+            List<UsersInDocRes> all = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId()) ? UserStatus.ONLINE : UserStatus.OFFLINE)).collect(Collectors.toList());
             Collections.sort(all, new Comparator<UsersInDocRes>() {
                 public int compare(UsersInDocRes o1, UsersInDocRes o2) {
                     return o1.compareTo(o2);
