@@ -4,7 +4,6 @@ import docSharing.entity.*;
 import docSharing.repository.*;
 import docSharing.requests.Method;
 import docSharing.utils.ExceptionMessage;
-import docSharing.utils.debounce.Debouncer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -17,7 +16,6 @@ public class DocumentService implements ServiceInterface {
     static Map<Long, String> documentsContentLiveChanges = new HashMap<>(); // current content in cache
     static Map<Long, String> databaseDocumentsCurrentContent = new HashMap<>(); // current content in database
     //<docId,<userId, log>>
-    static Map<Long, Map<Long, Log>> chainedLogs = new HashMap<>(); // logs history until storing to database
     static Map<Long, Set<User>> onlineUsersPerDoc = new HashMap<>();
     @Autowired
     DocumentRepository documentRepository;
@@ -27,12 +25,8 @@ public class DocumentService implements ServiceInterface {
     UserDocumentRepository userDocumentRepository;
     @Autowired
     UserRepository userRepository;
-    @Autowired
-    LogRepository logRepository;
 
-    Debouncer debouncer = new Debouncer<>(new SendLogsToDatabase(chainedLogs), 5000);
-
-    @Scheduled(fixedDelay = 10000)
+    @Scheduled(fixedDelay = 10 * 1000)
     public void updateDatabaseWithNewContent() {
         for (Map.Entry<Long, String> entry : documentsContentLiveChanges.entrySet()) {
             if (!entry.getValue().equals(databaseDocumentsCurrentContent.get(entry.getKey()))) {
@@ -40,62 +34,6 @@ public class DocumentService implements ServiceInterface {
                 databaseDocumentsCurrentContent.put(entry.getKey(), entry.getValue());
             }
         }
-    }
-
-    /**
-     * This function called every time we get a new log,
-     * checks if a new data that was written to document was written before
-     * the logs that are online in chainedLogs map, if it ws before we will update the offsets accordingly.
-     *
-     * @param log - changes from
-     */
-    private void updateLogsOffset(Map<Long, Log> documentLogs, Log log) {
-        documentLogs.replaceAll((userId, _log) -> {
-            // create a copy of the log in case we need to modify it
-            Log tempLog = Log.copy(_log);
-
-            // make sure not to change the current user's log
-            if (log.getUser().getId() != userId) {
-
-                // if the offset is before other logs' offset, decrease its offset by the length of the log
-                if (log.getAction().equals("delete") && log.getOffset() <= _log.getOffset()) {
-                    tempLog.setOffset(_log.getOffset() - log.getData().length());
-                }
-
-                // if the offset is before other logs' offset, increase its offset by the length of the log
-                else if (log.getAction().equals("insert") && log.getOffset() <= _log.getOffset()) {
-                    tempLog.setOffset(_log.getOffset() + log.getData().length());
-                }
-
-                // if the offset is in the middle of the logs' offset, split it to two, commit the first one and store only the second part
-                else if (log.getOffset() > _log.getOffset() && log.getOffset() < _log.getOffset() + _log.getData().length()) {
-                    // cut the _log to half
-                    Log firstPartOfLog = Log.copy(_log);
-                    firstPartOfLog.setData(_log.getData().substring(0, log.getOffset()));
-                    firstPartOfLog.setLastEditDate(_log.getCreationDate());
-                    System.out.println("firstLog" + firstPartOfLog);
-                    // store the first half in the database. for now just print it
-                    firstPartOfLog.getUser().addLog(firstPartOfLog);
-                    firstPartOfLog.getDocument().addLog(firstPartOfLog);
-                    logRepository.save(firstPartOfLog);
-                    //TODO: save firstPartOfLog to db
-
-                    // keep the second half in the cache
-                    // there's not a real need to store it in a different log, but for simplicity...
-                    Log secondPartOfLog = Log.copy(_log);
-                    secondPartOfLog.setOffset(log.getOffset() + 1);
-                    secondPartOfLog.setData(_log.getData().substring(log.getOffset()));
-                    secondPartOfLog.setLastEditDate(_log.getCreationDate());
-                    System.out.println("secondLog" + secondPartOfLog);
-
-                    // firstPartLog.sendtoDB!!!!
-                    tempLog = secondPartOfLog;
-                }
-
-                // if the offset is after the log's data, skip it because it doesn't matter.
-            }
-            return tempLog;
-        });
     }
 
     /**
@@ -123,6 +61,8 @@ public class DocumentService implements ServiceInterface {
         return onlineUsersPerDoc.get(documentId);
     }
 
+    // FIXME: Can't this function be included in "addUserToDocActiveUsers"? They both do basically the same thing
+    // FIXME: but with a different action...
     public Set<User> getActiveUsersPerDoc(Long documentId){
         return onlineUsersPerDoc.get(documentId);
     }
@@ -137,8 +77,6 @@ public class DocumentService implements ServiceInterface {
      */
     public void updateContent(Log log) {
 
-        debouncer.call(log, logRepository);
-
         if (!documentRepository.findById(log.getDocument().getId()).isPresent()) {
             throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString() + log.getDocument().getId());
         }
@@ -152,15 +90,6 @@ public class DocumentService implements ServiceInterface {
         // update document content string
         updateCurrentContentCache(log);
 
-        Map<Long, Log> documentLogs = chainedLogs.get(log.getDocument().getId());
-
-        if (documentLogs == null) {
-            documentLogs = new HashMap<>();
-            chainedLogs.put(log.getDocument().getId(), documentLogs);
-        }
-        // update logs
-        chainLogs(documentLogs, log);
-        updateLogsOffset(documentLogs, log);
     }
 
     /**
@@ -172,76 +101,16 @@ public class DocumentService implements ServiceInterface {
     private void updateCurrentContentCache(Log log) {
         switch (log.getAction()) {
             case "delete":
-//                log.setData(String.valueOf(documentsContentLiveChanges.get(log.getDocumentId()).charAt(log.getOffset())));
                 log.setData(String.valueOf(documentsContentLiveChanges.get(log.getDocument().getId()).charAt(log.getOffset())));
-                log.setLastEditDate(log.getCreationDate());
-                System.out.println("log" + log);
-
-//                documentsContentLiveChanges.put(log.getDocumentId(), truncateString(documentsContentLiveChanges.get(log.getDocumentId()), log));
                 documentsContentLiveChanges.put(log.getDocument().getId(), truncateString(documentsContentLiveChanges.get(log.getDocument().getId()), log));
 
                 break;
             case "insert":
-//                documentsContentLiveChanges.put(log.getDocumentId(), concatenateStrings(documentsContentLiveChanges.get(log.getDocumentId()), log));
                 documentsContentLiveChanges.put(log.getDocument().getId(), concatenateStrings(documentsContentLiveChanges.get(log.getDocument().getId()), log));
                 break;
         }
     }
 
-    /**
-     * this function goal is to connect 2 logs to 1 log according to the user that was written the new data
-     * and the offset that the data was entered.
-     * checking order is:
-     * 1. if such a log doesn't exist in the cache, create a new entry for it in the map
-     * 2. if the new log is not a sequel to current log, store the current one in the db and start a new one instead.
-     * 3. if the current log was attempting to delete and how we want to insert,push the deleted one and create a new log
-     * 4. if the new log is in the middle of the current log, it must be concatenated.
-     * saves the concatenated logs to chainedLogs map.
-     *
-     * @param newLog - new data that needed to chain to old log.
-     */
-    private void chainLogs(Map<Long, Log> documentLogs, Log newLog) {
-
-
-        // if such a log doesn't exist in the cache, create a new entry for it in the map
-        if (!documentLogs.containsKey(newLog.getUser().getId())) {
-            documentLogs.put(newLog.getUser().getId(), newLog);
-            return;
-        }
-
-        Log currentLog = documentLogs.get(newLog.getUser().getId());
-        currentLog.setLastEditDate(newLog.getCreationDate());
-
-//        System.out.println("Is current log start point greater? " + (currentLog.getOffset() - 1 >= newLog.getOffset()));
-//        System.out.println("Is current log start point greater? " + (currentLog.getOffset() + currentLog.getData().length() + 1 <= newLog.getOffset()));
-        // if the new log is not a sequel to current log, store the current one in the db and start a new one instead.
-        if ((currentLog.getOffset() - 1 >= newLog.getOffset() || currentLog.getOffset() + currentLog.getData().length() + 1 <= newLog.getOffset())) {
-            currentLog.getUser().addLog(currentLog);
-            currentLog.getDocument().addLog(currentLog);
-            logRepository.save(currentLog);
-            documentLogs.put(currentLog.getUser().getId(), newLog);
-            return;
-        }
-
-        // if the new log is in the middle of the current log, it must be concatenated.
-        else {
-            if (currentLog.getAction().equals("insert") && newLog.getAction().equals("delete")) {
-                currentLog.setData(truncateLogs(currentLog, newLog));
-                // if the current log was attempting to delete and now we want to insert, push the delete and create a new log
-            } else if (currentLog.getAction().equals("delete") && newLog.getAction().equals("insert")) {
-                currentLog.getUser().addLog(currentLog);
-                currentLog.getDocument().addLog(currentLog);
-                logRepository.save(currentLog); //TODO: save currentLog to db
-                documentLogs.put(currentLog.getUser().getId(), newLog);
-                return;
-
-            } else if (newLog.getAction().equals(currentLog.getAction())) {
-                currentLog.setData(concatenateLogs(currentLog, newLog));
-            }
-
-            documentLogs.put(currentLog.getUser().getId(), currentLog);
-        }
-    }
 
     /**
      * @param id - document id.
@@ -361,26 +230,10 @@ public class DocumentService implements ServiceInterface {
      * @param log  - log with new data
      * @return updated content
      */
-    private String concatenateStrings(String text, Log log) {
+    public static String concatenateStrings(String text, Log log) {
         String beforeCut = text.substring(0, log.getOffset());
         String afterCut = text.substring(log.getOffset());
         return beforeCut + log.getData() + afterCut;
-    }
-
-    /**
-     * this function gets called from chainLogs when the logs are needed to concatenate.
-     * change the newLog offset to put him according to the current log.
-     * it comes from that idea that we want to make the currentLog offset as our absolute zero.
-     *
-     * @param currentLog - log that is in the cached map of logs.
-     * @param newLog     - log with changes from the client.
-     * @return - updated content that was concatenated from the 2 logs we have.
-     */
-    private String concatenateLogs(Log currentLog, Log newLog) {
-        int diff = newLog.getOffset() - currentLog.getOffset() < 0 ? 0 : newLog.getOffset() - currentLog.getOffset();
-        newLog.setOffset(diff);
-        if (currentLog.getData() == null) currentLog.setData(""); // CONSULT: shouldn't happen, so why did I write it?
-        return concatenateStrings(currentLog.getData(), newLog);
     }
 
     /**
@@ -391,25 +244,10 @@ public class DocumentService implements ServiceInterface {
      * @param log  - log with new data.
      * @return updated content.
      */
-    private String truncateString(String text, Log log) {
+    public static String truncateString(String text, Log log) {
         String beforeCut = text.substring(0, log.getOffset());
         String afterCut = text.substring(log.getOffset() + log.getData().length());
         return beforeCut.concat(afterCut);
-    }
-
-    /**
-     * this function gets called from chainLogs when the logs are needed to truncate.
-     * change the newLog offset to put him according to the current log.
-     * it comes from that idea that we want to make the currentLog offset as our absolute zero.
-     *
-     * @param currentLog - log that is in the cached map of logs.
-     * @param newLog     - log with changes from the client.
-     * @return - updated content that was truncated from the 2 logs we have.
-     */
-    private String truncateLogs(Log currentLog, Log newLog) {
-        newLog.setOffset(newLog.getOffset() - (currentLog.getOffset()));
-        if (currentLog.getData() == null) currentLog.setData("");
-        return truncateString(currentLog.getData(), newLog);
     }
 
     /**
