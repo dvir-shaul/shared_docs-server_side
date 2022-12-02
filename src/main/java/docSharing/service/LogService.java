@@ -69,9 +69,8 @@ public class LogService {
         }
 
         Log currentLog = documentLogs.get(newLog.getUser().getId());
-
         // if the new log is not a sequel to current log, store the current one in the db and start a new one instead.
-        if ((currentLog.getOffset() - 1 >= newLog.getOffset() || currentLog.getOffset() + currentLog.getData().length() + 1 <= newLog.getOffset())) {
+        if (currentLog.getOffset() - 1 > newLog.getOffset() || (currentLog.getOffset() + currentLog.getData().length() + 1) < newLog.getOffset()) {
             currentLog.getUser().addLog(currentLog);
             currentLog.getDocument().addLog(currentLog);
             logRepository.save(currentLog);
@@ -110,17 +109,17 @@ public class LogService {
         documentLogs.replaceAll((userId, _log) -> {
             // create a copy of the log in case we need to modify it
             Log tempLog = Log.copy(_log);
+            // if the offset is before other logs' offset, decrease its offset by the length of the log
+            if (log.getAction().equals("delete") && log.getOffset() <= _log.getOffset()) {
+                tempLog.setOffset(_log.getOffset() - log.getData().length());
+            }
 
             // make sure not to change the current user's log
             if (!log.getUser().getId().equals(userId)) {
 
-                // if the offset is before other logs' offset, decrease its offset by the length of the log
-                if (log.getAction().equals("delete") && log.getOffset() <= _log.getOffset()) {
-                    tempLog.setOffset(_log.getOffset() - log.getData().length());
-                }
 
                 // if the offset is before other logs' offset, increase its offset by the length of the log
-                else if (log.getAction().equals("insert") && log.getOffset() <= _log.getOffset()) {
+                if (log.getAction().equals("insert") && log.getOffset() <= _log.getOffset()) {
                     tempLog.setOffset(_log.getOffset() + log.getData().length());
                 }
 
@@ -141,7 +140,6 @@ public class LogService {
                     secondPartOfLog.setOffset(log.getOffset() + 1);
                     secondPartOfLog.setData(_log.getData().substring(log.getOffset()));
                     secondPartOfLog.setLastEditDate(_log.getCreationDate());
-                    System.out.println("secondLog" + secondPartOfLog);
 
                     // firstPartLog.send to DB!!!!
                     tempLog = secondPartOfLog;

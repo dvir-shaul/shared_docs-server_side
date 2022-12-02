@@ -5,7 +5,6 @@ import docSharing.entity.Log;
 import docSharing.entity.User;
 import docSharing.requests.LogReq;
 import docSharing.requests.OnlineUsersReq;
-import docSharing.response.AllUsers;
 import docSharing.response.UserStatus;
 import docSharing.response.UsersInDocRes;
 import docSharing.service.DocumentService;
@@ -52,9 +51,10 @@ public class TextEditController {
             User user = userService.findById(logReq.getUserId());
             // FIXME: what if there's no such a document? Do we check it?
             Document document = documentService.findById(documentId);
+            // CONSULT: Why do we even get a logReq and not a normal Log. Then return a logRes?
             Log log = new Log(user, document, logReq.getOffset(), logReq.getData(), logReq.getAction(), LocalDateTime.now());
             LogReq copyOfLog = new LogReq(log.getUser().getId(), log.getDocument().getId(), log.getOffset(), log.getData(), log.getAction());
-            documentService.updateContent(log);
+            String content = documentService.updateContent(log);
             logService.updateLogs(log);
 
             return copyOfLog;
@@ -69,7 +69,6 @@ public class TextEditController {
     @SendTo("/document/onlineUsers/{documentId}")
     public List<UsersInDocRes> getOnlineUsers(@DestinationVariable Long documentId, @Payload OnlineUsersReq onlineUsersReq) {
         try {
-            System.out.println("Looking for online users for document id:" + documentId);
             Set<Long> onlineUsers = documentService.addUserToDocActiveUsers(onlineUsersReq.getUserId(), documentId, onlineUsersReq.getMethod()).stream().map(u -> u.getId()).collect(Collectors.toSet());
             List<UsersInDocRes> all = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId()) ? UserStatus.ONLINE : UserStatus.OFFLINE)).collect(Collectors.toList());
             Collections.sort(all, new Comparator<UsersInDocRes>() {
@@ -82,6 +81,4 @@ public class TextEditController {
             return null;
         }
     }
-
-
 }
