@@ -241,26 +241,15 @@ public class DocumentService implements ServiceInterface {
      * @param documentId - document id
      * @return content in documentsContentLiveChanges
      */
-    public ResponseEntity<Response> getContent(Long documentId) {
+    public String getContent(Long documentId) {
         String content = documentsContentLiveChanges.get(documentId);
 
         if (content == null || content.length() == 0) {
             String databaseContent = documentRepository.getContentFromDocument(documentId);
             documentsContentLiveChanges.put(documentId, databaseContent);
             databaseDocumentsCurrentContent.put(documentId, databaseContent);
-            //FIXME: service should not return response entity, this is the responsibility of the controller
-            return ResponseEntity.ok().body(new Response.Builder()
-                    .status(HttpStatus.NO_CONTENT)
-                    .message("Could not find a content for this document.")
-                    .data("")
-                    .build());
         }
-        //FIXME: service should not return response entity, this is the responsibility of the controller
-        return ResponseEntity.ok().body(new Response.Builder()
-                .status(HttpStatus.NO_CONTENT)
-                .message("A content for documentId: " + documentId + " has been found.")
-                .data(documentsContentLiveChanges.get(documentId))
-                .build());
+        return documentsContentLiveChanges.get(documentId);
     }
 
     /**
@@ -332,9 +321,9 @@ public class DocumentService implements ServiceInterface {
         if (!document.isPresent())
             throw new FileNotFoundException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
 
-
         userDocumentRepository.deleteDocument(document.get());
         documentRepository.deleteById(docId);
+        // CONSULT: can we get the number of lines affected to return to the user?
     }
 
     public Boolean doesExist(Long id) {

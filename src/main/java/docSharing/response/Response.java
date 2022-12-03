@@ -29,7 +29,6 @@ public class Response {
 
         public Builder() {
             this.status = null;
-
             this.message = null;
             this.data = null;
             this.statusCode = null;
@@ -64,5 +63,6 @@ public class Response {
         this.status = builder.status;
         this.message = builder.message;
         this.data = builder.data;
+        this.statusCode = builder.statusCode;
     }
 }

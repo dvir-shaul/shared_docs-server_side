@@ -40,18 +40,20 @@ public class FacadeController {
                 folders = folderService.getAllWhereParentFolderIsNull(userId);
                 documents = documentService.getAllWhereParentFolderIsNull(userId);
             }
-            return ResponseEntity.ok().body(new Response.Builder()
+            return new ResponseEntity<>(new Response.Builder()
                     .status(HttpStatus.OK)
+                    .statusCode(200)
                     .data(convertToFileRes(folders, documents))
                     .message("getAll function worked")
-                    .build());
+                    .build(), HttpStatus.OK);
 
         } catch (AccountNotFoundException e) {
             // TODO: we need to throw more exceptions so we know what status to retrieve!
-            return ResponseEntity.badRequest().body(new Response.Builder()
+            return new ResponseEntity<>(new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
                     .message(e.getMessage())
-                    .build());
+                    .statusCode(400)
+                    .build(), HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -70,83 +72,100 @@ public class FacadeController {
         try {
             Validations.validate(Regex.FILE_NAME.getRegex(), item.getName());
 //            Validations.validate(Regex.ID.getRegex(), item.getParentFolderId().toString());
-        } catch (NullPointerException |IllegalArgumentException e) {
-            return ResponseEntity.ok().body(new Response.Builder()
-                    .status(HttpStatus.BAD_REQUEST)
-                    .data("")
-                    .message(e.getMessage())
-                    .build());
-        }
+            return new ResponseEntity<>(new Response.Builder()
+                    .status(HttpStatus.OK)
+                    .statusCode(200)
+                    .data(convertFromClassToService(c).create(item))
+                    .message("item created successfully")
+                    .build(), HttpStatus.OK);
 
-        return ResponseEntity.ok().body(new Response.Builder()
-                .status(HttpStatus.OK)
-                .data(convertFromClassToService(c).create(item))
-                .message("item created successfully")
-                .build());
+        } catch (NullPointerException | IllegalArgumentException e) {
+            return new ResponseEntity<>(new Response.Builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .statusCode(400)
+                    .message(e.getMessage())
+                    .build(), HttpStatus.BAD_REQUEST);
+        }
     }
 
-    public ResponseEntity<Response> getPath(GeneralItem item, Class c){
-        return ResponseEntity.ok().body(new Response.Builder()
+    public ResponseEntity<Response> getPath(GeneralItem item, Class c) {
+        return new ResponseEntity<>(new Response.Builder()
                 .status(HttpStatus.OK)
-                .message("")
+                .statusCode(200)
+                .message("Successfully managed to retrieve path")
                 .data(convertFromClassToService(c).getPath(item))
-                .build());
+                .build(), HttpStatus.OK);
     }
 
     public ResponseEntity<Response> rename(Long id, String name, Class c) {
         // FIXME: need to validate name using Validations.validate!
         //  it also checks if null and returns an exception so we need to catch it here.
         if (name == null)
-            return ResponseEntity.badRequest().body(new Response.Builder()
+            return new ResponseEntity<>(new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
+                    .statusCode(400)
                     .message("You must include all and exact parameters for such an action: name")
-                    .build());
+                    .build(), HttpStatus.BAD_REQUEST);
 
-        return ResponseEntity.ok().body(new Response.Builder()
+        return new ResponseEntity<>(new Response.Builder()
                 .status(HttpStatus.OK)
+                .statusCode(200)
                 .message("Successfully renamed to: " + convertFromClassToService(c).rename(id, name))
-                .build());
+                .build(), HttpStatus.OK);
     }
 
     public ResponseEntity<Response> delete(Long id, Class c) {
+        // FIXME: We have this check in a Validation.validate function. Why not do that there and let it throw its exception?
+        //  if we do it this way, we only return an exception response once, and not twice.
         if (id == null)
-            return ResponseEntity.badRequest().body(new Response.Builder()
+            return new ResponseEntity<>(new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
+                    .statusCode(400)
                     .message("I'm sorry. In order for me to delete a document, you need to be more specific about its id... So what is it's id?")
-                    .build());
+                    .build(), HttpStatus.BAD_REQUEST);
         try {
             convertFromClassToService(c).delete(id);
-            return ResponseEntity.ok().body(new Response.Builder()
+            return new ResponseEntity<>(new Response.Builder()
                     .status(HttpStatus.OK)
+                    .statusCode(200)
                     .message("An item answering to the id:" + id + " has been successfully erased from the database!")
-                    .build());
+                    .build(), HttpStatus.OK);
+
         } catch (FileNotFoundException e) {
-            return ResponseEntity.badRequest().body(new Response.Builder().status(HttpStatus.NOT_FOUND).message("You must include all and exact parameters for such an action: name").build());
+            return new ResponseEntity<>(new Response.Builder()
+                    .status(HttpStatus.NOT_FOUND)
+                    .statusCode(400)
+                    .message("You must include all and exact parameters for such an action: id")
+                    .build(), HttpStatus.NOT_FOUND);
         }
     }
 
     public ResponseEntity<Response> relocate(Long newParentId, Long id, Class c) {
         try {
             if (id == null)
-                return ResponseEntity.badRequest().body(new Response.Builder()
+                return new ResponseEntity<>(new Response.Builder()
                         .status(HttpStatus.BAD_REQUEST)
+                        .statusCode(400)
                         .message("In order to relocate, an ID must be provided!")
-                        .build());
+                        .build(), HttpStatus.BAD_REQUEST);
 
             Folder parentFolder = null;
             if (newParentId != null) {
                 parentFolder = folderService.findById(newParentId);
             }
-            return ResponseEntity.ok().body(new Response.Builder()
-                    .message("Affected number of lines: " + convertFromClassToService(c).relocate(parentFolder, id))
+            return new ResponseEntity<>(new Response.Builder()
+                    .message("Successfully relocated a file")
                     .status(HttpStatus.OK)
-                    .build());
+                    .statusCode(200)
+                    .data(convertFromClassToService(c).relocate(parentFolder, id))
+                    .build(), HttpStatus.OK);
 
         } catch (FileNotFoundException e) {
-            return ResponseEntity.badRequest().body(new Response.Builder()
+            return new ResponseEntity<>(new Response.Builder()
                     .message(e.getMessage())
-                    .status(HttpStatus.NOT_FOUND)
-                    .build());
+                    .statusCode(400)
+                    .status(HttpStatus.BAD_REQUEST)
+                    .build(), HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -154,32 +173,35 @@ public class FacadeController {
         try {
             Document document = documentService.findById(documentId);
             ExportDoc exportDoc = new ExportDoc(document.getName(), document.getContent());
-            return ResponseEntity.ok().body(new Response.Builder()
+            return new ResponseEntity<>(new Response.Builder()
                     .data(exportDoc)
                     .status(HttpStatus.OK)
                     .message("Export performed successfully")
-                    .build());
+                    .build(), HttpStatus.OK);
 
         } catch (FileNotFoundException e) {
-            return ResponseEntity.badRequest().body(new Response.Builder()
+            return new ResponseEntity<>(new Response.Builder()
                     .message(e.getMessage())
-                    .status(HttpStatus.NOT_FOUND)
-                    .build());
+                    .statusCode(400)
+                    .status(HttpStatus.BAD_REQUEST)
+                    .build(), HttpStatus.BAD_REQUEST);
         }
     }
 
     public ResponseEntity<Response> doesExist(Long id, Class c) {
         if (id == null)
-            return ResponseEntity.badRequest().body(new Response.Builder()
+            return new ResponseEntity<>(new Response.Builder()
                     .message("File of type " + c.getSimpleName() + " with an id of: " + id + " does not exist")
                     .status(HttpStatus.BAD_REQUEST)
-                    .build());
+                    .statusCode(400)
+                    .build(), HttpStatus.BAD_REQUEST);
 
-        return ResponseEntity.ok().body(new Response.Builder()
+        return new ResponseEntity<>(new Response.Builder()
                 .status(HttpStatus.OK)
                 .message("File exists")
+                .statusCode(200)
                 .data(convertFromClassToService(c).doesExist(id))
-                .build());
+                .build(), HttpStatus.OK);
     }
 
 
