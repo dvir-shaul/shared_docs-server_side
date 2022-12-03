@@ -67,6 +67,7 @@ public class AuthController {
             String mail = Activation.buildEmail(emailUser.getName(), link);
             try {
                 emailService.send(emailUser.getEmail(), mail, "activate account");
+                return ResponseEntity.status(201).body("Account has been successfully registered and created!");
             } catch (Exception e) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
             }
@@ -75,7 +76,6 @@ public class AuthController {
         }
 
         // if correct -> call auth service with parameters -> register function
-        return ResponseEntity.status(201).body("Account has been successfully registered and created!");
     }
 
     /**

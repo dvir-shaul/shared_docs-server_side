@@ -3,12 +3,17 @@ package docSharing.service;
 import docSharing.entity.*;
 import docSharing.repository.*;
 import docSharing.requests.Method;
+import docSharing.response.Response;
 import docSharing.utils.ExceptionMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import javax.print.Doc;
 import javax.security.auth.login.AccountNotFoundException;
+import java.io.FileNotFoundException;
 import java.util.*;
 
 @Service
@@ -62,7 +67,7 @@ public class DocumentService implements ServiceInterface {
     }
 
     // FIXME: Can't this function be included in "addUserToDocActiveUsers"? They both do basically the same thing
-    // FIXME: but with a different action...
+    //  but with a different action...
     public Set<User> getActiveUsersPerDoc(Long documentId) {
         return onlineUsersPerDoc.get(documentId);
     }
@@ -119,10 +124,12 @@ public class DocumentService implements ServiceInterface {
      * @return entity of Document from database
      * @throws AccountNotFoundException - no document in database with given id.
      */
-    public Document findById(Long id) throws AccountNotFoundException {
-        if (!documentRepository.findById(id).isPresent())
-            throw new AccountNotFoundException(ExceptionMessage.NO_DOCUMENT_IN_DATABASE.toString());
-        return documentRepository.findById(id).get();
+    public Document findById(Long id) throws FileNotFoundException {
+        Optional<Document> document = documentRepository.findById(id);
+        if (!document.isPresent())
+            throw new FileNotFoundException(ExceptionMessage.NO_DOCUMENT_IN_DATABASE.toString());
+
+        return document.get();
     }
 
     /**
@@ -208,20 +215,31 @@ public class DocumentService implements ServiceInterface {
         throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
     }
 
+
     /**
      * this function goal is to show the live content of a document to the client.
      *
      * @param documentId - document id
      * @return content in documentsContentLiveChanges
      */
-    public String getContent(Long documentId) {
+    public ResponseEntity<Response> getContent(Long documentId) {
         String content = documentsContentLiveChanges.get(documentId);
+
         if (content == null || content.length() == 0) {
             String databaseContent = documentRepository.getContentFromDocument(documentId);
             documentsContentLiveChanges.put(documentId, databaseContent);
             databaseDocumentsCurrentContent.put(documentId, databaseContent);
+            return ResponseEntity.ok().body(new Response.Builder()
+                    .status(HttpStatus.NO_CONTENT)
+                    .message("Could not find a content for this document.")
+                    .data("")
+                    .build());
         }
-        return documentsContentLiveChanges.get(documentId);
+        return ResponseEntity.ok().body(new Response.Builder()
+                .status(HttpStatus.NO_CONTENT)
+                .message("A content for documentId: " + documentId + " has been found.")
+                .data(documentsContentLiveChanges.get(documentId))
+                .build());
     }
 
     /**
@@ -259,19 +277,22 @@ public class DocumentService implements ServiceInterface {
      * @param id              - document id.
      * @return rows affected in mysql.
      */
-    public int relocate(Folder newParentFolder, Long id) {
+    public int relocate(Folder newParentFolder, Long id) throws FileNotFoundException {
         if (newParentFolder != null && !folderRepository.findById(newParentFolder.getId()).isPresent()) {
-            throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
+            throw new FileNotFoundException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
         }
-        if (!documentRepository.findById(id).isPresent()) {
-            throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
+
+        Optional<Document> document = documentRepository.findById(id);
+        if (!document.isPresent()) {
+            throw new FileNotFoundException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
         }
-        Document doc = documentRepository.findById(id).get();
-        Folder oldParentFolder = doc.getParentFolder();
-        doc.setParentFolder(newParentFolder);
-        oldParentFolder.removeDocument(doc);
+
+        Folder oldParentFolder = document.get().getParentFolder();
+        document.get().setParentFolder(newParentFolder);
+        oldParentFolder.removeDocument(document.get());
+
         if (newParentFolder != null) {
-            newParentFolder.addDocument(doc);
+            newParentFolder.addDocument(document.get());
         }
         return documentRepository.updateParentFolderId(newParentFolder, id);
     }
@@ -282,15 +303,23 @@ public class DocumentService implements ServiceInterface {
      *
      * @param docId - gets document id .
      */
-    public void delete(Long docId) {
+    public void delete(Long docId) throws FileNotFoundException {
         databaseDocumentsCurrentContent.remove(docId);
         documentsContentLiveChanges.remove(docId);
-        if (!documentRepository.findById(docId).isPresent()) {
-            throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
-        }
-        userDocumentRepository.deleteDocument(documentRepository.findById(docId).get());
+
+        Optional<Document> document = documentRepository.findById(docId);
+        if (!document.isPresent())
+            throw new FileNotFoundException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
+
+
+        userDocumentRepository.deleteDocument(document.get());
         documentRepository.deleteById(docId);
     }
+
+    public Boolean doesExist(Long id) {
+        return documentRepository.findById(id).isPresent();
+    }
+
 
     public List<Document> getAllWhereParentFolderIsNull(Long userId) throws AccountNotFoundException {
         if (!userRepository.findById(userId).isPresent())

@@ -12,6 +12,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 public class FileRes {
+    // CONSULT: FileRes == DocumentRes ?
     private String name;
     private Long id;
     private Type type;
