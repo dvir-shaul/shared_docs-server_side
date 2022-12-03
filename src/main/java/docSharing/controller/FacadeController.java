@@ -65,19 +65,32 @@ public class FacadeController {
 //        return ResponseEntity.ok().body(convertFromClassToService(c).get(id));
 //    }
 
-    // FIXME -> transform to ResponseEntity<Response>
-    public ResponseEntity create(GeneralItem item, Class c) {
+    public ResponseEntity<Response> create(GeneralItem item, Class c) {
         // make sure we got all the data from the client
         try {
             Validations.validate(Regex.FILE_NAME.getRegex(), item.getName());
 //            Validations.validate(Regex.ID.getRegex(), item.getParentFolderId().toString());
-        } catch (NullPointerException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (NullPointerException |IllegalArgumentException e) {
+            return ResponseEntity.ok().body(new Response.Builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .data("")
+                    .message(e.getMessage())
+                    .build());
         }
 
-        return ResponseEntity.ok().body(convertFromClassToService(c).create(item).toString());
+        return ResponseEntity.ok().body(new Response.Builder()
+                .status(HttpStatus.OK)
+                .data(convertFromClassToService(c).create(item))
+                .message("item created successfully")
+                .build());
+    }
+
+    public ResponseEntity<Response> getPath(GeneralItem item, Class c){
+        return ResponseEntity.ok().body(new Response.Builder()
+                .status(HttpStatus.OK)
+                .message("")
+                .data(convertFromClassToService(c).getPath(item))
+                .build());
     }
 
     public ResponseEntity<Response> rename(Long id, String name, Class c) {

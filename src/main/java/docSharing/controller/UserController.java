@@ -3,33 +3,21 @@ package docSharing.controller;
 import docSharing.entity.Document;
 import docSharing.entity.Permission;
 import docSharing.entity.User;
-import docSharing.entity.UserDocument;
-import docSharing.requests.OnlineUsersReq;
-import docSharing.response.AllUsers;
-import docSharing.response.UserStatus;
-import docSharing.response.UsersInDocRes;
+import docSharing.response.JoinRes;
 import docSharing.service.DocumentService;
 import docSharing.service.EmailService;
 import docSharing.service.UserService;
-import docSharing.utils.ExceptionMessage;
 import docSharing.utils.Invite;
 import docSharing.utils.Share;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.handler.annotation.DestinationVariable;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.web.bind.annotation.*;
 
 import javax.security.auth.login.AccountNotFoundException;
-import java.io.FileNotFoundException;
-import java.util.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
+
 
 @RestController
 @CrossOrigin
@@ -54,24 +42,13 @@ public class UserController {
         if (documentId == null || uid == null || permission == null) {
             return ResponseEntity.badRequest().build();
         }
-
-        // FIXME: Too much logics for a controller. We need to move it to the service.
-        //  A controller only validates the data. It doesn't have logics inside of it.
         try {
-            // FIXME: should be in the filter -> permission filter
-//            if (!Objects.equals(documentService.findById(documentId).getUser().getId(), userId)) {
-//                return ResponseEntity.badRequest().body(ExceptionMessage.USER_IS_NOT_THE_ADMIN);
-//            }
+            return ResponseEntity.ok().body(documentService.getAllUsersInDocument(documentId));
 
-            userService.updatePermission(documentId, uid, permission);
-            Set<Long> onlineUsers = documentService.getActiveUsersPerDoc(documentId).stream().map(u->u.getId()).collect(Collectors.toSet());
-            List<UsersInDocRes> usersInDocRes = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId()) ? UserStatus.ONLINE : UserStatus.OFFLINE)).collect(Collectors.toList());
-            return ResponseEntity.ok().body(usersInDocRes);
-
-        } catch (AccountNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        }  catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (AccountNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -111,12 +88,7 @@ public class UserController {
             }
         }
         try {
-            List<UserDocument> usersInDocument = documentService.getAllUsersInDocument(documentId);
-            Set<User> onlineUsers = documentService.getActiveUsersPerDoc(documentId);
-            List<UsersInDocRes> usersInDocRes = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId()) ? UserStatus.ONLINE : UserStatus.OFFLINE)).collect(Collectors.toList());
-
-            // List<UsersInDocRes> usersInDocRes = usersInDocument.stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
-            return ResponseEntity.ok(usersInDocRes);
+            return ResponseEntity.ok(documentService.getAllUsersInDocument(documentId));
         } catch (AccountNotFoundException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
@@ -130,5 +102,17 @@ public class UserController {
     @RequestMapping(value = "getUser", method = RequestMethod.GET)
     public ResponseEntity<?> getUser(@RequestAttribute Long userId) {
         return ResponseEntity.ok(userService.getUser(userId));
+    }
+
+    @RequestMapping(value = "document/getUser", method = RequestMethod.GET)
+    public ResponseEntity<?> getUser(@RequestParam Long documentId, @RequestAttribute Long userId) {
+        try {
+            User user = userService.findById(userId);
+            Permission permission = documentService.getUserPermissionInDocument(userId, documentId);
+            return ResponseEntity.ok(new JoinRes(user.getName(), userId, permission));
+
+        } catch (AccountNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 }
