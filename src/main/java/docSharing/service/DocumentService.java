@@ -3,7 +3,11 @@ package docSharing.service;
 import docSharing.entity.*;
 import docSharing.repository.*;
 import docSharing.requests.Method;
+import docSharing.requests.Type;
+import docSharing.response.FileRes;
 import docSharing.response.Response;
+import docSharing.response.UserStatus;
+import docSharing.response.UsersInDocRes;
 import docSharing.utils.ExceptionMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,6 +19,7 @@ import javax.print.Doc;
 import javax.security.auth.login.AccountNotFoundException;
 import java.io.FileNotFoundException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class DocumentService implements ServiceInterface {
@@ -50,6 +55,7 @@ public class DocumentService implements ServiceInterface {
      * @param method     - ADD/ REMOVE
      * @return set of current users that viewing the document.
      */
+    //FIXME: this function should be renamed to "getActiveUsers"
     public Set<User> addUserToDocActiveUsers(Long userId, Long documentId, Method method) {
         onlineUsersPerDoc.putIfAbsent(documentId, new HashSet<>());
         if (!userRepository.findById(userId).isPresent()) {
@@ -62,12 +68,25 @@ public class DocumentService implements ServiceInterface {
                 break;
             case REMOVE:
                 onlineUsersPerDoc.get(documentId).remove(user);
+                break;
+            case GET:
+                break;
+
         }
         return onlineUsersPerDoc.get(documentId);
     }
 
-    // FIXME: Can't this function be included in "addUserToDocActiveUsers"? They both do basically the same thing
-    //  but with a different action...
+    public List<FileRes> getPath(GeneralItem generalItem){
+        List<FileRes> path = new ArrayList<>();
+        Folder parentFolder = generalItem.getParentFolder();
+        while (parentFolder != null) {
+            path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, generalItem.getUser().getEmail()));
+            parentFolder = parentFolder.getParentFolder();
+        }
+        return path;
+    }
+  //This function is redundant because it has been added to addUserToDocActiveUsers with a method of "GET"
+    //FIXME: This function will be removed later
     public Set<User> getActiveUsersPerDoc(Long documentId) {
         return onlineUsersPerDoc.get(documentId);
     }
@@ -229,12 +248,14 @@ public class DocumentService implements ServiceInterface {
             String databaseContent = documentRepository.getContentFromDocument(documentId);
             documentsContentLiveChanges.put(documentId, databaseContent);
             databaseDocumentsCurrentContent.put(documentId, databaseContent);
+            //FIXME: service should not return response entity, this is the responsibility of the controller
             return ResponseEntity.ok().body(new Response.Builder()
                     .status(HttpStatus.NO_CONTENT)
                     .message("Could not find a content for this document.")
                     .data("")
                     .build());
         }
+        //FIXME: service should not return response entity, this is the responsibility of the controller
         return ResponseEntity.ok().body(new Response.Builder()
                 .status(HttpStatus.NO_CONTENT)
                 .message("A content for documentId: " + documentId + " has been found.")
@@ -328,11 +349,18 @@ public class DocumentService implements ServiceInterface {
         return documentRepository.findAllByParentFolderIsNull(user);
     }
 
-    public List<UserDocument> getAllUsersInDocument(Long documentId) throws AccountNotFoundException {
+    public List<UsersInDocRes> getAllUsersInDocument(Long documentId) throws AccountNotFoundException {
         if (!documentRepository.findById(documentId).isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
         Document document = documentRepository.findById(documentId).get();
-        return userDocumentRepository.findAllUsersInDocument(document);
+       // return userDocumentRepository.findAllUsersInDocument(document);
+
+        Set<Long> onlineUsers = getActiveUsersPerDoc(documentId).stream().map(u->u.getId()).collect(Collectors.toSet());
+        return userDocumentRepository.findAllUsersInDocument(document)
+                .stream()
+                .map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId()) ? UserStatus.ONLINE : UserStatus.OFFLINE))
+                .collect(Collectors.toList());
+       // List<UsersInDocRes> usersInDocRes = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId()) ? UserStatus.ONLINE : UserStatus.OFFLINE)).collect(Collectors.toList());
     }
 
     public Permission getUserPermissionInDocument(Long userId, Long documentId) throws AccountNotFoundException {

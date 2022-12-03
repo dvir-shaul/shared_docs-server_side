@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.stereotype.Controller;
@@ -94,47 +95,50 @@ class FileController {
         return documentService.getContent(documentId);
     }
 
-    // FIXME -> transform to ResponseEntity<Response>
     @RequestMapping(value = "document", method = RequestMethod.GET)
-    public ResponseEntity<?> getDocumentName(@RequestParam Long documentId, @RequestAttribute Long userId) {
+    public ResponseEntity<Response> getDocumentName(@RequestParam Long documentId, @RequestAttribute Long userId) {
         try {
             Document document = documentService.findById(documentId);
             DocRes docRes = new DocRes(document.getName(), document.getUser().getId(), document.getPrivate(), document.getCreationDate(), document.getParentFolder().getId(), document.getId());
-            return ResponseEntity.ok(docRes);
+            return ResponseEntity.ok().body(new Response.Builder()
+                    .status(HttpStatus.OK)
+                    .message("")
+                    .data(docRes)
+                    .build());
 
         } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
+            return ResponseEntity.ok().body(new Response.Builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .message(e.getMessage())
+                    .data("")
+                    .build());
         }
     }
 
-    // FIXME -> transform to ResponseEntity<Response>
     @RequestMapping(value = "folder", method = RequestMethod.POST)
-    public ResponseEntity<?> createFolder(@RequestParam(required = false) Long parentFolderId, @RequestParam String name, @RequestAttribute Long userId) {
+    public ResponseEntity<Response> createFolder(@RequestParam(required = false) Long parentFolderId, @RequestParam String name, @RequestAttribute Long userId) {
         Folder parentFolder = null;
         try {
             if (parentFolderId != null) {
                 parentFolder = folderService.findById(parentFolderId);
             }
-            // FIXME: put all the logics in AbstractController
-            //  our AbstractController is kind of a facade class.
-            //  In fact, we can rename it to facadeController
             User user = userService.findById(userId);
             Folder folder = Folder.createFolder(name, parentFolder, user);
-            // CONSULT: I think we should return this response as an object everytime.
-            //  either if it's an OK status or BAD status.
-            Response response = new Response.Builder().status(HttpStatus.CREATED).message("Created successfully!").data("Hello").build();
-            System.out.println(response);
             return facadeController.create(folder, Folder.class);
 
+
         } catch (AccountNotFoundException | FileNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+           return ResponseEntity.ok().body(new Response.Builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .message(e.getMessage())
+                    .data("")
+                    .build());
         }
 
     }
 
-    // FIXME -> transform to ResponseEntity<Response>
     @RequestMapping(value = "document", method = RequestMethod.POST, consumes = "application/json")
-    public ResponseEntity<?> createDocument(@RequestParam Long parentFolderId, @RequestParam String name, @RequestBody(required = false) String content, @RequestAttribute Long userId) {
+    public ResponseEntity<Response> createDocument(@RequestParam Long parentFolderId, @RequestParam String name, @RequestBody(required = false) String content, @RequestAttribute Long userId) {
         try {
             Folder parentFolder = folderService.findById(parentFolderId);
             User user = userService.findById(userId);
@@ -142,18 +146,19 @@ class FileController {
             return facadeController.create(doc, Document.class);
 
         } catch (FileNotFoundException | AccountNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            return ResponseEntity.ok().body(new Response.Builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .message(e.getMessage())
+                    .data("")
+                    .build());
         }
     }
 
-    // FIXME -> transform to ResponseEntity<Response>
+//FIXME: this function has been split into two functions: getDocumentPath and getFolderPath. this should be removed once the client is updated.
     @RequestMapping(value = "getPath", method = RequestMethod.GET)
-    public ResponseEntity<?> getPath(@RequestParam Type type, @RequestParam Long fileId, @RequestAttribute Long userId) {
+    public ResponseEntity<Response> getPath(@RequestParam Type type, @RequestParam Long fileId, @RequestAttribute Long userId) {
         List<FileRes> path = new ArrayList<>();
         GeneralItem generalItem = null;
-
-        // FIXME: We already have this function that checks which service to use
-        //  in the FacadeController (former "AbstractController"). Move it there.
         try {
             switch (type) {
                 case FOLDER:
@@ -171,14 +176,48 @@ class FileController {
                 path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, generalItem.getUser().getEmail()));
                 parentFolder = parentFolder.getParentFolder();
             }
-            return ResponseEntity.ok(path);
+           return ResponseEntity.ok().body(new Response.Builder()
+                    .status(HttpStatus.OK)
+                    .message("")
+                    .data(path)
+                    .build());
 
         } catch (FileNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.ok().body(new Response.Builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .message(e.getMessage())
+                    .data("")
+                    .build());
+        }
+    }
+    @RequestMapping(value = "document/getPath", method = RequestMethod.GET)
+    public ResponseEntity<Response> getDocumentPath(@RequestParam Long documentId, @RequestAttribute Long userId) {
+        try {
+            Document document=documentService.findById(documentId);
+            return facadeController.getPath(document, Document.class);
+        } catch (FileNotFoundException e) {
+            return ResponseEntity.ok().body(new Response.Builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .message(e.getMessage())
+                    .data("")
+                    .build());
         }
     }
 
-    // FIXME: Better be in a userController + useService instead of here because it belongs to a user manipulation.
+    @RequestMapping(value = "folder/getPath", method = RequestMethod.GET)
+    public ResponseEntity<Response> getFolderPath(@RequestParam Long folderId, @RequestAttribute Long userId) {
+        try {
+            Folder folder=folderService.findById(folderId);
+            return facadeController.getPath(folder, Folder.class);
+        } catch (FileNotFoundException e) {
+            return ResponseEntity.ok().body(new Response.Builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .message(e.getMessage())
+                    .data("")
+                    .build());
+        }
+    }
+        // FIXME: this function has been relocated to userController, so this function will be removed once the client is updated
     @RequestMapping(value = "document/getUser", method = RequestMethod.GET)
     public ResponseEntity<?> getUser(@RequestParam Long documentId, @RequestAttribute Long userId) {
         try {

@@ -32,7 +32,7 @@ public class LogService {
             Log log = unsavedLogs.remove(0);
             log.getUser().addLog(log);
             log.getDocument().addLog(log);
-            logRepository.save(log);  // TODO: save to the database instead of console logging it.
+            logRepository.save(log);
             System.out.println("New log has been saved in the database: " + log);
         }
     }
