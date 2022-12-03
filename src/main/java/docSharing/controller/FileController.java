@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.security.auth.login.AccountNotFoundException;
 import java.io.FileNotFoundException;
+import java.time.LocalDate;
 import java.util.*;
 
 @Controller
@@ -96,20 +97,29 @@ class FileController {
 
     // FIXME -> transform to ResponseEntity<Response>
     @RequestMapping(value = "document", method = RequestMethod.GET)
-    public ResponseEntity<?> getDocumentName(@RequestParam Long documentId, @RequestAttribute Long userId) {
+    public ResponseEntity<Response> getDocumentName(@RequestParam Long documentId, @RequestAttribute Long userId) {
         try {
             Document document = documentService.findById(documentId);
-            DocRes docRes = new DocRes(document.getName(), document.getUser().getId(), document.getPrivate(), document.getCreationDate(), document.getParentFolder().getId(), document.getId());
-            return ResponseEntity.ok(docRes);
+            FileRes fileResponse = new FileRes(document.getName(), document.getId(), Type.DOCUMENT, Permission.ADMIN, document.getUser().getEmail());
+            return new ResponseEntity<>(new Response.Builder()
+                    .statusCode(200)
+                    .status(HttpStatus.OK)
+                    .data(fileResponse)
+                    .message("Managed to get file name properly")
+                    .build(),HttpStatus.OK);
 
         } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
+            return new ResponseEntity<>(new Response.Builder()
+                    .message("Couldn't find such a file")
+                    .status(HttpStatus.NOT_FOUND)
+                    .statusCode(401)
+                    .build(), HttpStatus.BAD_REQUEST);
         }
     }
 
     // FIXME -> transform to ResponseEntity<Response>
     @RequestMapping(value = "folder", method = RequestMethod.POST)
-    public ResponseEntity<?> createFolder(@RequestParam(required = false) Long parentFolderId, @RequestParam String name, @RequestAttribute Long userId) {
+    public ResponseEntity<Response> createFolder(@RequestParam(required = false) Long parentFolderId, @RequestParam String name, @RequestAttribute Long userId) {
         Folder parentFolder = null;
         try {
             if (parentFolderId != null) {
@@ -120,14 +130,15 @@ class FileController {
             //  In fact, we can rename it to facadeController
             User user = userService.findById(userId);
             Folder folder = Folder.createFolder(name, parentFolder, user);
+
+//            DocRes docres = new DocRes("hey", 1L, true, LocalDate.now(), 11L, 12L );
             // CONSULT: I think we should return this response as an object everytime.
             //  either if it's an OK status or BAD status.
-            Response response = new Response.Builder().status(HttpStatus.CREATED).message("Created successfully!").data("Hello").build();
-            System.out.println(response);
-            return facadeController.create(folder, Folder.class);
+            return new ResponseEntity<>(new Response.Builder().status(HttpStatus.CREATED).message("Created successfully!").data("Hey!").build(),HttpStatus.CREATED);
+//            return facadeController.create(folder, Folder.class);
 
         } catch (AccountNotFoundException | FileNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return new ResponseEntity<>(new Response.Builder().status(HttpStatus.BAD_REQUEST).message("Could not create a folder!").build(), HttpStatus.BAD_REQUEST);
         }
 
     }

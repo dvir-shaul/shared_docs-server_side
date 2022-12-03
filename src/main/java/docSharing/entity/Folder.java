@@ -16,8 +16,6 @@ public class Folder extends GeneralItem {
         super();
     }
 
-
-
     public Set<Folder> getFolders() {
         return folders;
     }

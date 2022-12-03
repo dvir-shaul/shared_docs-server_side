@@ -17,6 +17,7 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 
+import java.io.FileNotFoundException;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Comparator;
@@ -59,6 +60,8 @@ public class TextEditController {
 
             return copyOfLog;
         } catch (AccountNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
