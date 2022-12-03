@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.security.auth.login.AccountNotFoundException;
+import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,10 +34,12 @@ public class FolderService implements ServiceInterface {
      * @return - Folder entity from database.
      * @throws AccountNotFoundException - no such folder in database.
      */
-    public Folder findById(Long id) throws AccountNotFoundException {
-        if (!folderRepository.findById(id).isPresent())
-            throw new AccountNotFoundException(ExceptionMessage.NO_FOLDER_IN_DATABASE.toString());
-        return folderRepository.findById(id).get();
+    public Folder findById(Long id) throws FileNotFoundException {
+        Optional<Folder> folder = folderRepository.findById(id);
+        if (!folder.isPresent())
+            throw new FileNotFoundException(ExceptionMessage.NO_FOLDER_IN_DATABASE.toString());
+
+        return folder.get();
     }
 
     /**
@@ -103,26 +106,26 @@ public class FolderService implements ServiceInterface {
      * @param id              - document id.
      * @return rows affected in mysql.
      */
-    public int relocate(Folder newParentFolder, Long id) {
-        if (newParentFolder != null && !folderRepository.findById(newParentFolder.getId()).isPresent()) {
-            throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
-        }
-        if (!folderRepository.findById(id).isPresent()) {
-            throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
-        }
-        Folder folder = folderRepository.findById(id).get();
-        if (newParentIsChild(newParentFolder, folder)) {
-            throw new IllegalArgumentException(ExceptionMessage.CIRCULAR_FOLDERS.toString());
-        }
+    public int relocate(Folder newParentFolder, Long id) throws FileNotFoundException {
+        if (newParentFolder != null && !folderRepository.findById(newParentFolder.getId()).isPresent())
+            throw new FileNotFoundException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
 
-        Folder oldParentFolder = folder.getParentFolder();
-        folder.setParentFolder(newParentFolder);
-        if (oldParentFolder != null) {
-            oldParentFolder.removeFolder(folder);
-        }
-        if (newParentFolder != null) {
-            newParentFolder.addFolder(folder);
-        }
+        Optional<Folder> folder = folderRepository.findById(id);
+        if (!folder.isPresent())
+            throw new FileNotFoundException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
+
+        if (newParentIsChild(newParentFolder, folder.get()))
+            throw new IllegalArgumentException(ExceptionMessage.CIRCULAR_FOLDERS.toString());
+
+        Folder oldParentFolder = folder.get().getParentFolder();
+
+        folder.get().setParentFolder(newParentFolder);
+        if (oldParentFolder != null)
+            oldParentFolder.removeFolder(folder.get());
+
+        if (newParentFolder != null)
+            newParentFolder.addFolder(folder.get());
+
         return folderRepository.updateParentFolderId(newParentFolder, id);
     }
 
@@ -143,16 +146,25 @@ public class FolderService implements ServiceInterface {
         return false;
     }
 
-    public void delete(Long folderId) {
-        Folder folder = folderRepository.findById(folderId).get();
-        folder.getDocuments().forEach(document -> {
+    public void delete(Long folderId) throws FileNotFoundException {
+        Optional<Folder> folder = folderRepository.findById(folderId);
+        if (!folder.isPresent())
+            throw new FileNotFoundException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
+
+        folder.get().getDocuments().forEach(document -> {
             userDocumentRepository.deleteDocument(document);
             documentRepository.delete(document);
         });
-        folder.getFolders().forEach(f -> {
+
+        for (Folder f : folder.get().getFolders()) {
             delete(f.getId());
-        });
-        folderRepository.delete(folder);
+        }
+
+        folderRepository.delete(folder.get());
+    }
+
+    public Boolean doesExist(Long id){
+        return folderRepository.findById(id).isPresent();
     }
 
     public void createRootFolders(User user) {
