@@ -1,19 +1,19 @@
 package docSharing.service;
 
-import docSharing.entity.Document;
-import docSharing.entity.GeneralItem;
-import docSharing.entity.Folder;
-import docSharing.entity.User;
+import docSharing.entity.*;
 import docSharing.repository.DocumentRepository;
 import docSharing.repository.FolderRepository;
 import docSharing.repository.UserDocumentRepository;
 import docSharing.repository.UserRepository;
+import docSharing.requests.Type;
+import docSharing.response.FileRes;
 import docSharing.utils.ExceptionMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.security.auth.login.AccountNotFoundException;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -84,7 +84,16 @@ public class FolderService implements ServiceInterface {
         savedFolder.getUser().addFolder(savedFolder);
         return savedFolder.getId();
     }
-
+public List<FileRes> getPath(GeneralItem generalItem){
+    List<FileRes> path = new ArrayList<>();
+    Folder parentFolder = generalItem.getParentFolder();
+        path.add(0, new FileRes(generalItem.getName(), generalItem.getId(), Type.FOLDER, Permission.ADMIN, generalItem.getUser().getEmail()));
+    while (parentFolder != null) {
+        path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, generalItem.getUser().getEmail()));
+        parentFolder = parentFolder.getParentFolder();
+    }
+    return path;
+}
     /**
      * rename function gets an id of folder and new name to change the folder's name.
      *

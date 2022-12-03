@@ -72,8 +72,7 @@ public class TextEditController {
     @SendTo("/document/onlineUsers/{documentId}")
     public List<UsersInDocRes> getOnlineUsers(@DestinationVariable Long documentId, @Payload OnlineUsersReq onlineUsersReq) {
         try {
-            Set<Long> onlineUsers = documentService.addUserToDocActiveUsers(onlineUsersReq.getUserId(), documentId, onlineUsersReq.getMethod()).stream().map(u -> u.getId()).collect(Collectors.toSet());
-            List<UsersInDocRes> all = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId()) ? UserStatus.ONLINE : UserStatus.OFFLINE)).collect(Collectors.toList());
+            List<UsersInDocRes> all = documentService.getAllUsersInDocument(documentId);
             Collections.sort(all, new Comparator<UsersInDocRes>() {
                 public int compare(UsersInDocRes o1, UsersInDocRes o2) {
                     return o1.compareTo(o2);
