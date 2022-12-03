@@ -1,16 +1,11 @@
 package docSharing.entity;
 
-import docSharing.repository.LogRepository;
 import docSharing.utils.debounce.Callback;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-//@Component
 public class SendLogsToDatabase implements Callback {
 
     private Map<Long, Map<Long, Log>> logsMap;

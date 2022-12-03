@@ -24,6 +24,7 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.web.bind.annotation.*;
 
 import javax.security.auth.login.AccountNotFoundException;
+import java.io.FileNotFoundException;
 import java.util.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,19 +55,23 @@ public class UserController {
             return ResponseEntity.badRequest().build();
         }
 
+        // FIXME: Too much logics for a controller. We need to move it to the service.
+        //  A controller only validates the data. It doesn't have logics inside of it.
         try {
             // FIXME: should be in the filter -> permission filter
-            if (!Objects.equals(documentService.findById(documentId).getUser().getId(), userId)) {
-                return ResponseEntity.badRequest().body(ExceptionMessage.USER_IS_NOT_THE_ADMIN);
-            }
+//            if (!Objects.equals(documentService.findById(documentId).getUser().getId(), userId)) {
+//                return ResponseEntity.badRequest().body(ExceptionMessage.USER_IS_NOT_THE_ADMIN);
+//            }
+
             userService.updatePermission(documentId, uid, permission);
             Set<Long> onlineUsers = documentService.getActiveUsersPerDoc(documentId).stream().map(u->u.getId()).collect(Collectors.toSet());
             List<UsersInDocRes> usersInDocRes = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId()) ? UserStatus.ONLINE : UserStatus.OFFLINE)).collect(Collectors.toList());
             return ResponseEntity.ok().body(usersInDocRes);
+
         } catch (AccountNotFoundException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (IllegalArgumentException exception) {
-            return ResponseEntity.badRequest().body(exception.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 

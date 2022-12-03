@@ -2,10 +2,7 @@ package docSharing.controller;
 
 import docSharing.entity.*;
 import docSharing.requests.*;
-import docSharing.response.DocRes;
-import docSharing.response.FileRes;
-import docSharing.response.ExportDoc;
-import docSharing.response.JoinRes;
+import docSharing.response.*;
 import docSharing.service.DocumentService;
 import docSharing.service.FolderService;
 import docSharing.service.UserService;
@@ -19,6 +16,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.security.auth.login.AccountNotFoundException;
+import java.io.FileNotFoundException;
 import java.util.*;
 
 @Controller
@@ -29,19 +27,87 @@ import java.util.*;
 class FileController {
 
     @Autowired
-    AbstractController ac;
+    FacadeController facadeController;
+    // FIXME: there's no need for folderService since "AbstractController" does all the logic.
     @Autowired
     FolderService folderService;
+    // FIXME: there's no need for folderService since "DocumentController" does all the logic.
     @Autowired
     DocumentService documentService;
     @Autowired
     UserService userService;
 
     @RequestMapping(value = "getAll", method = RequestMethod.GET)
-    public ResponseEntity<List<FileRes>> getAll(@RequestParam(required = false) Long parentFolderId, @RequestAttribute Long userId) throws AccountNotFoundException {
-        return ac.getAll(parentFolderId, userId);
+    public ResponseEntity<Response> getAll(@RequestParam(required = false) Long parentFolderId, @RequestAttribute Long userId) throws AccountNotFoundException {
+        return facadeController.getAll(parentFolderId, userId);
     }
 
+    @RequestMapping(value = "folder/rename", method = RequestMethod.PATCH)
+    public ResponseEntity<Response> renameFolder(@RequestParam Long folderId, @RequestParam String name, @RequestAttribute Long userId) {
+        return facadeController.rename(folderId, name, Folder.class);
+    }
+
+    @RequestMapping(value = "document/rename", method = RequestMethod.PATCH)
+    public ResponseEntity<Response> renameDocument(@RequestParam Long documentId, @RequestParam String name, @RequestAttribute Long userId) {
+        return facadeController.rename(documentId, name, Document.class);
+    }
+
+    @RequestMapping(value = "folder", method = RequestMethod.DELETE)
+    public ResponseEntity<Response> deleteFolder(@RequestParam Long folderId, @RequestAttribute Long userId) {
+        return facadeController.delete(folderId, Folder.class);
+    }
+
+    @RequestMapping(value = "document", method = RequestMethod.DELETE)
+    public ResponseEntity<Response> deleteDocument(@RequestParam Long documentId, @RequestAttribute Long userId) {
+        return facadeController.delete(documentId, Document.class);
+    }
+
+    @RequestMapping(value = "folder/relocate", method = RequestMethod.PATCH)
+    public ResponseEntity<Response> relocateFolder(@RequestParam Long newParentFolderId, @RequestParam Long folderId, @RequestAttribute Long userId) {
+        return facadeController.relocate(newParentFolderId, folderId, Folder.class);
+
+    }
+
+    @RequestMapping(value = "document/relocate", method = RequestMethod.PATCH)
+    public ResponseEntity<Response> relocateDocument(@RequestParam Long newParentFolderId, @RequestParam Long documentId, @RequestAttribute Long userId) {
+        return facadeController.relocate(newParentFolderId, documentId, Document.class);
+    }
+
+    @RequestMapping(value = "document/export", method = RequestMethod.GET)
+    public ResponseEntity<Response> export(@RequestParam Long documentId, @RequestAttribute Long userId) {
+      return facadeController.export(documentId);
+    }
+
+
+
+    @RequestMapping(value = "document/doesExists", method = RequestMethod.GET)
+    public ResponseEntity<Response> doesDocumentExists(@RequestParam Long documentId, @RequestAttribute Long userId) {
+       return facadeController.doesExist(documentId, Document.class);
+    }
+    @RequestMapping(value = "folder/doesExists", method = RequestMethod.GET)
+    public ResponseEntity<Response> doesFolderExists(@RequestParam Long folderId, @RequestAttribute Long userId) {
+        return facadeController.doesExist(folderId, Folder.class);
+    }
+
+    @RequestMapping(value = "document/getContent", method = RequestMethod.GET)
+    public ResponseEntity<Response> getContent(@RequestParam Long documentId, @RequestAttribute Long userId) {
+        return documentService.getContent(documentId);
+    }
+
+    // FIXME -> transform to ResponseEntity<Response>
+    @RequestMapping(value = "document", method = RequestMethod.GET)
+    public ResponseEntity<?> getDocumentName(@RequestParam Long documentId, @RequestAttribute Long userId) {
+        try {
+            Document document = documentService.findById(documentId);
+            DocRes docRes = new DocRes(document.getName(), document.getUser().getId(), document.getPrivate(), document.getCreationDate(), document.getParentFolder().getId(), document.getId());
+            return ResponseEntity.ok(docRes);
+
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // FIXME -> transform to ResponseEntity<Response>
     @RequestMapping(value = "folder", method = RequestMethod.POST)
     public ResponseEntity<?> createFolder(@RequestParam(required = false) Long parentFolderId, @RequestParam String name, @RequestAttribute Long userId) {
         Folder parentFolder = null;
@@ -49,84 +115,45 @@ class FileController {
             if (parentFolderId != null) {
                 parentFolder = folderService.findById(parentFolderId);
             }
+            // FIXME: put all the logics in AbstractController
+            //  our AbstractController is kind of a facade class.
+            //  In fact, we can rename it to facadeController
             User user = userService.findById(userId);
             Folder folder = Folder.createFolder(name, parentFolder, user);
-            return ac.create(folder, Folder.class);
-        } catch (AccountNotFoundException e) {
+            // CONSULT: I think we should return this response as an object everytime.
+            //  either if it's an OK status or BAD status.
+            Response response = new Response.Builder().status(HttpStatus.CREATED).message("Created successfully!").data("Hello").build();
+            System.out.println(response);
+            return facadeController.create(folder, Folder.class);
+
+        } catch (AccountNotFoundException | FileNotFoundException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
 
     }
 
+    // FIXME -> transform to ResponseEntity<Response>
     @RequestMapping(value = "document", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<?> createDocument(@RequestParam Long parentFolderId, @RequestParam String name, @RequestBody(required = false) String content, @RequestAttribute Long userId) {
         try {
             Folder parentFolder = folderService.findById(parentFolderId);
             User user = userService.findById(userId);
             Document doc = Document.createDocument(user, name, parentFolder, content != null ? content : "");
-            return ac.create(doc, Document.class);
-        } catch (AccountNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return facadeController.create(doc, Document.class);
+
+        } catch (FileNotFoundException | AccountNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
 
-
-    @RequestMapping(value = "folder/rename", method = RequestMethod.PATCH)
-    public ResponseEntity<?> renameFolder(@RequestParam Long folderId, @RequestParam String name, @RequestAttribute Long userId) {
-        return ac.rename(folderId, name, Folder.class);
-    }
-
-    @RequestMapping(value = "document/rename", method = RequestMethod.PATCH)
-    public ResponseEntity<?> renameDocument(@RequestParam Long documentId, @RequestParam String name, @RequestAttribute Long userId) {
-        return ac.rename(documentId, name, Document.class);
-    }
-
-    @RequestMapping(value = "folder", method = RequestMethod.DELETE)
-    public ResponseEntity<?> deleteFolder(@RequestParam Long folderId, @RequestAttribute Long userId) {
-        return ac.delete(folderId, Folder.class);
-    }
-
-    @RequestMapping(value = "document", method = RequestMethod.DELETE)
-    public ResponseEntity<?> deleteDocument(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        return ac.delete(documentId, Document.class);
-    }
-
-    @RequestMapping(value = "folder/relocate", method = RequestMethod.PATCH)
-    public ResponseEntity<?> relocateFolder(@RequestParam Long newParentFolderId, @RequestParam Long folderId, @RequestAttribute Long userId) {
-        try {
-            Folder folder = folderService.findById(folderId);
-            return ac.relocate(newParentFolderId, folderId, Folder.class);
-        } catch (AccountNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
-    }
-
-    @RequestMapping(value = "document/relocate", method = RequestMethod.PATCH)
-    public ResponseEntity<?> relocateDocument(@RequestParam Long newParentFolderId, @RequestParam Long documentId, @RequestAttribute Long userId) {
-        try {
-            Document doc = documentService.findById(documentId);
-            return ac.relocate(newParentFolderId, documentId, Document.class);
-        } catch (AccountNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
-    }
-
-
-    @RequestMapping(value = "document/export", method = RequestMethod.GET)
-    public ResponseEntity<?> export(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        try {
-            Document document = documentService.findById(documentId);
-            ExportDoc exportDoc = new ExportDoc(document.getName(), document.getContent());
-            return ResponseEntity.ok().body(exportDoc);
-        } catch (AccountNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
-    }
-
+    // FIXME -> transform to ResponseEntity<Response>
     @RequestMapping(value = "getPath", method = RequestMethod.GET)
     public ResponseEntity<?> getPath(@RequestParam Type type, @RequestParam Long fileId, @RequestAttribute Long userId) {
         List<FileRes> path = new ArrayList<>();
         GeneralItem generalItem = null;
+
+        // FIXME: We already have this function that checks which service to use
+        //  in the FacadeController (former "AbstractController"). Move it there.
         try {
             switch (type) {
                 case FOLDER:
@@ -137,7 +164,7 @@ class FileController {
                     break;
             }
             Folder parentFolder = generalItem.getParentFolder();
-            if(type.equals(Type.FOLDER)){
+            if (type.equals(Type.FOLDER)) {
                 path.add(0, new FileRes(generalItem.getName(), generalItem.getId(), Type.FOLDER, Permission.ADMIN, generalItem.getUser().getEmail()));
             }
             while (parentFolder != null) {
@@ -145,42 +172,20 @@ class FileController {
                 parentFolder = parentFolder.getParentFolder();
             }
             return ResponseEntity.ok(path);
-        } catch (AccountNotFoundException e) {
+
+        } catch (FileNotFoundException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
-    @RequestMapping(value = "document/isExists", method = RequestMethod.GET)
-    public ResponseEntity<?> documentExists(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        try {
-            return ResponseEntity.ok(documentService.findById(documentId));
-        } catch (AccountNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
-    }
-
+    // FIXME: Better be in a userController + useService instead of here because it belongs to a user manipulation.
     @RequestMapping(value = "document/getUser", method = RequestMethod.GET)
     public ResponseEntity<?> getUser(@RequestParam Long documentId, @RequestAttribute Long userId) {
         try {
             User user = userService.findById(userId);
             Permission permission = documentService.getUserPermissionInDocument(userId, documentId);
             return ResponseEntity.ok(new JoinRes(user.getName(), userId, permission));
-        } catch (AccountNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
-    }
 
-    @RequestMapping(value = "document/getContent", method = RequestMethod.GET)
-    public ResponseEntity<String> getContent(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        String content = documentService.getContent(documentId);
-        return ResponseEntity.ok().body(content);
-    }
-    @RequestMapping(value = "document", method = RequestMethod.GET)
-    public ResponseEntity<?> getDocumentName(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        try {
-            Document document=documentService.findById(documentId);
-            DocRes docRes=new DocRes(document.getName(), document.getUser().getId(), document.getPrivate(), document.getCreationDate(), document.getParentFolder().getId(), document.getId());
-            return ResponseEntity.ok(docRes);
         } catch (AccountNotFoundException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
