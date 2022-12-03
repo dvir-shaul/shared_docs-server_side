@@ -54,6 +54,7 @@ public class AuthController {
 
         // make sure we got all the data from the client
         if (name == null || email == null || password == null || user.getId() != null) {
+            logger.error("in AuthController -> register -> one of email, name, password is null");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You must include all and exact parameters for such an action: email, name, password");
         }
 
@@ -88,7 +89,7 @@ public class AuthController {
      * If the credentials match to the database's information, it will allow the user to use its functionalities.
      * A token will be returned in a successful request.
      *
-     * @param user
+     * @param user - user's details with email and password to check if correct
      * @return token
      */
     @RequestMapping(value = "login", method = RequestMethod.POST, consumes = "application/json")
@@ -109,9 +110,9 @@ public class AuthController {
 
         // make sure we got all the data from the client
         if (email == null || password == null || user.getId() != null || user.getName() != null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You must include all and exact parameters for such an action: email, name, password");
+            logger.error("in AuthController -> register -> one of email or password is null");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You must include all and exact parameters for such an action: email, password");
         }
-        System.out.println("==222222222222222222====");
 
         // validate information
         String token = null;
@@ -126,7 +127,6 @@ public class AuthController {
             logger.error("in AuthController -> login -> "+e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
-        System.out.println("====================");
 
         // if correct -> call auth service with parameters -> login function
         return ResponseEntity.status(200).body("token: " + token);

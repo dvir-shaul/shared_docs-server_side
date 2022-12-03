@@ -2,6 +2,7 @@ package docSharing.controller;
 
 import docSharing.entity.*;
 import docSharing.requests.*;
+import docSharing.response.DocRes;
 import docSharing.response.FileRes;
 import docSharing.response.ExportDoc;
 import docSharing.response.JoinRes;
@@ -269,15 +270,14 @@ class FileController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
-
     /**
-     * getUser is a POST? method that sends back to the client an entity of JoinRes which contain
+     * getUser is a GET method that sends back to the client an entity of JoinRes which contain
      *  name; userId; permission;
      * @param documentId - the document we work on.
      * @param userId - the user that creates this request.
      * @return - ResponseEntity with a message.
      */
-    @RequestMapping(value = "document/getUser", method = RequestMethod.POST)
+    @RequestMapping(value = "document/getUser", method = RequestMethod.GET)
     public ResponseEntity<?> getUser(@RequestParam Long documentId, @RequestAttribute Long userId) {
         logger.info("in FileController -> getUser");
         try {
@@ -289,14 +289,13 @@ class FileController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
-
     /**
      * getContent is a GET method that the client needs to show content of a file when a file is loading.
      * @param documentId - document id in database.
      * @param userId - the user that creates this request.
      * @return - ResponseEntity with a message.
      */
-    @RequestMapping(value = "/document/getContent", method = RequestMethod.GET)
+    @RequestMapping(value = "document/getContent", method = RequestMethod.GET)
     public ResponseEntity<String> getContent(@RequestParam Long documentId, @RequestAttribute Long userId) {
         logger.info("in FileController -> getContent");
         String content = documentService.getContent(documentId);
@@ -309,14 +308,14 @@ class FileController {
      * @param userId - the user that creates this request.
      * @return - ResponseEntity with a message.
      */
-    @RequestMapping(value = "/document/name", method = RequestMethod.GET)
-    public ResponseEntity<String> getDocumentName(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        logger.info("in FileController -> getDocumentName");
+    @RequestMapping(value = "document", method = RequestMethod.GET)
+    public ResponseEntity<?> getDocumentName(@RequestParam Long documentId, @RequestAttribute Long userId) {
         try {
             Document document=documentService.findById(documentId);
-            return ResponseEntity.ok(document.getName());
+            DocRes docRes=new DocRes(document.getName(), document.getUser().getId(), document.getPrivate(), document.getCreationDate(), document.getParentFolder().getId(), document.getId());
+            return ResponseEntity.ok(docRes);
         } catch (AccountNotFoundException e) {
-            logger.error("in FileController -> getContent -> "+e.getMessage());
+            logger.error("in FileController -> getDocumentName -> "+e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }

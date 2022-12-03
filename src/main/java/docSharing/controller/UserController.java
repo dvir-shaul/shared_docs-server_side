@@ -4,6 +4,9 @@ import docSharing.entity.Document;
 import docSharing.entity.Permission;
 import docSharing.entity.User;
 import docSharing.entity.UserDocument;
+import docSharing.requests.OnlineUsersReq;
+import docSharing.response.AllUsers;
+import docSharing.response.UserStatus;
 import docSharing.response.UsersInDocRes;
 import docSharing.service.DocumentService;
 import docSharing.service.EmailService;
@@ -16,13 +19,17 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.web.bind.annotation.*;
 
 import javax.security.auth.login.AccountNotFoundException;
+import java.util.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -41,8 +48,8 @@ public class UserController {
 
     /**
      * deleteUserById not used
-     * @param id
-     * @return
+     * @param id - users id
+     * @return -
      */
     @RequestMapping(value = "/delete/{id}")
     public ResponseEntity<?> deleteUserById(@PathVariable("id") int id) {
@@ -60,20 +67,25 @@ public class UserController {
     @RequestMapping(value = "/permission/give", method = RequestMethod.PATCH)
     public ResponseEntity<?> givePermission(@RequestParam Long documentId, @RequestParam Long uid, @RequestParam Permission permission, @RequestAttribute Long userId) {
         logger.info("in UserController -> givePermission");
-
         if (documentId == null || uid == null || permission == null) {
+            logger.error("in UserController -> givePermission -> on of documentId,uid,permission is null");
             return ResponseEntity.badRequest().build();
         }
-
         try {
+            // FIXME: should be in the filter -> permission filter
             if (!Objects.equals(documentService.findById(documentId).getUser().getId(), userId)) {
+                logger.warn("in UserController -> givePermission -> " +ExceptionMessage.USER_IS_NOT_THE_ADMIN);
                 return ResponseEntity.badRequest().body(ExceptionMessage.USER_IS_NOT_THE_ADMIN);
             }
             userService.updatePermission(documentId, uid, permission);
-            return ResponseEntity.ok().body("permission added successfully!");
+            Set<Long> onlineUsers = documentService.getActiveUsersPerDoc(documentId).stream().map(u->u.getId()).collect(Collectors.toSet());
+            List<UsersInDocRes> usersInDocRes = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId()) ? UserStatus.ONLINE : UserStatus.OFFLINE)).collect(Collectors.toList());
+            return ResponseEntity.ok().body(usersInDocRes);
         } catch (AccountNotFoundException e) {
+            logger.error("in UserController -> givePermission -> " +e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (IllegalArgumentException exception) {
+            logger.error("in UserController -> givePermission -> " +exception.getMessage());
             return ResponseEntity.badRequest().body(exception.getMessage());
         }
     }
@@ -99,8 +111,8 @@ public class UserController {
                     unregisteredUsers.add(email);
                     continue;
                 }
-                Permission permission=documentService.getUserPermissionInDocument(user.getId(), documentId);
-                if(permission.equals(Permission.UNAUTORIZED)) {
+                Permission permission = documentService.getUserPermissionInDocument(user.getId(), documentId);
+                if (permission.equals(Permission.UNAUTHORIZED)) {
                     Document document = documentService.findById(documentId);
                     userService.updatePermission(documentId, user.getId(), Permission.VIEWER);
                     String link = "http://localhost:3000/document/share/documentId=" + documentId + "&userId=" + user.getId();
@@ -109,8 +121,10 @@ public class UserController {
                 }
             }
         } catch (AccountNotFoundException e) {
+            logger.error("in UserController -> givePermissionToAll -> " +e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
+            logger.error("in UserController -> givePermissionToAll -> " +e.getMessage());
             throw new RuntimeException(e);
         }
 
@@ -119,29 +133,42 @@ public class UserController {
             try {
                 emailService.send(unregisteredEmail, inviteUserString, "Personal invitation");
             } catch (Exception e) {
+                logger.error("in UserController -> givePermissionToAll -> " +e.getMessage());
                 throw new RuntimeException(e);
             }
         }
         try {
             List<UserDocument> usersInDocument = documentService.getAllUsersInDocument(documentId);
-            List<UsersInDocRes> usersInDocRes = usersInDocument.stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
+            Set<User> onlineUsers = documentService.getActiveUsersPerDoc(documentId);
+            List<UsersInDocRes> usersInDocRes = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId()) ? UserStatus.ONLINE : UserStatus.OFFLINE)).collect(Collectors.toList());
+
+            // List<UsersInDocRes> usersInDocRes = usersInDocument.stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
             return ResponseEntity.ok(usersInDocRes);
         } catch (AccountNotFoundException e) {
+            logger.error("in UserController -> givePermissionToAll -> " +e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
+    /**
+     * getDocuments is a GET method that sends all the document the user have linked with him.
+     * @param userId - id in database.
+     * @return - list with document.
+     */
     @RequestMapping(value = "sharedDocuments", method = RequestMethod.GET)
     public ResponseEntity<?> getDocuments(@RequestAttribute Long userId) {
         logger.info("in UserController -> getDocuments");
-
         return ResponseEntity.ok(userService.documentsOfUser(userId));
     }
 
-    @RequestMapping(method = RequestMethod.GET)
+    /**
+     * getUser is a GET method that sends an entity of user to the client.
+     * @param userId - user's id in database.
+     * @return - entity of UserRes that's contain name,email and id.
+     */
+    @RequestMapping(value = "getUser", method = RequestMethod.GET)
     public ResponseEntity<?> getUser(@RequestAttribute Long userId) {
         logger.info("in UserController -> getUser");
-
         return ResponseEntity.ok(userService.getUser(userId));
     }
 }

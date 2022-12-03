@@ -5,9 +5,10 @@ import docSharing.entity.Log;
 import docSharing.entity.User;
 import docSharing.requests.LogReq;
 import docSharing.requests.OnlineUsersReq;
-import docSharing.response.AllUsers;
+import docSharing.response.UserStatus;
 import docSharing.response.UsersInDocRes;
 import docSharing.service.DocumentService;
+import docSharing.service.LogService;
 import docSharing.service.UserService;
 import docSharing.utils.ConfirmationToken;
 import docSharing.utils.Validations;
@@ -15,14 +16,15 @@ import io.jsonwebtoken.Claims;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -40,7 +42,16 @@ public class TextEditController {
     DocumentService documentService;
     @Autowired
     UserService userService;
+    @Autowired
+    LogService logService;
 
+    /**
+     *  receiveLog is a function that's called from the client when we have changes in a specific document id,
+     *  it contains the logReq with new data to update the document content.
+     * @param documentId - document id in database.
+     * @param logReq - log request with: userId, documentId, offset, data, action.
+     * @return -LogReq from the client.
+     */
     @MessageMapping("/document/{documentId}")
     @SendTo("/document/{documentId}")
 //    public Log receiveLog(@DestinationVariable Long documentId, @Payload Log log) {
@@ -50,37 +61,49 @@ public class TextEditController {
         //        if (log.getData() == null || log.getAction() == null || log.getOffset() == null || log.getDocumentId() == null || log.getUserId() == null || log.getCreationDate() == null)
 //            // FIXME: What to do if anything fails? Do we do anything with the client?
 //            return null;
-        Log log = null;
         try {
+            // FIXME: what if there's no such a user? Do we handle it?
             User user = userService.findById(logReq.getUserId());
+            // FIXME: what if there's no such a document? Do we check it?
             Document document = documentService.findById(documentId);
-            log = new Log(user, document, logReq.getOffset(), logReq.getData(), logReq.getAction());
+            // CONSULT: Why do we even get a logReq and not a normal Log. Then return a logRes?
+            Log log = new Log(user, document, logReq.getOffset(), logReq.getData(), logReq.getAction(), LocalDateTime.now());
             LogReq copyOfLog = new LogReq(log.getUser().getId(), log.getDocument().getId(), log.getOffset(), log.getData(), log.getAction());
-            documentService.updateContent(log);
-            //System.out.println("Creating a new log for: " + copyOfLog);
+            String content = documentService.updateContent(log);
+            logService.updateLogs(log);
+
             return copyOfLog;
         } catch (AccountNotFoundException e) {
+            logger.error("in TextEditController -> receiveLog ->"+ e.getMessage());
             throw new RuntimeException(e);
         }
     }
 
+    //return one map with status
 
+    /**
+     * getOnlineUsers called with an document id and user with method add or remove,
+     * goal is to keep an update list of users that use a document.
+     * @param documentId - document id in database.
+     * @param onlineUsersReq - new request with user and method ADD, REMOVE the user from the document.
+     * @return - list of users that use the given document's id.
+     */
     @MessageMapping("/document/onlineUsers/{documentId}")
     @SendTo("/document/onlineUsers/{documentId}")
-    public AllUsers getOnlineUsers(@DestinationVariable Long documentId, @Payload OnlineUsersReq onlineUsersReq) {
-        logger.info("in TextEditController -> receiveLog");
-
+    public List<UsersInDocRes> getOnlineUsers(@DestinationVariable Long documentId, @Payload OnlineUsersReq onlineUsersReq) {
+        logger.info("in TextEditController -> getOnlineUsers");
         try {
-            System.out.println("Looking for online users for document id:" + documentId);
-            Set<User> onlineUsers = documentService.addUserToDocActiveUsers(onlineUsersReq.getUserId(), documentId, onlineUsersReq.getMethod());
-            List<String> online = onlineUsers.stream().map(u -> u.getEmail()).collect(Collectors.toList());
-            List<UsersInDocRes> all = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission())).collect(Collectors.toList());
-            return new AllUsers(online, all);
+            Set<Long> onlineUsers = documentService.addUserToDocActiveUsers(onlineUsersReq.getUserId(), documentId, onlineUsersReq.getMethod()).stream().map(u -> u.getId()).collect(Collectors.toSet());
+            List<UsersInDocRes> all = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId()) ? UserStatus.ONLINE : UserStatus.OFFLINE)).collect(Collectors.toList());
+            Collections.sort(all, new Comparator<UsersInDocRes>() {
+                public int compare(UsersInDocRes o1, UsersInDocRes o2) {
+                    return o1.compareTo(o2);
+                }
+            });
+            return all;
         } catch (AccountNotFoundException e) {
-            logger.debug("in TextEditController -> receiveLog -> no users to get online");
+            logger.debug("in TextEditController -> getOnlineUsers -> no users to get online");
             return null;
         }
     }
-
-
 }

@@ -82,6 +82,10 @@ public class UserService {
         }
         Document doc = documentRepository.findById(docId).get();
         User user = userRepository.findById(userId).get();
+        if(permission.equals(Permission.UNAUTHORIZED)){
+            userDocumentRepository.deleteUserFromDocument(user,doc);
+            return;
+        }
         if (userDocumentRepository.find(doc, user).isPresent()) {
             userDocumentRepository.updatePermission(permission, doc, user);
         } else {
@@ -94,10 +98,10 @@ public class UserService {
     }
 
     /**
-     * function get called by controller from GET method to get all UserDocument.
-     *
+     * function get called by controller from GET method sharedDocuments path,
+     * to get all files that connected to user's specific id.
      * @param userId - user's id
-     * @return list of UserDocument
+     * @return list of FileRes
      */
     public List<FileRes> documentsOfUser(Long userId) {
         logger.info("in UserService -> documentsOfUser");
@@ -105,20 +109,21 @@ public class UserService {
             logger.error("in UserService -> documentsOfUser --> "+ExceptionMessage.NO_ACCOUNT_IN_DATABASE );
             throw new IllegalArgumentException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
         }
-        List<UserDocument> ud = userDocumentRepository.findByUser(userRepository.findById(userId).get());
+        List<UserDocument> userDocuments = userDocumentRepository.findByUser(userRepository.findById(userId).get());
         List<FileRes> userDocumentResList = new ArrayList<>();
-        for (UserDocument userDocument :
-                ud) {
-            if(userDocument.getPermission()!=Permission.ADMIN)
-            userDocumentResList.add(new FileRes(userDocument.getDocument().getName(),userDocument.getDocument().getId(), Type.DOCUMENT, userDocument.getPermission(), userDocument.getDocument().getUser().getEmail()));
+        for (UserDocument userDocument : userDocuments) {
+            if (userDocument.getPermission() != Permission.ADMIN) {
+                userDocumentResList.add(new FileRes(userDocument.getDocument().getName(), userDocument.getDocument().getId(), Type.DOCUMENT, userDocument.getPermission(), userDocument.getDocument().getUser().getEmail()));
+            }
         }
         return userDocumentResList;
     }
 
     /**
-     *
-     * @param userId -
-     * @return -
+     *  getUser called from userController to send back to client an UserRes which is a response
+     *  with name mail and id.
+     * @param userId - user id in database.
+     * @return - entity of UserRes that's contain name,email and id.
      */
     public UserRes getUser(Long userId) {
         logger.info("in UserService -> getUser");

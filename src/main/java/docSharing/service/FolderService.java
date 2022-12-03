@@ -53,7 +53,6 @@ public class FolderService implements ServiceInterface {
      * @param userId         - current user that ask for the list of folders
      * @return - list of inner folders in parent folder.
      */
-
     public List<Folder> get(Long parentFolderId, Long userId) throws AccountNotFoundException {
         logger.info("in FolderService -> get");
 
