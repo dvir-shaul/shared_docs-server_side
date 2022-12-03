@@ -30,6 +30,8 @@ public class LogService {
         // keep it in a while loop because this list can be edited in any second, so need to check if still contains anything
         while (!unsavedLogs.isEmpty()) {
             Log log = unsavedLogs.remove(0);
+            log.getUser().addLog(log);
+            log.getDocument().addLog(log);
             logRepository.save(log);  // TODO: save to the database instead of console logging it.
             System.out.println("New log has been saved in the database: " + log);
         }
@@ -84,9 +86,9 @@ public class LogService {
                 currentLog.setData(truncateLogs(currentLog, newLog));
                 // if the current log was attempting to delete, and now we want to insert, push the deleted log and create a new log
             } else if (currentLog.getAction().equals("delete") && newLog.getAction().equals("insert")) {
+                currentLog.setLastEditDate(newLog.getCreationDate());
                 currentLog.getUser().addLog(currentLog);
                 currentLog.getDocument().addLog(currentLog);
-                currentLog.setLastEditDate(newLog.getCreationDate());
                 logRepository.save(currentLog);
                 documentLogs.put(currentLog.getUser().getId(), newLog);
                 return;
