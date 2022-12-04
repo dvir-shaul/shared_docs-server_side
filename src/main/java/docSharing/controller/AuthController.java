@@ -6,7 +6,7 @@ import docSharing.service.FolderService;
 import docSharing.service.UserService;
 import docSharing.utils.*;
 import docSharing.service.AuthService;
-import docSharing.service.EmailService;
+import docSharing.utils.EmailUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import lombok.AllArgsConstructor;
@@ -22,8 +22,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
-import java.util.Optional;
 
 @Controller
 @RequestMapping(value = "/user/auth")
@@ -34,8 +32,6 @@ public class AuthController {
 
     @Autowired
     private AuthService authService;
-    @Autowired
-    private EmailService emailService;
     @Autowired
     private UserService userService;
     @Autowired
@@ -72,7 +68,7 @@ public class AuthController {
             String token = ConfirmationToken.createJWT(Long.toString(emailUser.getId()), "docs-app", "activation email", 5 * 1000 * 60);
             String link = Activation.buildLink(token);
             String mail = Activation.buildEmail(emailUser.getName(), link);
-            emailService.send(emailUser.getEmail(), mail, "activate account");
+            EmailUtil.send(emailUser.getEmail(), mail, "activate account");
             return new ResponseEntity<>(new Response.Builder()
                     .message("Account has been successfully registered and created!")
                     .statusCode(200)
@@ -193,7 +189,7 @@ public class AuthController {
         } catch (ExpiredJwtException e) {
             String id = e.getClaims().getId();
             User user = userService.findById(Long.valueOf(id));
-            emailService.reactivateLink(user);
+            EmailUtil.reactivateLink(user);
             return new ResponseEntity<>(new Response.Builder()
                     .message("the link expired, new activation link has been sent")
                     .statusCode(200)

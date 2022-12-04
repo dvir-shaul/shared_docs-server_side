@@ -6,7 +6,7 @@ import docSharing.entity.User;
 import docSharing.response.JoinRes;
 import docSharing.response.Response;
 import docSharing.service.DocumentService;
-import docSharing.service.EmailService;
+import docSharing.utils.EmailUtil;
 import docSharing.service.UserService;
 import docSharing.utils.Invite;
 import docSharing.utils.Share;
@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.mail.MessagingException;
 import javax.security.auth.login.AccountNotFoundException;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,8 +31,7 @@ public class UserController {
     private UserService userService;
     @Autowired
     private DocumentService documentService;
-    @Autowired
-    private EmailService emailService;
+
 
     @RequestMapping(value = "/permission/give", method = RequestMethod.PATCH)
     public ResponseEntity<Response> givePermission(@RequestParam Long documentId, @RequestParam Long uid, @RequestParam Permission permission, @RequestAttribute Long userId) {
@@ -87,12 +85,12 @@ public class UserController {
                     userService.updatePermission(documentId, user.getId(), Permission.VIEWER);
                     String link = "http://localhost:3000/document/share/documentId=" + documentId + "&userId=" + user.getId();
                     String body = Share.buildEmail(user.getName(), link, document.getName());
-                    emailService.send(user.getEmail(), body, "You have been invited to view the document");
+                    EmailUtil.send(user.getEmail(), body, "You have been invited to view the document");
                 }
 
                 for (String unregisteredEmail : unregisteredUsers) {
                     String inviteUserString = Invite.emailBody;
-                    emailService.send(unregisteredEmail, inviteUserString, "Personal invitation");
+                    EmailUtil.send(unregisteredEmail, inviteUserString, "Personal invitation");
                 }
             }
             return new ResponseEntity<>(new Response.Builder()
