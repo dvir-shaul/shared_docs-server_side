@@ -105,10 +105,10 @@ class AuthControllerTest {
         String token = ConfirmationToken.createJWT(Long.toString(id+1), "docs-app", "activation email", 5*1000*60);
         assertThrows(RuntimeException.class, ()->authController.activate(token));
     }
-    @Test
-    void createUser_Returns201() {
-        User user = User.createUser("test@test.com", "abcd1234", "test");
-        ResponseEntity<String> response = authController.register(user);
-        assertEquals(201, response.getStatusCodeValue());
-    }
+//    @Test
+//    void createUser_Returns201() {
+//        User user = User.createUser("test@test.com", "abcd1234", "test");
+//        ResponseEntity<String> response = authController.register(user);
+//        assertEquals(201, response.getStatusCodeValue());
+//    }
 }

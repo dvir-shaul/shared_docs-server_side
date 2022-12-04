@@ -4,6 +4,7 @@ import docSharing.entity.User;
 import docSharing.utils.ExceptionMessage;
 import docSharing.repository.UserRepository;
 import docSharing.utils.ConfirmationToken;
+import docSharing.utils.Validations;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -62,7 +63,6 @@ public class AuthService {
      */
     public int activate(Long id) {
         logger.info("in AuthService -> activate");
-        // check if id exists
         return userRepository.updateIsActivated(true, id);
     }
 
@@ -73,6 +73,18 @@ public class AuthService {
     private String generateToken(User user) {
         logger.info("in AuthService -> generateToken");
         return ConfirmationToken.createJWT(String.valueOf(user.getId()), "docs app", "login", 0);
+    }
+
+    /**
+     * called by permimssion filter to check if the token is a valid user token
+     * @return - id of user
+     */
+    public Long isValid(String token) throws AccountNotFoundException {
+        long id =  Validations.validateToken(token);
+        if(userRepository.existsById(id))
+            return id;
+        throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
+
     }
 
 }

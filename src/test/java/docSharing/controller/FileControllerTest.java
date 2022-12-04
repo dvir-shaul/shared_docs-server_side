@@ -52,11 +52,11 @@ class FileControllerTest {
         folderRepository.save(folder);
     }
 
-    @Test
-    void getAll_successfully() throws AccountNotFoundException {
-        ResponseEntity<List<FileRes>> list = fileController.getAll(null, userRepository.findByEmail("testUser@gmail.com").get().getId());
-        assertFalse(Objects.requireNonNull(list.getBody()).isEmpty());
-    }
+//    @Test
+//    void getAll_successfully() throws AccountNotFoundException {
+//        ResponseEntity<List<FileRes>> list = fileController.getAll(null, userRepository.findByEmail("testUser@gmail.com").get().getId());
+//        assertFalse(Objects.requireNonNull(list.getBody()).isEmpty());
+//    }
 
     @Test
     void getAll_noParentFolderInDB_successfully() throws AccountNotFoundException {

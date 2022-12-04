@@ -5,11 +5,13 @@ import docSharing.repository.DocumentRepository;
 import docSharing.repository.FolderRepository;
 import docSharing.repository.UserDocumentRepository;
 import docSharing.repository.UserRepository;
+import docSharing.service.AuthService;
 import docSharing.service.EmailService;
 import docSharing.utils.ExceptionMessage;
 import docSharing.utils.Params;
 import docSharing.utils.Validations;
 
+import docSharing.utils.grantPermission;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.GenericFilterBean;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.security.auth.login.AccountNotFoundException;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -33,7 +36,8 @@ import java.util.*;
 public class PermissionFilter extends GenericFilterBean {
 
     private static Logger logger = LogManager.getLogger(PermissionFilter.class.getName());
-
+    @Autowired
+    AuthService authService;
     @Autowired
     UserDocumentRepository userDocumentRepository;
     @Autowired
@@ -86,10 +90,12 @@ public class PermissionFilter extends GenericFilterBean {
                 }
 
             }
-        }catch (ResponseStatusException e){
-            // TODO: add here
+        }catch (ResponseStatusException | AccountNotFoundException e){
+            ((HttpServletResponse) response).sendError(HttpServletResponse.SC_UNAUTHORIZED,"Not Authorized");
+            throw new IllegalAccessError("Not Authorized");
         }
         if (!flag) {
+            ((HttpServletResponse) response).sendError(HttpServletResponse.SC_UNAUTHORIZED,ExceptionMessage.WRONG_SEARCH.toString());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ExceptionMessage.WRONG_SEARCH.toString());
         }
 
@@ -101,19 +107,19 @@ public class PermissionFilter extends GenericFilterBean {
      * actionThatDontRequirePermission checks if the given request from the client doesn't need to check for permission,
      * i.e:  get path of a file doesn't need permission, so it bypass our filter.
      *
-     * @param list - list of URI request - httpRequest.getRequestURI().split("/").
+     * @param uriList - list of URI request - httpRequest.getRequestURI().split("/").
      * @return - if the action need to bypass the filter
      */
-    public boolean actionThatDontRequirePermission(ServletRequest request, List<String> list) {
+    public boolean actionThatDontRequirePermission(ServletRequest request, List<String> uriList) {
         logger.info("in PermissionFilter -> actionThatDontRequirePermission");
 
         HttpServletRequest httpRequest = (HttpServletRequest) request;
-
-        if (list.contains("sharedDocuments") || list.contains("share") || list.contains("auth") ||
-                list.contains("getAll") || list.contains("getPath") || list.contains("ws") ||
-                list.contains("getUser") || list.contains("getContent") || list.contains("onlineUsers") ||
-                list.contains("import") || list.contains("export") || list.contains("isExists")||
-                httpRequest.getMethod().equals(HttpMethod.OPTIONS.toString()) || httpRequest.getMethod().equals(HttpMethod.GET.toString())) {
+        for (String s : grantPermission.list) {
+            if (uriList.contains(s))
+                return true;
+        }
+        if (httpRequest.getMethod().equals(HttpMethod.OPTIONS.toString()) ||
+                httpRequest.getMethod().equals(HttpMethod.GET.toString())) {
             return true;
         }
         return false;
@@ -125,13 +131,13 @@ public class PermissionFilter extends GenericFilterBean {
      *
      * @return - if the given request can go through the filter.
      */
-    public boolean actionIsChangePermission(ServletRequest request) throws ResponseStatusException {
+    public boolean actionIsChangePermission(ServletRequest request) throws ResponseStatusException, AccountNotFoundException {
         logger.info("in PermissionFilter -> actionIsChangePermission");
 
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         String token = httpRequest.getHeader("authorization");
         Long docId = Long.valueOf(request.getParameter(Params.DOCUMENT_ID.toString()));
-        Long userId = Validations.validateToken(token);
+        Long userId = authService.isValid(token);
         UserDocument userDocument = getUserDocument(docId, userId);
         if (userDocument.getPermission().equals(Permission.MODERATOR) || userDocument.getDocument().getUser().getId().equals(userId)) {
             return true;

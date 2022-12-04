@@ -15,12 +15,4 @@ public class CreateDocumentReq {
     private Long parentFolderId;
     private String content;
 
-    @Override
-    public String toString() {
-        return "CreateDocumentReq{" +
-                "name='" + name + '\'' +
-                ", parentFolderId=" + parentFolderId +
-                ", content='" + content + '\'' +
-                '}';
-    }
 }

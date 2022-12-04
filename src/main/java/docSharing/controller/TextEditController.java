@@ -72,9 +72,10 @@ public class TextEditController {
 
             return copyOfLog;
         } catch (AccountNotFoundException e) {
-            logger.error("in TextEditController -> receiveLog ->"+ e.getMessage());
+            logger.fatal("in TextEditController -> receiveLog ->"+ e.getMessage());
             throw new RuntimeException(e);
         } catch (FileNotFoundException e) {
+            logger.fatal("in TextEditController -> receiveLog ->"+ e.getMessage());
             throw new RuntimeException(e);
         }
     }

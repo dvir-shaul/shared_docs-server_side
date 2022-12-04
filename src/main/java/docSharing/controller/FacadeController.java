@@ -28,7 +28,14 @@ public class FacadeController {
     DocumentService documentService;
     @Autowired
     FolderService folderService;
-
+    /**
+     * getAll function called from the client when we enter a new folder, and it should send the client a list with all
+     * the folders & documents to present the client.
+     *
+     * @param parentFolderId - folder id.
+     * @param userId         - the user id.
+     * @return response entity with a List<FileRes> with all the folders & documents to send.
+     */
     public Response getAll(Long parentFolderId, Long userId) {
         try {
             List<Folder> folders;
@@ -66,7 +73,13 @@ public class FacadeController {
 //
 //        return ResponseEntity.ok().body(convertFromClassToService(c).get(id));
 //    }
-
+    /**
+     * create is a request from the client to create a new file in a specific folder location.
+     *
+     * @param item - item of kind folder or document.
+     * @param c    - the class of the item, need to know to what service sends the request.
+     * @return - ResponseEntity.
+     */
     public Response create(GeneralItem item, Class c) {
         // make sure we got all the data from the client
         try {
@@ -88,6 +101,12 @@ public class FacadeController {
         }
     }
 
+    /**
+     *
+     * @param item
+     * @param c
+     * @return
+     */
     public Response getPath(GeneralItem item, Class c) {
         return new Response.Builder()
                 .status(HttpStatus.OK)
@@ -96,7 +115,14 @@ public class FacadeController {
                 .data(convertFromClassToService(c).getPath(item))
                 .build();
     }
-
+    /**
+     * rename a file, called from the fileController with a request to change name.
+     *
+     * @param id   - of a file.
+     * @param name - new name.
+     * @param c    - the class of the item, need to know to what service sends the request.
+     * @return - ResponseEntity.
+     */
     public Response rename(Long id, String name, Class c) {
         // FIXME: need to validate name using Validations.validate!
         //  it also checks if null and returns an exception so we need to catch it here.
@@ -113,7 +139,13 @@ public class FacadeController {
                 .message("Successfully renamed to: " + convertFromClassToService(c).rename(id, name))
                 .build();
     }
-
+    /**
+     * delete a file, called from the fileController with a request to delete.
+     *
+     * @param id - of a file to delete it.
+     * @param c  - the class of the item, need to know to what service sends the request.
+     * @return - ResponseEntity.
+     */
     public Response delete(Long id, Class c) {
         // FIXME: We have this check in a Validation.validate function. Why not do that there and let it throw its exception?
         //  if we do it this way, we only return an exception response once, and not twice.
@@ -139,7 +171,14 @@ public class FacadeController {
                     .build();
         }
     }
-
+    /**
+     * relocate a file, called from the fileController with a request to relocate.
+     *
+     * @param newParentId - the new folder that the new file will insert into.
+     * @param id          - of a file
+     * @param c           - the class of the item, need to know to what service sends the request.
+     * @return - ResponseEntity
+     */
     public Response relocate(Long newParentId, Long id, Class c) {
         try {
             if (id == null)
@@ -169,6 +208,11 @@ public class FacadeController {
         }
     }
 
+    /**
+     *
+     * @param documentId -
+     * @return -
+     */
     public Response export(Long documentId) {
         try {
             Document document = documentService.findById(documentId);
@@ -188,6 +232,12 @@ public class FacadeController {
         }
     }
 
+    /**
+     *
+     * @param id -
+     * @param c -
+     * @return -
+     */
     public Response doesExist(Long id, Class c) {
         if (id == null)
             return new Response.Builder()
@@ -217,6 +267,16 @@ public class FacadeController {
         return null;
     }
 
+    /**
+     * convertToFileRes is an inner function of getAll, that gets a list of folders & documents,
+     * and return a list of FileRes entity which has the name,id and the type of a given file
+     * for the convenient of the client side which need
+     * to show all the files to user.
+     *
+     * @param folders   - List<Folder> to present.
+     * @param documents - List<Document> to present
+     * @return - List<FileRes>
+     */
     private List<FileRes> convertToFileRes(List<Folder> folders, List<Document> documents) {
         List<FileRes> fileResList = new ArrayList<>();
 

@@ -169,6 +169,12 @@ class FileController {
         return new ResponseEntity<>(response, response.getStatus());
     }
 
+    /**
+     * getDocumentName
+     * @param documentId - doc id
+     * @param userId - user id
+     * @return -
+     */
     @RequestMapping(value = "document", method = RequestMethod.GET)
     public ResponseEntity<Response> getDocumentName(@RequestParam Long documentId, @RequestAttribute Long userId) {
         try {
@@ -297,8 +303,12 @@ class FileController {
     }
 
 
-
-
+    /**
+     * getContent
+     * @param documentId - doc id
+     * @param userId - user id
+     * @return -
+     */
     @RequestMapping(value = "document/getContent", method = RequestMethod.GET)
     public ResponseEntity<Response> getContent(@RequestParam Long documentId, @RequestAttribute Long userId) {
         // FIXME: What if the document doesn't exist?
