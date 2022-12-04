@@ -266,6 +266,42 @@ public class FacadeController {
         }
     }
 
+    public Response login(User user) {
+        User userInDb = null;
+        try {
+            userInDb = userService.findByEmail(user.getEmail());
+            if (!userInDb.getActivated()) {
+                return new Response.Builder()
+                        .message(ExceptionMessage.USER_NOT_ACTIVATED.toString())
+                        .status(HttpStatus.FORBIDDEN)
+                        .statusCode(400)
+                        .build();
+            }
+            String email = user.getEmail();
+            String password = user.getPassword();
+            Validations.validate(Regex.EMAIL.getRegex(), email);
+            Validations.validate(Regex.PASSWORD.getRegex(), password);
+            return new Response.Builder()
+                    .data(authService.login(email, password))
+                    .message("Successfully created a token for a user.")
+                    .statusCode(200)
+                    .status(HttpStatus.OK)
+                    .build();
+        } catch (IllegalArgumentException | NullPointerException e) {
+            return new Response.Builder()
+                    .message("You must include all and exact parameters for such an action: email, name, password")
+                    .status(HttpStatus.FORBIDDEN)
+                    .statusCode(400)
+                    .build();
+        } catch (AccountNotFoundException e) {
+            return new Response.Builder()
+                    .message("You must include all and exact parameters for such an action: email, name, password")
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .statusCode(400)
+                    .build();
+        }
+    }
+
     /**
      * This function gets an item as a parameter and extracts its class in order to return the correct service.
      *

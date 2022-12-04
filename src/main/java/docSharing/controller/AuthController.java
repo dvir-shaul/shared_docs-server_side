@@ -62,61 +62,8 @@ public class AuthController {
      */
     @RequestMapping(value = "login", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<Response> login(@RequestBody User user) {
-        User userInDb = null;
-        try {
-            userInDb = userService.findByEmail(user.getEmail());
-        } catch (AccountNotFoundException e) {
-            return new ResponseEntity<>(new Response.Builder()
-                    .message(e.getMessage())
-                    .statusCode(400)
-                    .status(HttpStatus.FORBIDDEN)
-                    .build(), HttpStatus.FORBIDDEN);
-        }
-        if (!userInDb.getActivated()) {
-            return new ResponseEntity<>(new Response.Builder()
-                    .message(ExceptionMessage.USER_NOT_ACTIVATED.toString())
-                    .status(HttpStatus.FORBIDDEN)
-                    .statusCode(400)
-                    .build(), HttpStatus.FORBIDDEN);
-        }
-        String email = user.getEmail();
-        String password = user.getPassword();
-
-        // make sure we got all the data from the client
-        if (email == null || password == null || user.getId() != null || user.getName() != null) {
-            return new ResponseEntity<>(new Response.Builder()
-                    .message("You must include all and exact parameters for such an action: email, name, password")
-                    .status(HttpStatus.BAD_REQUEST)
-                    .statusCode(400)
-                    .build(), HttpStatus.BAD_REQUEST);
-        }
-
-        // validate information
-        try {
-            Validations.validate(Regex.EMAIL.getRegex(), email);
-            Validations.validate(Regex.PASSWORD.getRegex(), password);
-            return new ResponseEntity<>(new Response.Builder()
-                    .data(authService.login(email, password))
-                    .message("Successfully created a token for a user.")
-                    .statusCode(200)
-                    .status(HttpStatus.OK)
-                    .build(), HttpStatus.OK);
-
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(new Response.Builder()
-                    .message("You must include all and exact parameters for such an action: email, name, password")
-                    .status(HttpStatus.FORBIDDEN)
-                    .statusCode(400)
-                    .build(), HttpStatus.FORBIDDEN);
-        } catch (AccountNotFoundException e) {
-            return new ResponseEntity<>(new Response.Builder()
-                    .message("You must include all and exact parameters for such an action: email, name, password")
-                    .status(HttpStatus.UNAUTHORIZED)
-                    .statusCode(400)
-                    .build(), HttpStatus.UNAUTHORIZED);
-        }
-
-        // if correct -> call auth service with parameters -> login function
+        Response response = facadeController.login(user);
+        return new ResponseEntity<>(response, response.getStatus());
     }
 
     /**

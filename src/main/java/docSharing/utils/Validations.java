@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 
 public class Validations {
 
-    public static void validate(String regex, String data) {
+    public static void validate(String regex, String data) throws NullPointerException, IllegalArgumentException{
         if (data == null)
             throw new NullPointerException(ExceptionMessage.EMPTY_NOTNULL_FIELD.toString());
 
