@@ -192,9 +192,9 @@ public class AuthController {
             EmailUtil.reactivateLink(user);
             return new ResponseEntity<>(new Response.Builder()
                     .message("the link expired, new activation link has been sent")
-                    .statusCode(200)
-                    .status(HttpStatus.OK)
-                    .build(), HttpStatus.OK);
+                    .statusCode(410)
+                    .status(HttpStatus.GONE)
+                    .build(), HttpStatus.GONE);
         } catch (AccountNotFoundException e) {
             return new ResponseEntity<>(new Response.Builder()
                     .message("You must include all and exact parameters for such an action: email, name, password")
