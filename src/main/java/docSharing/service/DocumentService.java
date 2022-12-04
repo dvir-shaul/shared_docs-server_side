@@ -31,8 +31,9 @@ public class DocumentService implements ServiceInterface {
     UserDocumentRepository userDocumentRepository;
     @Autowired
     UserRepository userRepository;
-@Autowired
-LogRepository logRepository;
+    @Autowired
+    LogRepository logRepository;
+
     @Scheduled(fixedDelay = 10 * 1000)
     public void updateDatabaseWithNewContent() {
         for (Map.Entry<Long, String> entry : documentsContentLiveChanges.entrySet()) {
@@ -71,7 +72,8 @@ LogRepository logRepository;
 
             }
         }
-        return onlineUsersPerDoc.get(documentId);
+        Set<User> userList = onlineUsersPerDoc.get(documentId);
+        return userList;
     }
 
     public List<FileRes> getPath(Long documentId) {
@@ -196,9 +198,9 @@ LogRepository logRepository;
      * set Permission of the creator as an MODERATOR.
      *
      * @param parentFolder - parent folder of the document
-     * @param user - the owner of the document
-     * @param name - name of document
-     * @param content - the content of the document
+     * @param user         - the owner of the document
+     * @param name         - name of document
+     * @param content      - the content of the document
      * @return id of document.
      */
     public Long create(Folder parentFolder, User user, String name, String content) {
@@ -324,7 +326,7 @@ LogRepository logRepository;
 
         userDocumentRepository.deleteDocument(document.get());
         documentRepository.deleteById(docId);
-        for (Log log: document.get().getLogs()) {
+        for (Log log : document.get().getLogs()) {
             logRepository.delete(log);
         }
         // CONSULT: can we get the number of lines affected to return to the user?
@@ -342,14 +344,14 @@ LogRepository logRepository;
         return documentRepository.findAllByParentFolderIsNull(user);
     }
 
-    public List<UsersInDocRes> getAllUsersInDocument(Long userId,Long documentId,Method method) throws AccountNotFoundException {
-        if (!documentRepository.findById(documentId).isPresent())
+    public List<UsersInDocRes> getAllUsersInDocument(Long userId, Long documentId, Method method) throws AccountNotFoundException {
+        Optional<Document> document = documentRepository.findById(documentId);
+        if (!document.isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
-        Document document = documentRepository.findById(documentId).get();
-        // return userDocumentRepository.findAllUsersInDocument(document);
 
         Set<Long> onlineUsers = getActiveUsers(userId, documentId, method).stream().map(u -> u.getId()).collect(Collectors.toSet());
-        return userDocumentRepository.findAllUsersInDocument(document)
+        List<UserDocument> usersList = userDocumentRepository.findAllUsersInDocument(document.get());
+        return usersList
                 .stream()
                 .map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId()) ? UserStatus.ONLINE : UserStatus.OFFLINE))
                 .collect(Collectors.toList());

@@ -40,6 +40,7 @@ public class FacadeUserController {
                     .build();
         }
         try {
+            userService.updatePermission(documentId, userId, permission);
             return new Response.Builder()
                     .data(documentService.getAllUsersInDocument(userId, documentId, Method.GET))
                     .status(HttpStatus.OK)
