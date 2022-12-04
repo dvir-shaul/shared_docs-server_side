@@ -7,6 +7,8 @@ import docSharing.response.FileRes;
 import docSharing.response.Response;
 import docSharing.service.*;
 import docSharing.utils.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,9 @@ import javax.mail.MessagingException;
 import javax.security.auth.login.AccountNotFoundException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -297,6 +302,58 @@ public class FacadeController {
             return new Response.Builder()
                     .message("You must include all and exact parameters for such an action: email, name, password")
                     .status(HttpStatus.UNAUTHORIZED)
+                    .statusCode(400)
+                    .build();
+        }
+    }
+
+    public Response activate(String token) {
+        try {
+            String parsedToken = null;
+            parsedToken = URLDecoder.decode(token, StandardCharsets.UTF_8.toString()).replaceAll(" ", ".");
+            Claims claims = null;
+            claims = ConfirmationToken.decodeJWT(parsedToken);
+            if (userService.findById(Long.valueOf(claims.getId())).getActivated()) {
+                return new Response.Builder()
+                        .message("account already activated")
+                        .status(HttpStatus.CONFLICT)
+                        .statusCode(400)
+                        .build();
+            }
+            authService.activate(Long.valueOf(claims.getId()));
+            return new Response.Builder()
+                    .message("account activated successfully!")
+                    .status(HttpStatus.OK)
+                    .statusCode(200)
+                    .build();
+        } catch (ExpiredJwtException e) {
+            try {
+                String id = e.getClaims().getId();
+                User user = userService.findById(Long.valueOf(id));
+                EmailUtil.reactivateLink(user);
+                return new Response.Builder()
+                        .message("the link expired, new activation link has been sent")
+                        .statusCode(410)
+                        .status(HttpStatus.GONE)
+                        .build();
+            } catch (AccountNotFoundException ex) {
+                return new Response.Builder()
+                        .message("activation link expired, failed to send new link")
+                        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .statusCode(500)
+                        .build();
+            }
+
+        } catch (UnsupportedEncodingException e) {
+            return new Response.Builder()
+                    .message("failed to activate account")
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .statusCode(500)
+                    .build();
+        } catch (AccountNotFoundException e) {
+            return new Response.Builder()
+                    .message("invalid token")
+                    .status(HttpStatus.BAD_REQUEST)
                     .statusCode(400)
                     .build();
         }

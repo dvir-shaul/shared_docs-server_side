@@ -75,45 +75,8 @@ public class AuthController {
      * @return
      */
     @RequestMapping(value = "activate", method = RequestMethod.POST)
-    public ResponseEntity<Response> activate(@RequestParam String token) throws AccountNotFoundException {
-        String parsedToken = null;
-        try {
-            parsedToken = URLDecoder.decode(token, StandardCharsets.UTF_8.toString()).replaceAll(" ", ".");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
-        Claims claims = null;
-        try {
-            claims = ConfirmationToken.decodeJWT(parsedToken);
-            if (userService.findById(Long.valueOf(claims.getId())).getActivated()) {
-                return new ResponseEntity<>(new Response.Builder()
-                        .message("account already activated")
-                        .status(HttpStatus.CONFLICT)
-                        .statusCode(400)
-                        .build(), HttpStatus.CONFLICT);
-            }
-            authService.activate(Long.valueOf(claims.getId()));
-            return new ResponseEntity<>(new Response.Builder()
-                    .message("account activated successfully!")
-                    .status(HttpStatus.OK)
-                    .statusCode(200)
-                    .build(), HttpStatus.OK);
-
-        } catch (ExpiredJwtException e) {
-            String id = e.getClaims().getId();
-            User user = userService.findById(Long.valueOf(id));
-            EmailUtil.reactivateLink(user);
-            return new ResponseEntity<>(new Response.Builder()
-                    .message("the link expired, new activation link has been sent")
-                    .statusCode(410)
-                    .status(HttpStatus.GONE)
-                    .build(), HttpStatus.GONE);
-        } catch (AccountNotFoundException e) {
-            return new ResponseEntity<>(new Response.Builder()
-                    .message("You must include all and exact parameters for such an action: email, name, password")
-                    .status(HttpStatus.BAD_REQUEST)
-                    .statusCode(400)
-                    .build(), HttpStatus.BAD_REQUEST);
-        }
+    public ResponseEntity<Response> activate(@RequestParam String token) {
+        Response response = facadeController.activate(token);
+        return new ResponseEntity<>(response, response.getStatus());
     }
 }
