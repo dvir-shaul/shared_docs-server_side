@@ -10,7 +10,6 @@ import org.springframework.stereotype.Repository;
 
 import javax.transaction.Transactional;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface DocumentRepository extends CrudRepository<Document, Long> {
@@ -24,6 +23,11 @@ public interface DocumentRepository extends CrudRepository<Document, Long> {
     @Modifying
     @Query("UPDATE Document d SET d.content = ?1 WHERE d.id = ?2")
     int updateContent(String content, Long id);
+
+//    @Transactional
+//    @Modifying
+//    @Query("Delete Document d WHERE d.id = ?2")
+//    void deleteById(Long id);
 
     @Transactional
     @Modifying

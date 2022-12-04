@@ -1,10 +1,7 @@
 package docSharing.service;
 
 import docSharing.entity.*;
-import docSharing.repository.DocumentRepository;
-import docSharing.repository.FolderRepository;
-import docSharing.repository.UserDocumentRepository;
-import docSharing.repository.UserRepository;
+import docSharing.repository.*;
 import docSharing.requests.Type;
 import docSharing.response.FileRes;
 import docSharing.utils.ExceptionMessage;
@@ -28,6 +25,8 @@ public class FolderService implements ServiceInterface {
     UserRepository userRepository;
     @Autowired
     UserDocumentRepository userDocumentRepository;
+    @Autowired
+    DocumentService documentService;
 
     /**
      * @param id - id of folder in database
@@ -69,14 +68,14 @@ public class FolderService implements ServiceInterface {
      * function get an item of kind folder and uses the logics to create and save a new folder to database.
      *
      * @param parentFolder - parent folder of the folder
-     * @param user - the owner of the folder
-     * @param name - name of folder
-     * @param content - not in use here
+     * @param user         - the owner of the folder
+     * @param name         - name of folder
+     * @param content      - not in use here
      * @return id of the item that was saved to database.
      */
     public Long create(Folder parentFolder, User user, String name, String content) {
         if (parentFolder == null) {
-                throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + parentFolder.getId());
+            throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + parentFolder.getId());
         }
         Folder folder = Folder.createFolder(name, parentFolder, user);
         Folder savedFolder = folderRepository.save(folder);
@@ -86,21 +85,23 @@ public class FolderService implements ServiceInterface {
         savedFolder.getUser().addFolder(savedFolder);
         return savedFolder.getId();
     }
-public List<FileRes> getPath(Long folderId){
-    try {
-        Folder folder =findById(folderId);
-    List<FileRes> path = new ArrayList<>();
-    Folder parentFolder = folder.getParentFolder();
-        path.add(0, new FileRes(folder.getName(), folder.getId(), Type.FOLDER, Permission.ADMIN, folder.getUser().getEmail()));
-    while (parentFolder != null) {
-        path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, folder.getUser().getEmail()));
-        parentFolder = parentFolder.getParentFolder();
+
+    public List<FileRes> getPath(Long folderId) {
+        try {
+            Folder folder = findById(folderId);
+            List<FileRes> path = new ArrayList<>();
+            Folder parentFolder = folder.getParentFolder();
+            path.add(0, new FileRes(folder.getName(), folder.getId(), Type.FOLDER, Permission.ADMIN, folder.getUser().getEmail()));
+            while (parentFolder != null) {
+                path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, folder.getUser().getEmail()));
+                parentFolder = parentFolder.getParentFolder();
+            }
+            return path;
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
-    return path;
-    } catch (FileNotFoundException e) {
-        throw new RuntimeException(e);
-    }
-}
+
     /**
      * rename function gets an id of folder and new name to change the folder's name.
      *
@@ -168,8 +169,11 @@ public List<FileRes> getPath(Long folderId){
             throw new FileNotFoundException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
 
         folder.get().getDocuments().forEach(document -> {
-            userDocumentRepository.deleteDocument(document);
-            documentRepository.delete(document);
+            try {
+                documentService.delete(document.getId());
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
         });
 
         for (Folder f : folder.get().getFolders()) {
@@ -179,7 +183,7 @@ public List<FileRes> getPath(Long folderId){
         folderRepository.delete(folder.get());
     }
 
-    public Boolean doesExist(Long id){
+    public Boolean doesExist(Long id) {
         return folderRepository.findById(id).isPresent();
     }
 

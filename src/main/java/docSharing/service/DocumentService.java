@@ -31,7 +31,8 @@ public class DocumentService implements ServiceInterface {
     UserDocumentRepository userDocumentRepository;
     @Autowired
     UserRepository userRepository;
-
+@Autowired
+LogRepository logRepository;
     @Scheduled(fixedDelay = 10 * 1000)
     public void updateDatabaseWithNewContent() {
         for (Map.Entry<Long, String> entry : documentsContentLiveChanges.entrySet()) {
@@ -323,6 +324,9 @@ public class DocumentService implements ServiceInterface {
 
         userDocumentRepository.deleteDocument(document.get());
         documentRepository.deleteById(docId);
+        for (Log log: document.get().getLogs()) {
+            logRepository.delete(log);
+        }
         // CONSULT: can we get the number of lines affected to return to the user?
     }
 
@@ -338,13 +342,13 @@ public class DocumentService implements ServiceInterface {
         return documentRepository.findAllByParentFolderIsNull(user);
     }
 
-    public List<UsersInDocRes> getAllUsersInDocument(Long documentId) throws AccountNotFoundException {
+    public List<UsersInDocRes> getAllUsersInDocument(Long userId,Long documentId,Method method) throws AccountNotFoundException {
         if (!documentRepository.findById(documentId).isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
         Document document = documentRepository.findById(documentId).get();
         // return userDocumentRepository.findAllUsersInDocument(document);
 
-        Set<Long> onlineUsers = getActiveUsers(null, documentId, Method.GET).stream().map(u -> u.getId()).collect(Collectors.toSet());
+        Set<Long> onlineUsers = getActiveUsers(userId, documentId, method).stream().map(u -> u.getId()).collect(Collectors.toSet());
         return userDocumentRepository.findAllUsersInDocument(document)
                 .stream()
                 .map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId()) ? UserStatus.ONLINE : UserStatus.OFFLINE))

@@ -3,6 +3,7 @@ package docSharing.controller;
 import docSharing.entity.Document;
 import docSharing.entity.Permission;
 import docSharing.entity.User;
+import docSharing.requests.Method;
 import docSharing.response.FileRes;
 import docSharing.response.JoinRes;
 import docSharing.response.Response;
@@ -40,7 +41,7 @@ public class FacadeUserController {
         }
         try {
             return new Response.Builder()
-                    .data(documentService.getAllUsersInDocument(documentId))
+                    .data(documentService.getAllUsersInDocument(userId, documentId, Method.GET))
                     .status(HttpStatus.OK)
                     .statusCode(200)
                     .message("Successfully changed permission to user id:" + userId)
@@ -81,7 +82,7 @@ public class FacadeUserController {
             return new Response.Builder()
                     .statusCode(200)
                     .status(HttpStatus.OK)
-                    .data(documentService.getAllUsersInDocument(documentId))
+                    .data(documentService.getAllUsersInDocument(null, documentId, Method.GET))
                     .build();
         } catch (MessagingException | IOException | AccountNotFoundException e) {
             return new Response.Builder()

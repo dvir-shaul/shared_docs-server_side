@@ -63,7 +63,7 @@ public class TextEditController {
     @SendTo("/document/onlineUsers/{documentId}")
     public List<UsersInDocRes> getOnlineUsers(@DestinationVariable Long documentId, @Payload OnlineUsersReq onlineUsersReq) {
         try {
-            List<UsersInDocRes> all = documentService.getAllUsersInDocument(documentId);
+            List<UsersInDocRes> all = documentService.getAllUsersInDocument(onlineUsersReq.getUserId(),documentId, onlineUsersReq.getMethod());
             Collections.sort(all, new Comparator<UsersInDocRes>() {
                 public int compare(UsersInDocRes o1, UsersInDocRes o2) {
                     return o1.compareTo(o2);

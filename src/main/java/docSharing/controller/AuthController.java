@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     @Autowired
-    FacadeController facadeController;
+    FacadeAuthController facadeAuthController;
 
     /**
      * Register function is responsible for creating new users and adding them to the database.
@@ -27,7 +27,7 @@ public class AuthController {
      */
     @RequestMapping(value = "register", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<Response> register(@RequestBody User user) {
-        Response response = facadeController.register(user);
+        Response response = facadeAuthController.register(user);
         return new ResponseEntity<>(response, response.getStatus());
     }
 
@@ -42,7 +42,7 @@ public class AuthController {
      */
     @RequestMapping(value = "login", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<Response> login(@RequestBody User user) {
-        Response response = facadeController.login(user);
+        Response response = facadeAuthController.login(user);
         return new ResponseEntity<>(response, response.getStatus());
     }
 
@@ -56,7 +56,7 @@ public class AuthController {
      */
     @RequestMapping(value = "activate", method = RequestMethod.POST)
     public ResponseEntity<Response> activate(@RequestParam String token) {
-        Response response = facadeController.activate(token);
+        Response response = facadeAuthController.activate(token);
         return new ResponseEntity<>(response, response.getStatus());
     }
 }
