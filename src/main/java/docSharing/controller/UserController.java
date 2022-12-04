@@ -14,35 +14,35 @@ import java.util.List;
 @RequestMapping("/user")
 public class UserController {
     @Autowired
-    private FacadeController facadeController;
+    private FacadeUserController facadeUserController;
 
     @RequestMapping(value = "/permission/give", method = RequestMethod.PATCH)
     public ResponseEntity<Response> givePermission(@RequestParam Long documentId, @RequestParam Long uid, @RequestParam Permission permission, @RequestAttribute Long userId) {
-        Response response = facadeController.givePermission(documentId, uid, permission);
+        Response response = facadeUserController.givePermission(documentId, uid, permission);
         return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "/share", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<Response> givePermissionToAll(@RequestBody List<String> emails, @RequestParam Long documentId, @RequestAttribute Long userId) {
-        Response response = facadeController.givePermissionToAll(emails, documentId);
+        Response response = facadeUserController.givePermissionToAll(emails, documentId);
         return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "sharedDocuments", method = RequestMethod.GET)
     public ResponseEntity<Response> getDocuments(@RequestAttribute Long userId) {
-        Response response = facadeController.getDocuments(userId);
+        Response response = facadeUserController.getDocuments(userId);
         return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "getUser", method = RequestMethod.GET)
     public ResponseEntity<Response> getUser(@RequestAttribute Long userId) {
-        Response response = facadeController.getUser(userId);
+        Response response = facadeUserController.getUser(userId);
         return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "document/getUser", method = RequestMethod.GET)
     public ResponseEntity<Response> getUserPermissionForSpecificDocument(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        Response response = facadeController.getUserPermissionForSpecificDocument(documentId, userId);
+        Response response = facadeUserController.getUserPermissionForSpecificDocument(documentId, userId);
         return new ResponseEntity<>(response, response.getStatus());
     }
 }

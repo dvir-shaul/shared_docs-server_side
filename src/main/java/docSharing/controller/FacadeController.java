@@ -2,10 +2,7 @@ package docSharing.controller;
 
 import docSharing.entity.*;
 import docSharing.requests.Type;
-import docSharing.response.ExportDoc;
-import docSharing.response.FileRes;
-import docSharing.response.JoinRes;
-import docSharing.response.Response;
+import docSharing.response.*;
 import docSharing.service.*;
 import docSharing.utils.*;
 import io.jsonwebtoken.Claims;
@@ -360,106 +357,15 @@ public class FacadeController {
         }
     }
 
-    public Response givePermission(Long documentId, Long userId, Permission permission) {
-        // FIXME: use Valdidations.validate for it.
-        if (documentId == null || userId == null || permission == null) {
-            return new Response.Builder()
-                    .status(HttpStatus.BAD_REQUEST)
-                    .statusCode(400)
-                    .message("Could not continue due to lack of data. Required: documentId, uid, permission")
-                    .build();
-        }
-        try {
-            return new Response.Builder()
-                    .data(documentService.getAllUsersInDocument(documentId))
-                    .status(HttpStatus.OK)
-                    .statusCode(200)
-                    .message("Successfully changed permission to user id:" + userId)
-                    .build();
-        } catch (AccountNotFoundException e) {
-            return new Response.Builder()
-                    .message("failed to update a permission")
-                    .status(HttpStatus.BAD_REQUEST)
-                    .statusCode(400)
-                    .build();
-        }
-    }
 
-    public Response givePermissionToAll(List<String> emails, Long documentId) {
-        try {
-            List<String> unregisteredUsers = new ArrayList<>();
-            for (String email : emails) {
-                User user = null;
-                try {
-                    user = userService.findByEmail(email);
-                } catch (AccountNotFoundException exception) {
-                    unregisteredUsers.add(email);
-                    continue;
-                }
-                Permission permission = documentService.getUserPermissionInDocument(user.getId(), documentId);
-                if (permission.equals(Permission.UNAUTHORIZED)) {
-                    Document document = documentService.findById(documentId);
-                    userService.updatePermission(documentId, user.getId(), Permission.VIEWER);
-                    String link = "http://localhost:3000/document/share/documentId=" + documentId + "&userId=" + user.getId();
-                    String body = Share.buildEmail(user.getName(), link, document.getName());
-                    EmailUtil.send(user.getEmail(), body, "You have been invited to view the document");
-                }
-            }
-            for (String unregisteredEmail : unregisteredUsers) {
-                String inviteUserString = Invite.emailBody;
-                EmailUtil.send(unregisteredEmail, inviteUserString, "Personal invitation");
-            }
-            return new Response.Builder()
-                    .statusCode(200)
-                    .status(HttpStatus.OK)
-                    .data(documentService.getAllUsersInDocument(documentId))
-                    .build();
-        } catch (MessagingException | IOException | AccountNotFoundException e) {
-            return new Response.Builder()
-                    .message(e.getMessage())
-                    .statusCode(400)
-                    .status(HttpStatus.BAD_REQUEST)
-                    .build();
-        }
 
-    }
 
-    public Response getDocuments(Long userId) {
-        return new Response.Builder()
-                .data(userService.documentsOfUser(userId))
-                .message("Successfully managed to fetch all shared documents for a user!")
-                .statusCode(200)
-                .status(HttpStatus.OK)
-                .build();
-    }
 
-    public Response getUser(Long userId) {
-        return new Response.Builder()
-                .data(userService.getUser(userId))
-                .status(HttpStatus.OK)
-                .statusCode(200)
-                .message("Successfully managed to get the user from the database.")
-                .build();
-    }
 
-    public Response getUserPermissionForSpecificDocument(Long documentId, Long userId) {
-        try {
-            User user = userService.findById(userId);
-            Permission permission = documentService.getUserPermissionInDocument(userId, documentId);
-            return new Response.Builder()
-                    .data(new JoinRes(user.getName(), userId, permission))
-                    .message("Successfully managed to fetch a user with his permission")
-                    .status(HttpStatus.OK)
-                    .statusCode(200)
-                    .build();
-        } catch (AccountNotFoundException e) {
-            return new Response.Builder()
-                    .statusCode(400)
-                    .status(HttpStatus.BAD_REQUEST)
-                    .message(e.getMessage())
-                    .build();
-        }
-    }
+
+
+
+
 
     /**
      * This function gets an item as a parameter and extracts its class in order to return the correct service.

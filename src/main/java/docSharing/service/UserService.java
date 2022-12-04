@@ -89,7 +89,7 @@ public class UserService {
      * @param userId - user's id
      * @return list of UserDocument
      */
-    public List<FileRes> documentsOfUser(Long userId) {
+    public List<FileRes> documentsOfUser(Long userId){
         if (!userRepository.findById(userId).isPresent()) {
             throw new IllegalArgumentException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
         }

@@ -48,10 +48,9 @@ public class TextEditController {
             Document document = documentService.findById(documentId);
             // CONSULT: Why do we even get a logReq and not a normal Log. Then return a logRes?
             Log log = new Log(user, document, logReq.getOffset(), logReq.getData(), logReq.getAction(), LocalDateTime.now());
-            LogReq copyOfLog = new LogReq(log.getUser().getId(), log.getDocument().getId(), log.getOffset(), log.getData(), log.getAction());
-            String content = documentService.updateContent(log);
+            documentService.updateContent(log);
             logService.updateLogs(log);
-            return copyOfLog;
+            return logReq;
         } catch (AccountNotFoundException e) {
             throw new RuntimeException(e);
         } catch (FileNotFoundException e) {
