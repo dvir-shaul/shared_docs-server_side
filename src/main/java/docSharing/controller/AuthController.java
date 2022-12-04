@@ -36,6 +36,8 @@ public class AuthController {
     private UserService userService;
     @Autowired
     private FolderService folderService;
+    @Autowired
+    FacadeController facadeController;
 
     /**
      * Register function is responsible for creating new users and adding them to the database.
@@ -45,44 +47,8 @@ public class AuthController {
      */
     @RequestMapping(value = "register", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<Response> register(@RequestBody User user) {
-        String email = user.getEmail();
-        String name = user.getName();
-        String password = user.getPassword();
-
-        // make sure we got all the data from the client
-        if (name == null || email == null || password == null || user.getId() != null) {
-            return new ResponseEntity<>(new Response.Builder()
-                    .message("You must include all and exact parameters for such an action: email, name, password")
-                    .status(HttpStatus.BAD_REQUEST)
-                    .statusCode(400)
-                    .build(), HttpStatus.BAD_REQUEST);
-        }
-
-        // validate information
-        try {
-            Validations.validate(Regex.EMAIL.getRegex(), email);
-            Validations.validate(Regex.PASSWORD.getRegex(), password);
-//            Validations.validate(Regex.NAME.getRegex(), name);
-            User emailUser = authService.register(email, password, name);
-            folderService.createRootFolders(emailUser);
-            String token = ConfirmationToken.createJWT(Long.toString(emailUser.getId()), "docs-app", "activation email", 5 * 1000 * 60);
-            String link = Activation.buildLink(token);
-            String mail = Activation.buildEmail(emailUser.getName(), link);
-            EmailUtil.send(emailUser.getEmail(), mail, "activate account");
-            return new ResponseEntity<>(new Response.Builder()
-                    .message("Account has been successfully registered and created!")
-                    .statusCode(200)
-                    .data(true)
-                    .status(HttpStatus.OK)
-                    .build(), HttpStatus.OK);
-
-        } catch (IllegalArgumentException | MessagingException | IOException e) {
-            return new ResponseEntity<>(new Response.Builder()
-                    .status(HttpStatus.BAD_REQUEST)
-                    .data(false)
-                    .statusCode(400)
-                    .message(e.getMessage()).build(), HttpStatus.BAD_REQUEST);
-        }
+        Response response = facadeController.register(user);
+        return new ResponseEntity<>(response, response.getStatus());
     }
 
     /**

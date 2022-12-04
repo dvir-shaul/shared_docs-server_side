@@ -6,15 +6,16 @@ import docSharing.response.ExportDoc;
 import docSharing.response.FileRes;
 import docSharing.response.Response;
 import docSharing.service.*;
-import docSharing.utils.Regex;
-import docSharing.utils.Validations;
+import docSharing.utils.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+import javax.mail.MessagingException;
 import javax.security.auth.login.AccountNotFoundException;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +28,8 @@ public class FacadeController {
     FolderService folderService;
     @Autowired
     UserService userService;
+    @Autowired
+    AuthService authService;
 
     public Response getAll(Long parentFolderId, Long userId) {
         try {
@@ -226,6 +229,42 @@ public class FacadeController {
 
     }
 
+    public Response register(User user) {
+        String email = user.getEmail();
+        String name = user.getName();
+        String password = user.getPassword();
+
+        // make sure we got all the data from the client
+        if (name == null || email == null || password == null || user.getId() != null) {
+            return new Response.Builder()
+                    .message("You must include all and exact parameters for such an action: email, name, password")
+                    .status(HttpStatus.BAD_REQUEST)
+                    .statusCode(400)
+                    .build();
+        }
+        Validations.validate(Regex.EMAIL.getRegex(), email);
+        Validations.validate(Regex.PASSWORD.getRegex(), password);
+        User emailUser = authService.register(email, password, name);
+        folderService.createRootFolders(emailUser);
+        String token = ConfirmationToken.createJWT(Long.toString(emailUser.getId()), "docs-app", "activation email", 5 * 1000 * 60);
+        String link = Activation.buildLink(token);
+        String mail = Activation.buildEmail(emailUser.getName(), link);
+        try {
+            EmailUtil.send(emailUser.getEmail(), mail, "activate account");
+            return new Response.Builder()
+                    .message("Account has been successfully registered and created!")
+                    .statusCode(201)
+                    .data(true)
+                    .status(HttpStatus.CREATED)
+                    .build();
+        } catch (MessagingException | IOException e) {
+            return new Response.Builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .data(false)
+                    .statusCode(400)
+                    .message(e.getMessage()).build();
+        }
+    }
 
     /**
      * This function gets an item as a parameter and extracts its class in order to return the correct service.
