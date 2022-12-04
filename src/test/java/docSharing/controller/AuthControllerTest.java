@@ -17,6 +17,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import javax.security.auth.login.AccountNotFoundException;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(SpringExtension.class)@SpringBootTest
 class AuthControllerTest {
@@ -40,24 +41,33 @@ class AuthControllerTest {
 
     @Test
     void register_goodUser_Successfully() {
-        assertEquals(authController.register(goodUser), ResponseEntity.status(201).body("Account has been successfully registered and created!"));
+        assertEquals(authController.register(goodUser).getStatusCode().toString().substring(0,3),"200");
+    }
+    @Test
+    void register_goodUserAndThenAgainDifferentMail_Successfully() {
+        assertEquals(authController.register(goodUser).getStatusCode().toString().substring(0,3),"200");
+        goodUser.setEmail("dvir@gmail.com");
+        assertEquals(authController.register(goodUser).getStatusCode().toString().substring(0,3),"200");
     }
     @Test
     void register_badUserEmail_BAD_REQUEST() {
-        assertEquals(authController.register(badUser), ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ExceptionMessage.VALIDATION_FAILED+badUser.getEmail()));
+        assertEquals(authController.register(badUser).toString().substring(1,4),
+                ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ExceptionMessage.VALIDATION_FAILED+badUser.getEmail()).toString().substring(1,4));
 
     }
     @Test
     void register_badUserPassword_BAD_REQUEST() {
         badUser=User.createUser(goodUser.getEmail(),"1","dvir");
-        assertEquals(authController.register(badUser), ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ExceptionMessage.VALIDATION_FAILED+badUser.getPassword()));
+        assertEquals(authController.register(badUser).toString().substring(1,4),
+                ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ExceptionMessage.VALIDATION_FAILED+badUser.getPassword()).toString().substring(1,4));
 
     }
 
     @Test
     void register_withSameEMailAgain_BAD_REQUEST(){
-        assertEquals(authController.register(goodUser), ResponseEntity.status(201).body("Account has been successfully registered and created!"));
-        assertEquals(authController.register(goodUser), ResponseEntity.status(HttpStatus.BAD_REQUEST).body("This user email already exists: "+goodUser.getEmail()));;
+        assertEquals(authController.register(goodUser).getStatusCode().toString().substring(0,3),"200");
+        assertEquals(authController.register(goodUser).toString().substring(1,4),
+                ResponseEntity.status(HttpStatus.BAD_REQUEST).body("This user email already exists: "+goodUser.getEmail()).toString().substring(1,4));;
     }
 
     @Test
@@ -67,9 +77,9 @@ class AuthControllerTest {
         Long id = userRepository.findByEmail(user.getEmail()).get().getId();
         user.setId(id);
         String token = ConfirmationToken.createJWT(Long.toString(id), "docs-app", "activation email", 5*1000*60);
-        assertEquals(authController.activate(token),ResponseEntity.status(200).body("account activated successfully!"));
+        assertEquals(authController.activate(token).getStatusCode().toString().substring(0,3),"200");
         User loginUser = User.createUserForLoginTest("asaf3964@gmail.com","dvir1234");
-        assertEquals(authController.login(loginUser).toString().substring(1,4),"200");//return token..
+        assertEquals(authController.login(loginUser).getStatusCode().toString().substring(0,3),"200");//return token..
 
     }
     @Test
@@ -79,14 +89,16 @@ class AuthControllerTest {
         Long id = userRepository.findByEmail(user.getEmail()).get().getId();
         user.setId(id);
         String token = ConfirmationToken.createJWT(Long.toString(id), "docs-app", "activation email", 5*1000*60);
-        assertEquals(authController.activate(token),ResponseEntity.status(200).body("account activated successfully!"));
+        assertEquals(authController.activate(token).getStatusCode().toString().substring(0,3),"200");
         User loginUser = User.createUserForLoginTest("asaf3964@gmail.com","dvir12");
-        assertEquals(authController.login(loginUser),ResponseEntity.status(HttpStatus.FORBIDDEN).body(ExceptionMessage.VALIDATION_FAILED+loginUser.getPassword()));
+        assertEquals(authController.login(loginUser).toString().substring(1,4),
+                ResponseEntity.status(HttpStatus.FORBIDDEN).body(ExceptionMessage.VALIDATION_FAILED+loginUser.getPassword()).toString().substring(1,4));
     }
     @Test
     void login_noEmailInDB_UNAUTHORIZED(){
         User loginUser = User.createUserForLoginTest("asaf3964@gmail.com","dvir1223");
-        assertEquals(authController.login(loginUser),ResponseEntity.status(HttpStatus.FORBIDDEN).body(ExceptionMessage.NO_ACCOUNT_IN_DATABASE + loginUser.getEmail()));
+        assertEquals(authController.login(loginUser).toString().substring(1,4),
+                ResponseEntity.status(HttpStatus.FORBIDDEN).body(ExceptionMessage.NO_ACCOUNT_IN_DATABASE + loginUser.getEmail()).toString().substring(1,4));
     }
 
     @Test
@@ -95,15 +107,15 @@ class AuthControllerTest {
         authController.register(user);
         Long id = userRepository.findByEmail(user.getEmail()).get().getId();
         String token = ConfirmationToken.createJWT(Long.toString(id), "docs-app", "activation email", 5*1000*60);
-        assertEquals(authController.activate(token),ResponseEntity.status(200).body("account activated successfully!"));
+        assertEquals(authController.activate(token).getStatusCode().toString().substring(0,3),"200");
     }
     @Test
-    void activate_wrongToken_throwException(){
+    void activate_wrongToken_throwException() throws AccountNotFoundException {
         User user = User.createUser("asaf3964446@gmail.com","dvir1234","dvir");
         authController.register(user);
         Long id = userRepository.findByEmail(user.getEmail()).get().getId();
         String token = ConfirmationToken.createJWT(Long.toString(id+1), "docs-app", "activation email", 5*1000*60);
-        assertThrows(RuntimeException.class, ()->authController.activate(token));
+        assertEquals(authController.activate(token).toString().substring(1,4),"400");
     }
 //    @Test
 //    void createUser_Returns201() {

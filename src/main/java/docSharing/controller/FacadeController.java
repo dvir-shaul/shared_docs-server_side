@@ -140,7 +140,7 @@ public class FacadeController {
 
         // FIXME: need to validate name using Validations.validate!
         //  it also checks if null and returns an exception so we need to catch it here.
-        if (name == null) {
+        if (name == null || name.length()==0) {
             logger.error("in FacadeController -> rename -> name is null");
             return new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)

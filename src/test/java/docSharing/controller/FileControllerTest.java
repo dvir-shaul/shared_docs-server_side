@@ -8,6 +8,7 @@ import docSharing.repository.FolderRepository;
 import docSharing.repository.UserRepository;
 import docSharing.response.FileRes;
 import docSharing.response.JoinRes;
+import docSharing.response.Response;
 import docSharing.utils.ExceptionMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,14 +22,12 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import javax.print.Doc;
 import javax.security.auth.login.AccountNotFoundException;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(SpringExtension.class)@SpringBootTest
+@ExtendWith(SpringExtension.class)
+@SpringBootTest
 class FileControllerTest {
     @Autowired
     FileController fileController;
@@ -38,6 +37,8 @@ class FileControllerTest {
     DocumentRepository documentRepository;
     @Autowired
     FolderRepository folderRepository;
+    @Autowired
+    FacadeController facadeController;
 
     @BeforeEach
     void setup() {
@@ -52,15 +53,22 @@ class FileControllerTest {
         folderRepository.save(folder);
     }
 
-//    @Test
-//    void getAll_successfully() throws AccountNotFoundException {
-//        ResponseEntity<List<FileRes>> list = fileController.getAll(null, userRepository.findByEmail("testUser@gmail.com").get().getId());
-//        assertFalse(Objects.requireNonNull(list.getBody()).isEmpty());
-//    }
+    @Test
+    void getAll_successfully() throws AccountNotFoundException {
+        ResponseEntity<Response> response = fileController.getAll(null, userRepository.findByEmail("testUser@gmail.com").get().getId());
+        assertNotNull(response.getBody().getData());
+    }
+
+    @Test
+    void getAll_noUserDatabase_nullValue() throws AccountNotFoundException {
+        folderRepository.deleteAll();
+        documentRepository.deleteAll();
+        assertThrows(NoSuchElementException.class, () -> fileController.getAll(null, userRepository.findByEmail("test123User@gmail.com").get().getId()));
+    }
 
     @Test
     void getAll_noParentFolderInDB_successfully() throws AccountNotFoundException {
-        assertThrows(RuntimeException.class, () -> fileController.getAll(240000L, userRepository.findByEmail("testUser@gmail.com").get().getId()));
+        assertEquals(fileController.getAll(240000L, userRepository.findByEmail("testUser@gmail.com").get().getId()).getStatusCode().toString().substring(0, 3), "400");
     }
 
     @Test
@@ -70,10 +78,10 @@ class FileControllerTest {
 
     @Test
     void createFolder_successFromNullParent() {
-        assertEquals(fileController.createFolder(null, "f1_folder", userRepository.findByEmail("testUser@gmail.com").get().getId()).toString().substring(1, 4), "200");
+        assertEquals(fileController.createFolder(null, "f1_folder", userRepository.findByEmail("testUser@gmail.com").get().getId()).toString().substring(1, 4), "201");
     }
 
-    //    @Test
+    //        @Test
 //    void createFolder_successWithIdParent() { // nested exception
 //        Folder f = folderRepository.findByNameAndUser("folder",userRepository.findByEmail("testUser@gmail.com").get());
 //        assertEquals(fileController.createFolder(f.getId(),"f1_folder",userRepository.findByEmail("testUser@gmail.com").get().getId()).toString().substring(1,4),"200");
@@ -96,8 +104,8 @@ class FileControllerTest {
     @Test
     void createDocument_noName_BAD_REQUEST() {
         Folder f = folderRepository.findByNameAndUser("folder", userRepository.findByEmail("testUser@gmail.com").get());
-        assertEquals(fileController.createDocument(f.getId(), "", "", userRepository.findByEmail("testUser@gmail.com").get().getId()),
-                ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Could not approve the given information: "));
+        assertEquals(fileController.createDocument(f.getId(), "", "", userRepository.findByEmail("testUser@gmail.com").get().getId()).toString().substring(1, 4),
+                ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Could not approve the given information: ").toString().substring(1, 4));
     }
 
     @Test
@@ -111,8 +119,8 @@ class FileControllerTest {
     @Test
     void renameFolder_noName_BAD_REQUEST() {
         Folder f = folderRepository.findByNameAndUser("folder", userRepository.findByEmail("testUser@gmail.com").get());
-        assertEquals(fileController.renameFolder(f.getId(), "", userRepository.findByEmail("testUser@gmail.com").get().getId()).toString(),
-                ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ExceptionMessage.VALIDATION_FAILED + "name is empty/null").toString());
+        assertEquals(fileController.renameFolder(f.getId(), "", userRepository.findByEmail("testUser@gmail.com").get().getId()).toString().substring(1, 4),
+                ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ExceptionMessage.VALIDATION_FAILED + "name is empty/null").toString().substring(1, 4));
     }
 
     @Test
@@ -132,22 +140,24 @@ class FileControllerTest {
 
     }
 
+
+    @Test
+    void getPath_givenFolder_success() {
+        //org.hibernate.LazyInitializationException:
+        // failed to lazily initialize a collection of role: docSharing.entity.Folder.documents, could not initialize proxy - no Session
+        User user = userRepository.findByEmail("testUser@gmail.com").get();
+        assertEquals(facadeController.getPath(folderRepository.findByNameAndUser("folder",user),Folder.class).getStatus().toString().substring(0,3),
+                "200");
+    }
     @Test
     void deleteFolder_givenFolder_success() {
         //org.hibernate.LazyInitializationException:
         // failed to lazily initialize a collection of role: docSharing.entity.Folder.documents, could not initialize proxy - no Session
 //        User user = userRepository.findByEmail("testUser@gmail.com").get();
-//        Folder folder = new Folder();
-//        folder.setName("folderrrrrrrrrrrrrrr");
-//        folder.setUser(user);
-//        Document document = Document.createDocument(user,"newDoc",folder,"hey");
-//        folder.addDocument(document);
-//        folderRepository.save(folder);
-//        documentRepository.save(document);
-//        assertEquals(fileController.deleteFolder(folder.getId(),userRepository.findByEmail("testUser@gmail.com").get().getId()).toString().substring(1,4),
+//        assertEquals(facadeController.delete(folderRepository.findByNameAndUser("folder",user).getId(),Folder.class).toString().substring(1,4),
 //                "200");
     }
-}
+
 //    @Test
 //    void deleteDocument_givenDoc_success() {
 //        User user = userRepository.findByEmail("testUser@gmail.com").get();
@@ -160,19 +170,6 @@ class FileControllerTest {
 //        documentRepository.save(document);
 //        assertEquals(fileController.deleteDocument(document.getId(),userRepository.findByEmail("testUser@gmail.com").get().getId()).toString().substring(1,4),
 //                "200");
-//    }
-
-//    @Test
-//    void relocate() {
-//    }
-
-
-//    @Test
-//    void export() {
-//    }
-
-//    @Test
-//    void getPath() {
 //    }
 //    @Test
 //    void documentExists_wrongValues_NoAccountInDatabase() {
@@ -193,11 +190,11 @@ class FileControllerTest {
 //        Folder folder = new Folder();
 //        folder.setName("folder");
 //        folder.setUser(user);
-//        Document document = Document.createDocument(user,"newDoc",folder,"hey");
+//        Document document = Document.createDocument(user, "newDoc", folder, "hey");
 //        folder.addDocument(document);
 //        folderRepository.save(folder);
 //        documentRepository.save(document);
-//        assertEquals(fileController.documentExists(documentRepository.findByNameAndUser(document.getName(),document.getUser()).getId(),user.getId()).toString().substring(1,4),
+//        assertEquals(fileController.doesDocumentExists(documentRepository.findByNameAndUser(document.getName(), document.getUser()).getId(), user.getId()).toString().substring(1, 4),
 //                "200");
 //    }
 //    @Test
@@ -255,3 +252,5 @@ class FileControllerTest {
 //
 //
 //
+
+}

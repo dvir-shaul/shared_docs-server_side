@@ -160,7 +160,7 @@ public class FolderService implements ServiceInterface {
 
         Optional<Folder> folder = folderRepository.findById(id);
         if (!folder.isPresent()) {
-            logger.error("in FolderService -> relocate --> " + ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS);
+            logger.error("in FolderService -> relocate --> " + ExceptionMessage.FOLDER_DOES_NOT_EXISTS);
             throw new FileNotFoundException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
         }
 
