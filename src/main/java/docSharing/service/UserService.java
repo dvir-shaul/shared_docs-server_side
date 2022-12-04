@@ -60,24 +60,24 @@ public class UserService {
      * @param permission - the new Permission
      */
     public void updatePermission(Long docId, Long userId, Permission permission) {
-        if (!documentRepository.findById(docId).isPresent()) {
+        Optional<Document> document = documentRepository.findById(docId);
+        if (!document.isPresent()) {
             throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
         }
-        if (!userRepository.findById(userId).isPresent()) {
+        Optional<User> user = userRepository.findById(userId);
+        if (!user.isPresent()) {
             throw new IllegalArgumentException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
         }
-        Document doc = documentRepository.findById(docId).get();
-        User user = userRepository.findById(userId).get();
-        if(permission.equals(Permission.UNAUTHORIZED)){
-            userDocumentRepository.deleteUserFromDocument(user,doc);
+        if (permission.equals(Permission.UNAUTHORIZED)) {
+            userDocumentRepository.deleteUserFromDocument(user.get(), document.get());
             return;
         }
-        if (userDocumentRepository.find(doc, user).isPresent()) {
-            userDocumentRepository.updatePermission(permission, doc, user);
+        if (userDocumentRepository.find(document.get(), user.get()).isPresent()) {
+            userDocumentRepository.updatePermission(permission, document.get(), user.get());
         } else {
             UserDocument userDocument = new UserDocument();
-            userDocument.setUser(user);
-            userDocument.setDocument(doc);
+            userDocument.setUser(user.get());
+            userDocument.setDocument(document.get());
             userDocument.setPermission(permission);
             userDocumentRepository.save(userDocument);
         }
@@ -89,7 +89,7 @@ public class UserService {
      * @param userId - user's id
      * @return list of UserDocument
      */
-    public List<FileRes> documentsOfUser(Long userId){
+    public List<FileRes> documentsOfUser(Long userId) {
         if (!userRepository.findById(userId).isPresent()) {
             throw new IllegalArgumentException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
         }
@@ -97,8 +97,8 @@ public class UserService {
         List<FileRes> userDocumentResList = new ArrayList<>();
         for (UserDocument userDocument :
                 ud) {
-            if(userDocument.getPermission()!=Permission.ADMIN)
-            userDocumentResList.add(new FileRes(userDocument.getDocument().getName(),userDocument.getDocument().getId(), Type.DOCUMENT, userDocument.getPermission(), userDocument.getDocument().getUser().getEmail()));
+            if (userDocument.getPermission() != Permission.ADMIN)
+                userDocumentResList.add(new FileRes(userDocument.getDocument().getName(), userDocument.getDocument().getId(), Type.DOCUMENT, userDocument.getPermission(), userDocument.getDocument().getUser().getEmail()));
         }
         return userDocumentResList;
     }

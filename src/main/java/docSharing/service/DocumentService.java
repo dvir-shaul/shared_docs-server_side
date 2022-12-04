@@ -31,9 +31,8 @@ public class DocumentService implements ServiceInterface {
     UserDocumentRepository userDocumentRepository;
     @Autowired
     UserRepository userRepository;
-    @Autowired
-    LogRepository logRepository;
-
+@Autowired
+LogRepository logRepository;
     @Scheduled(fixedDelay = 10 * 1000)
     public void updateDatabaseWithNewContent() {
         for (Map.Entry<Long, String> entry : documentsContentLiveChanges.entrySet()) {
@@ -197,9 +196,9 @@ public class DocumentService implements ServiceInterface {
      * set Permission of the creator as an MODERATOR.
      *
      * @param parentFolder - parent folder of the document
-     * @param user         - the owner of the document
-     * @param name         - name of document
-     * @param content      - the content of the document
+     * @param user - the owner of the document
+     * @param name - name of document
+     * @param content - the content of the document
      * @return id of document.
      */
     public Long create(Folder parentFolder, User user, String name, String content) {
