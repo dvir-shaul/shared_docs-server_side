@@ -64,6 +64,7 @@ public class UserController {
         }
     }
 
+
     // FIXME: Move to a different place. Too much logics for a controller!
     //  maybe even take it out to a private separate function...
     @RequestMapping(value = "/share", method = RequestMethod.POST, consumes = "application/json")
