@@ -24,7 +24,7 @@ import javax.security.auth.login.AccountNotFoundException;
 class FileController {
 
     @Autowired
-    FacadeController facadeController;
+    FacadeFileController facadeFileController;
     @Autowired
     FolderService folderService;
     @Autowired
@@ -34,38 +34,38 @@ class FileController {
 
     @RequestMapping(value = "getAll", method = RequestMethod.GET)
     public ResponseEntity<Response> getAll(@RequestParam(required = false) Long parentFolderId, @RequestAttribute Long userId) throws AccountNotFoundException {
-        Response response = facadeController.getAll(parentFolderId, userId);
+        Response response = facadeFileController.getAll(parentFolderId, userId);
         return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "folder/rename", method = RequestMethod.PATCH)
     public ResponseEntity<Response> renameFolder(@RequestParam Long folderId, @RequestParam String name, @RequestAttribute Long userId) {
-        Response response = facadeController.rename(folderId, name, Folder.class);
+        Response response = facadeFileController.rename(folderId, name, Folder.class);
         return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "document/rename", method = RequestMethod.PATCH)
     public ResponseEntity<Response> renameDocument(@RequestParam Long documentId, @RequestParam String name, @RequestAttribute Long userId) {
-        Response response = facadeController.rename(documentId, name, Document.class);
+        Response response = facadeFileController.rename(documentId, name, Document.class);
         return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "folder", method = RequestMethod.DELETE)
     public ResponseEntity<Response> deleteFolder(@RequestParam Long folderId, @RequestAttribute Long userId) {
-        Response response = facadeController.delete(folderId, Folder.class);
+        Response response = facadeFileController.delete(folderId, Folder.class);
         return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "document", method = RequestMethod.DELETE)
     public ResponseEntity<Response> deleteDocument(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        Response response = facadeController.delete(documentId, Document.class);
+        Response response = facadeFileController.delete(documentId, Document.class);
         return new ResponseEntity<>(response, response.getStatus());
 
     }
 
     @RequestMapping(value = "folder/relocate", method = RequestMethod.PATCH)
     public ResponseEntity<Response> relocateFolder(@RequestParam Long newParentFolderId, @RequestParam Long folderId, @RequestAttribute Long userId) {
-        Response response = facadeController.relocate(newParentFolderId, folderId, Folder.class);
+        Response response = facadeFileController.relocate(newParentFolderId, folderId, Folder.class);
         return new ResponseEntity<>(response, response.getStatus());
 
 
@@ -73,14 +73,14 @@ class FileController {
 
     @RequestMapping(value = "document/relocate", method = RequestMethod.PATCH)
     public ResponseEntity<Response> relocateDocument(@RequestParam Long newParentFolderId, @RequestParam Long documentId, @RequestAttribute Long userId) {
-        Response response = facadeController.relocate(newParentFolderId, documentId, Document.class);
+        Response response = facadeFileController.relocate(newParentFolderId, documentId, Document.class);
         return new ResponseEntity<>(response, response.getStatus());
 
     }
 
     @RequestMapping(value = "document/export", method = RequestMethod.GET)
     public ResponseEntity<Response> export(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        Response response = facadeController.export(documentId);
+        Response response = facadeFileController.export(documentId);
         return new ResponseEntity<>(response, response.getStatus());
 
     }
@@ -88,51 +88,51 @@ class FileController {
 
     @RequestMapping(value = "document/doesExists", method = RequestMethod.GET)
     public ResponseEntity<Response> doesDocumentExists(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        Response response = facadeController.doesExist(documentId, Document.class);
+        Response response = facadeFileController.doesExist(documentId, Document.class);
         return new ResponseEntity<>(response, response.getStatus());
 
     }
 
     @RequestMapping(value = "folder/doesExists", method = RequestMethod.GET)
     public ResponseEntity<Response> doesFolderExists(@RequestParam Long folderId, @RequestAttribute Long userId) {
-        Response response = facadeController.doesExist(folderId, Folder.class);
+        Response response = facadeFileController.doesExist(folderId, Folder.class);
         return new ResponseEntity<>(response, response.getStatus());
 
     }
 
     @RequestMapping(value = "document/getContent", method = RequestMethod.GET)
     public ResponseEntity<Response> getContent(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        Response response = facadeController.getContent(documentId);
+        Response response = facadeFileController.getContent(documentId);
         return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "document", method = RequestMethod.GET)
     public ResponseEntity<Response> getDocumentName(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        Response response = facadeController.getDocumentName(documentId);
+        Response response = facadeFileController.getDocumentName(documentId);
         return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "folder", method = RequestMethod.POST)
     public ResponseEntity<Response> createFolder(@RequestParam(required = false) Long parentFolderId, @RequestParam String name, @RequestBody(required = false) String content, @RequestAttribute Long userId) {
-        Response response = facadeController.create(parentFolderId, name, content, userId, Folder.class);
+        Response response = facadeFileController.create(parentFolderId, name, content, userId, Folder.class);
         return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "document", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<Response> createDocument(@RequestParam Long parentFolderId, @RequestParam String name, @RequestBody(required = false) String content, @RequestAttribute Long userId) {
-        Response response = facadeController.create(parentFolderId, name, content, userId, Document.class);
+        Response response = facadeFileController.create(parentFolderId, name, content, userId, Document.class);
         return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "document/getPath", method = RequestMethod.GET)
     public ResponseEntity<Response> getDocumentPath(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        Response response = facadeController.getPath(documentId, Document.class);
+        Response response = facadeFileController.getPath(documentId, Document.class);
         return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "folder/getPath", method = RequestMethod.GET)
     public ResponseEntity<Response> getFolderPath(@RequestParam Long folderId, @RequestAttribute Long userId) {
-        Response response = facadeController.getPath(folderId, Folder.class);
+        Response response = facadeFileController.getPath(folderId, Folder.class);
         return new ResponseEntity<>(response, response.getStatus());
     }
 }
