@@ -1,66 +1,36 @@
 package docSharing.controller;
 
-import docSharing.entity.*;
+import docSharing.entity.Document;
+import docSharing.entity.Folder;
+import docSharing.entity.Permission;
+import docSharing.entity.User;
 import docSharing.requests.Type;
-import docSharing.response.*;
-import docSharing.service.*;
-import docSharing.utils.*;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
+import docSharing.response.ExportDoc;
+import docSharing.response.FileRes;
+import docSharing.response.Response;
+import docSharing.service.DocumentService;
+import docSharing.service.FolderService;
+import docSharing.service.ServiceInterface;
+import docSharing.service.UserService;
+import docSharing.utils.Regex;
+import docSharing.utils.Validations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
-import javax.mail.MessagingException;
 import javax.security.auth.login.AccountNotFoundException;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 @Component
-public class FacadeController {
-
+public class FacadeFileController {
     @Autowired
-    DocumentService documentService;
+    private FolderService folderService;
     @Autowired
-    FolderService folderService;
+    private DocumentService documentService;
     @Autowired
-    UserService userService;
-    @Autowired
-    AuthService authService;
-
-    public Response getAll(Long parentFolderId, Long userId) {
-        try {
-            List<Folder> folders;
-            List<Document> documents;
-            if (parentFolderId != null) {
-                folders = folderService.get(parentFolderId, userId);
-                documents = documentService.get(parentFolderId, userId);
-            } else {
-                folders = folderService.getAllWhereParentFolderIsNull(userId);
-                documents = documentService.getAllWhereParentFolderIsNull(userId);
-            }
-            return new Response.Builder()
-                    .status(HttpStatus.OK)
-                    .statusCode(200)
-                    .data(convertToFileRes(folders, documents))
-                    .message("getAll function worked")
-                    .build();
-
-        } catch (AccountNotFoundException e) {
-            // TODO: we need to throw more exceptions so we know what status to retrieve!
-            return new Response.Builder()
-                    .status(HttpStatus.BAD_REQUEST)
-                    .message(e.getMessage())
-                    .statusCode(400)
-                    .build();
-        }
-    }
+    private UserService userService;
 
     public Response create(Long parentFolderId, String name, String content, Long userId, Class c) {
         try {
@@ -93,6 +63,34 @@ public class FacadeController {
                 .message("Successfully managed to retrieve path")
                 .data(convertFromClassToService(c).getPath(itemId))
                 .build();
+    }
+
+    public Response getAll(Long parentFolderId, Long userId) {
+        try {
+            List<Folder> folders;
+            List<Document> documents;
+            if (parentFolderId != null) {
+                folders = folderService.get(parentFolderId, userId);
+                documents = documentService.get(parentFolderId, userId);
+            } else {
+                folders = folderService.getAllWhereParentFolderIsNull(userId);
+                documents = documentService.getAllWhereParentFolderIsNull(userId);
+            }
+            return new Response.Builder()
+                    .status(HttpStatus.OK)
+                    .statusCode(200)
+                    .data(convertToFileRes(folders, documents))
+                    .message("getAll function worked")
+                    .build();
+
+        } catch (AccountNotFoundException e) {
+            // TODO: we need to throw more exceptions so we know what status to retrieve!
+            return new Response.Builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .message(e.getMessage())
+                    .statusCode(400)
+                    .build();
+        }
     }
 
     public Response rename(Long id, String name, Class c) {
@@ -232,26 +230,13 @@ public class FacadeController {
 
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /**
      * This function gets an item as a parameter and extracts its class in order to return the correct service.
      *
      * @param c - class of folder/document
      * @return the service we need to use according to what file it is.
      */
+
     private ServiceInterface convertFromClassToService(Class c) {
         if (c.equals(Document.class)) return documentService;
         if (c.equals(Folder.class)) return folderService;

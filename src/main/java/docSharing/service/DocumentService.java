@@ -31,9 +31,8 @@ public class DocumentService implements ServiceInterface {
     UserDocumentRepository userDocumentRepository;
     @Autowired
     UserRepository userRepository;
-    @Autowired
-    LogRepository logRepository;
-
+@Autowired
+LogRepository logRepository;
     @Scheduled(fixedDelay = 10 * 1000)
     public void updateDatabaseWithNewContent() {
         for (Map.Entry<Long, String> entry : documentsContentLiveChanges.entrySet()) {
@@ -72,8 +71,7 @@ public class DocumentService implements ServiceInterface {
 
             }
         }
-        Set<User> userList = onlineUsersPerDoc.get(documentId);
-        return userList;
+        return onlineUsersPerDoc.get(documentId);
     }
 
     public List<FileRes> getPath(Long documentId) {
@@ -198,9 +196,9 @@ public class DocumentService implements ServiceInterface {
      * set Permission of the creator as an MODERATOR.
      *
      * @param parentFolder - parent folder of the document
-     * @param user         - the owner of the document
-     * @param name         - name of document
-     * @param content      - the content of the document
+     * @param user - the owner of the document
+     * @param name - name of document
+     * @param content - the content of the document
      * @return id of document.
      */
     public Long create(Folder parentFolder, User user, String name, String content) {
@@ -345,17 +343,14 @@ public class DocumentService implements ServiceInterface {
     }
 
     public List<UsersInDocRes> getAllUsersInDocument(Long userId, Long documentId, Method method) throws AccountNotFoundException {
-        Optional<Document> document = documentRepository.findById(documentId);
-        if (!document.isPresent())
+        if (!documentRepository.findById(documentId).isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
-
+        Document document = documentRepository.findById(documentId).get();
         Set<Long> onlineUsers = getActiveUsers(userId, documentId, method).stream().map(u -> u.getId()).collect(Collectors.toSet());
-        List<UserDocument> usersList = userDocumentRepository.findAllUsersInDocument(document.get());
-        return usersList
+        return userDocumentRepository.findAllUsersInDocument(document)
                 .stream()
                 .map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId()) ? UserStatus.ONLINE : UserStatus.OFFLINE))
                 .collect(Collectors.toList());
-        // List<UsersInDocRes> usersInDocRes = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId()) ? UserStatus.ONLINE : UserStatus.OFFLINE)).collect(Collectors.toList());
     }
 
     public Permission getUserPermissionInDocument(Long userId, Long documentId) throws AccountNotFoundException {
