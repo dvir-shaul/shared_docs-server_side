@@ -26,7 +26,6 @@ public class LogService {
 
     @Scheduled(fixedDelay = 5 * 1000)
     public void updateDatabaseWithNewContent() {
-
         // keep it in a while loop because this list can be edited in any second, so need to check if still contains anything
         while (!unsavedLogs.isEmpty()) {
             Log log = unsavedLogs.remove(0);
