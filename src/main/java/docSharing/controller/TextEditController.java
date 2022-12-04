@@ -5,7 +5,6 @@ import docSharing.entity.Log;
 import docSharing.entity.User;
 import docSharing.requests.LogReq;
 import docSharing.requests.OnlineUsersReq;
-import docSharing.response.UserStatus;
 import docSharing.response.UsersInDocRes;
 import docSharing.service.DocumentService;
 import docSharing.service.LogService;
@@ -22,8 +21,6 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
 

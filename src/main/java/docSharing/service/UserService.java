@@ -47,6 +47,7 @@ public class UserService {
     public User findByEmail(String email) throws AccountNotFoundException {
         if (!userRepository.findByEmail(email).isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE + email);
+
         return userRepository.findByEmail(email).get();
     }
 
