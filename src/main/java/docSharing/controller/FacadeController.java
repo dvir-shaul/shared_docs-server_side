@@ -194,14 +194,36 @@ public class FacadeController {
                 .build();
     }
 
-public Response getContent(Long documentId){
-    return new Response.Builder()
-            .status(HttpStatus.OK)
-            .message("Successfully managed to retrieve the document's content")
-            .statusCode(200)
-            .data(documentService.getContent(documentId))
-            .build();
-}
+    public Response getContent(Long documentId) {
+        return new Response.Builder()
+                .status(HttpStatus.OK)
+                .message("Successfully managed to retrieve the document's content")
+                .statusCode(200)
+                .data(documentService.getContent(documentId))
+                .build();
+    }
+
+    public Response getDocumentName(Long documentId) {
+        Document document = null;
+        try {
+            document = documentService.findById(documentId);
+            FileRes fileResponse = new FileRes(document.getName(), document.getId(), Type.DOCUMENT, Permission.ADMIN, document.getUser().getEmail());
+            return new Response.Builder()
+                    .statusCode(200)
+                    .status(HttpStatus.OK)
+                    .data(fileResponse)
+                    .message("Managed to get file name properly")
+                    .build();
+        } catch (FileNotFoundException e) {
+            return new Response.Builder()
+                    .message("Couldn't find such a file " + e)
+                    .status(HttpStatus.NOT_FOUND)
+                    .statusCode(401)
+                    .build();
+        }
+
+    }
+
     /**
      * This function gets an item as a parameter and extracts its class in order to return the correct service.
      *

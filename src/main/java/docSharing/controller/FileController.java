@@ -113,23 +113,8 @@ class FileController {
 
     @RequestMapping(value = "document", method = RequestMethod.GET)
     public ResponseEntity<Response> getDocumentName(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        try {
-            Document document = documentService.findById(documentId);
-            FileRes fileResponse = new FileRes(document.getName(), document.getId(), Type.DOCUMENT, Permission.ADMIN, document.getUser().getEmail());
-            return new ResponseEntity<>(new Response.Builder()
-                    .statusCode(200)
-                    .status(HttpStatus.OK)
-                    .data(fileResponse)
-                    .message("Managed to get file name properly")
-                    .build(), HttpStatus.OK);
-
-        } catch (FileNotFoundException e) {
-            return new ResponseEntity<>(new Response.Builder()
-                    .message("Couldn't find such a file " + e)
-                    .status(HttpStatus.NOT_FOUND)
-                    .statusCode(401)
-                    .build(), HttpStatus.BAD_REQUEST);
-        }
+        Response response=facadeController.getDocumentName(documentId);
+        return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "folder", method = RequestMethod.POST)
