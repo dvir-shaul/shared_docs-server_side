@@ -107,58 +107,26 @@ class FileController {
 
     @RequestMapping(value = "document/getContent", method = RequestMethod.GET)
     public ResponseEntity<Response> getContent(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        Response response=facadeController.getContent(documentId);
-       return new ResponseEntity<>(response, response.getStatus());
+        Response response = facadeController.getContent(documentId);
+        return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "document", method = RequestMethod.GET)
     public ResponseEntity<Response> getDocumentName(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        Response response=facadeController.getDocumentName(documentId);
+        Response response = facadeController.getDocumentName(documentId);
         return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "folder", method = RequestMethod.POST)
-    public ResponseEntity<Response> createFolder(@RequestParam(required = false) Long parentFolderId, @RequestParam String name, @RequestAttribute Long userId) {
-        Folder parentFolder = null;
-        try {
-            if (parentFolderId != null) {
-                parentFolder = folderService.findById(parentFolderId);
-            }
-            User user = userService.findById(userId);
-            Folder folder = Folder.createFolder(name, parentFolder, user);
-            return new ResponseEntity<>(new Response.Builder()
-                    .status(HttpStatus.CREATED)
-                    .statusCode(200)
-                    .message("Created successfully!")
-                    .data(facadeController.create(folder, Folder.class))
-                    .build(), HttpStatus.CREATED);
-
-        } catch (AccountNotFoundException | FileNotFoundException e) {
-            return new ResponseEntity<>(new Response.Builder()
-                    .status(HttpStatus.BAD_REQUEST)
-                    .statusCode(400)
-                    .message("Could not create a folder!")
-                    .build(), HttpStatus.BAD_REQUEST);
-        }
-
+    public ResponseEntity<Response> createFolder(@RequestParam(required = false) Long parentFolderId, @RequestParam String name, @RequestBody(required = false) String content, @RequestAttribute Long userId) {
+        Response response = facadeController.create(parentFolderId, name, content, userId, Folder.class);
+        return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "document", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<Response> createDocument(@RequestParam Long parentFolderId, @RequestParam String name, @RequestBody(required = false) String content, @RequestAttribute Long userId) {
-        try {
-            Folder parentFolder = folderService.findById(parentFolderId);
-            User user = userService.findById(userId);
-            Document doc = Document.createDocument(user, name, parentFolder, content != null ? content : "");
-            Response response = facadeController.create(doc, Document.class);
-            return new ResponseEntity<>(response, response.getStatus());
-
-        } catch (FileNotFoundException | AccountNotFoundException e) {
-            return new ResponseEntity<>(new Response.Builder()
-                    .status(HttpStatus.BAD_REQUEST)
-                    .statusCode(400)
-                    .message(e.getMessage())
-                    .build(), HttpStatus.BAD_REQUEST);
-        }
+        Response response = facadeController.create(parentFolderId, name, content, userId, Document.class);
+        return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "document/getPath", method = RequestMethod.GET)

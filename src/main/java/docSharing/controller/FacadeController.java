@@ -1,9 +1,6 @@
 package docSharing.controller;
 
-import docSharing.entity.Document;
-import docSharing.entity.GeneralItem;
-import docSharing.entity.Folder;
-import docSharing.entity.Permission;
+import docSharing.entity.*;
 import docSharing.requests.Type;
 import docSharing.response.ExportDoc;
 import docSharing.response.FileRes;
@@ -28,6 +25,8 @@ public class FacadeController {
     DocumentService documentService;
     @Autowired
     FolderService folderService;
+    @Autowired
+    UserService userService;
 
     public Response getAll(Long parentFolderId, Long userId) {
         try {
@@ -57,19 +56,22 @@ public class FacadeController {
         }
     }
 
-    public Response create(GeneralItem item, Class c) {
-        // make sure we got all the data from the client
+    public Response create(Long parentFolderId, String name, String content, Long userId, Class c) {
         try {
-            Validations.validate(Regex.FILE_NAME.getRegex(), item.getName());
+            Validations.validate(Regex.FILE_NAME.getRegex(), name);
 //            Validations.validate(Regex.ID.getRegex(), item.getParentFolderId().toString());
+            Folder parentFolder = null;
+            if (parentFolderId != null)
+                parentFolder = folderService.findById(parentFolderId);
+            User user = userService.findById(userId);
             return new Response.Builder()
                     .status(HttpStatus.OK)
                     .statusCode(200)
-                    .data(convertFromClassToService(c).create(item))
+                    .data(convertFromClassToService(c).create(parentFolder, user, name, content))
                     .message("item created successfully")
                     .build();
 
-        } catch (NullPointerException | IllegalArgumentException e) {
+        } catch (NullPointerException | IllegalArgumentException | FileNotFoundException | AccountNotFoundException e) {
             return new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
                     .statusCode(400)
@@ -223,6 +225,7 @@ public class FacadeController {
         }
 
     }
+
 
     /**
      * This function gets an item as a parameter and extracts its class in order to return the correct service.

@@ -192,13 +192,12 @@ public class DocumentService implements ServiceInterface {
      * @param generalItem - document.
      * @return id of document.
      */
-    public Long create(GeneralItem generalItem) {
-        if (generalItem.getParentFolder() != null) {
-            Optional<Folder> folder = folderRepository.findById(generalItem.getParentFolder().getId());
-            if (!folder.isPresent())
-                throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + generalItem.getParentFolder().getId());
+    public Long create(Folder parentFolder, User user, String name, String content) {
+        if (parentFolder == null) {
+            throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + parentFolder.getId());
         }
-        Document savedDoc = documentRepository.save((Document) generalItem);
+        Document doc = Document.createDocument(user, name, parentFolder, content != null ? content : "");
+        Document savedDoc = documentRepository.save(doc);
         addToMap(savedDoc.getId());
         if (savedDoc.getParentFolder() != null) {
             savedDoc.getParentFolder().addDocument(savedDoc);

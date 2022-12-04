@@ -68,16 +68,18 @@ public class FolderService implements ServiceInterface {
     /**
      * function get an item of kind folder and uses the logics to create and save a new folder to database.
      *
-     * @param generalItem - create item
+     * @param parentFolder - parent folder of the folder
+     * @param user - the owner of the folder
+     * @param name - name of folder
+     * @param content - not in use here
      * @return id of the item that was saved to database.
      */
-    public Long create(GeneralItem generalItem) {
-        if (generalItem.getParentFolder() != null) {
-            Optional<Folder> folder = folderRepository.findById(generalItem.getParentFolder().getId());
-            if (!folder.isPresent())
-                throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + generalItem.getParentFolder().getId());
+    public Long create(Folder parentFolder, User user, String name, String content) {
+        if (parentFolder == null) {
+                throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + parentFolder.getId());
         }
-        Folder savedFolder = folderRepository.save((Folder) generalItem);
+        Folder folder = Folder.createFolder(name, parentFolder, user);
+        Folder savedFolder = folderRepository.save(folder);
         if (savedFolder.getParentFolder() != null) {
             savedFolder.getParentFolder().addFolder(savedFolder);
         }
