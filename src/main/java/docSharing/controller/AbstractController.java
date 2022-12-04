@@ -9,19 +9,19 @@ import docSharing.response.FileRes;
 import docSharing.service.*;
 import docSharing.utils.Regex;
 import docSharing.utils.Validations;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import javax.security.auth.login.AccountNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
 @Component
 public class AbstractController {
+
     private static Logger logger = LogManager.getLogger(AbstractController.class.getName());
 
     @Autowired
@@ -30,7 +30,6 @@ public class AbstractController {
     FolderService folderService;
     @Autowired
     UserService userService;
-
     /**
      * getAll function called from the client when we enter a new folder, and it should send the client a list with all
      * the folders & documents to present the client.
@@ -64,7 +63,6 @@ public class AbstractController {
         }
         return ResponseEntity.ok().body(convertToFileRes(folders, documents));
     }
-
     /**
      * convertToFileRes is an inner function of getAll, that gets a list of folders & documents,
      * and return a list of FileRes entity which has the name,id and the type of a given file
@@ -83,7 +81,8 @@ public class AbstractController {
 
             fileResList.add(new FileRes(folder.getName(), folder.getId(), Type.FOLDER, Permission.ADMIN, folder.getUser().getEmail()));
         }
-        for (Document document : documents) {
+        for (Document document :
+                documents) {
             fileResList.add(new FileRes(document.getName(), document.getId(), Type.DOCUMENT, Permission.ADMIN, document.getUser().getEmail()));
         }
         return fileResList;
@@ -109,9 +108,9 @@ public class AbstractController {
             logger.error("in AbstractController -> create -> " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
+
         return ResponseEntity.ok().body(convertFromClassToService(c).create(item).toString());
     }
-
     /**
      * rename a file, called from the fileController with a request to change name.
      *
@@ -122,13 +121,13 @@ public class AbstractController {
      */
     public ResponseEntity<Object> rename(Long id, String name, Class c) {
         logger.info("in AbstractController -> rename");
-        if (name == null) {
+        if (name == null){
             logger.error("in AbstractController -> rename -> name is null");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You must include all and exact parameters for such an action: name");
         }
+
         return ResponseEntity.ok().body(String.valueOf(convertFromClassToService(c).rename(id, name)));
     }
-
     /**
      * delete a file, called from the fileController with a request to delete.
      *
@@ -145,7 +144,6 @@ public class AbstractController {
         convertFromClassToService(c).delete(id);
         return ResponseEntity.ok().body("An item answering to the id:" + id + " has been successfully erased from the database!");
     }
-
     /**
      * relocate a file, called from the fileController with a request to relocate.
      *
@@ -166,7 +164,6 @@ public class AbstractController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
             }
             return ResponseEntity.ok().body(convertFromClassToService(c).relocate(parentFolder, id));
-
         } catch (AccountNotFoundException e) {
             logger.error("in AbstractController -> relocate -> " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());

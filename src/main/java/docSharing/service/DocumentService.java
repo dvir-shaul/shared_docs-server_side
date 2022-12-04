@@ -3,6 +3,10 @@ package docSharing.service;
 import docSharing.entity.*;
 import docSharing.repository.*;
 import docSharing.requests.Method;
+import docSharing.requests.Type;
+import docSharing.response.FileRes;
+import docSharing.response.UserStatus;
+import docSharing.response.UsersInDocRes;
 import docSharing.utils.ExceptionMessage;
 import docSharing.utils.debounce.Debouncer;
 import org.apache.logging.log4j.LogManager;
@@ -12,7 +16,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import javax.security.auth.login.AccountNotFoundException;
+import java.io.FileNotFoundException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class DocumentService implements ServiceInterface {
@@ -54,37 +60,45 @@ public class DocumentService implements ServiceInterface {
      * @param method     - ADD/ REMOVE
      * @return set of current users that viewing the document.
      */
-    public Set<User> addUserToDocActiveUsers(Long userId, Long documentId, Method method) {
-        logger.info("in DocumentService -> addUserToDocActiveUsers");
-
+    public Set<User> getActiveUsers(Long userId, Long documentId, Method method) {
+        logger.info("in DocumentService -> getActiveUsers");
         onlineUsersPerDoc.putIfAbsent(documentId, new HashSet<>());
-        if (!userRepository.findById(userId).isPresent()) {
-            logger.error("in DocumentService -> addUserToDocActiveUsers -> " + ExceptionMessage.NO_USER_IN_DATABASE.toString());
-            throw new IllegalArgumentException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
-        }
-        User user = userRepository.findById(userId).get();
-        switch (method) {
-            case ADD:
-                onlineUsersPerDoc.get(documentId).add(user);
-                break;
-            case REMOVE:
-                onlineUsersPerDoc.get(documentId).remove(user);
+        if (method != Method.GET) {
+            if (!userRepository.findById(userId).isPresent()) {
+                logger.error("in DocumentService -> addUserToDocActiveUsers -> " + ExceptionMessage.NO_USER_IN_DATABASE.toString());
+                throw new IllegalArgumentException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
+            }
+            User user = userRepository.findById(userId).get();
+            switch (method) {
+                case ADD:
+                    onlineUsersPerDoc.get(documentId).add(user);
+                    break;
+                case REMOVE:
+                    onlineUsersPerDoc.get(documentId).remove(user);
+                    break;
+                default:
+                    break;
+
+            }
         }
         return onlineUsersPerDoc.get(documentId);
     }
 
     /**
-     * getActiveUsersPerDoc called when we need to update the current users that watch and use a specific document
-     * to the client.
-     * @param documentId - document id in database.
-     * @return - set of users that use this document.
+     *
+     * @param generalItem
+     * @return
      */
-    // FIXME: Can't this function be included in "addUserToDocActiveUsers"? They both do basically the same thing
-    // FIXME: but with a different action...
-    public Set<User> getActiveUsersPerDoc(Long documentId) {
-        logger.info("in DocumentService -> getActiveUsersPerDoc");
-        return onlineUsersPerDoc.get(documentId);
+    public List<FileRes> getPath(GeneralItem generalItem) {
+        List<FileRes> path = new ArrayList<>();
+        Folder parentFolder = generalItem.getParentFolder();
+        while (parentFolder != null) {
+            path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, generalItem.getUser().getEmail()));
+            parentFolder = parentFolder.getParentFolder();
+        }
+        return path;
     }
+
 
     /**
      * main function that deals with new logs,
@@ -141,14 +155,14 @@ public class DocumentService implements ServiceInterface {
      * @return entity of Document from database
      * @throws AccountNotFoundException - no document in database with given id.
      */
-    public Document findById(Long id) throws AccountNotFoundException {
+    public Document findById(Long id) throws FileNotFoundException {
         logger.info("in DocumentService -> findById");
-
-        if (!documentRepository.findById(id).isPresent()) {
+        Optional<Document> document = documentRepository.findById(id);
+        if (!document.isPresent()){
             logger.error("in DocumentService -> findById -> " + ExceptionMessage.NO_DOCUMENT_IN_DATABASE);
-            throw new AccountNotFoundException(ExceptionMessage.NO_DOCUMENT_IN_DATABASE.toString());
+            throw new FileNotFoundException(ExceptionMessage.NO_DOCUMENT_IN_DATABASE.toString());
         }
-        return documentRepository.findById(id).get();
+        return document.get();
     }
 
     /**
@@ -169,7 +183,6 @@ public class DocumentService implements ServiceInterface {
      */
     public Document getDocById(Long id) throws AccountNotFoundException {
         logger.info("in DocumentService -> getDocById");
-
         if (!documentRepository.findById(id).isPresent()) {
             logger.error("in DocumentService -> getDocById -> " + ExceptionMessage.NO_DOCUMENT_IN_DATABASE);
             throw new AccountNotFoundException(ExceptionMessage.NO_DOCUMENT_IN_DATABASE.toString());
@@ -253,6 +266,7 @@ public class DocumentService implements ServiceInterface {
         throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
     }
 
+
     /**
      * this function goal is to show the live content of a document to the client.
      *
@@ -263,6 +277,7 @@ public class DocumentService implements ServiceInterface {
         logger.info("in DocumentService -> getContent");
 
         String content = documentsContentLiveChanges.get(documentId);
+
         if (content == null || content.length() == 0) {
             String databaseContent = documentRepository.getContentFromDocument(documentId);
             documentsContentLiveChanges.put(documentId, databaseContent);
@@ -310,23 +325,25 @@ public class DocumentService implements ServiceInterface {
      * @param id              - document id.
      * @return rows affected in mysql.
      */
-    public int relocate(Folder newParentFolder, Long id) {
+    public int relocate(Folder newParentFolder, Long id) throws FileNotFoundException {
         logger.info("in DocumentService -> relocate");
-
         if (newParentFolder != null && !folderRepository.findById(newParentFolder.getId()).isPresent()) {
             logger.error("in DocumentService -> relocate -> " + ExceptionMessage.FOLDER_DOES_NOT_EXISTS);
-            throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
+            throw new FileNotFoundException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
         }
-        if (!documentRepository.findById(id).isPresent()) {
+
+        Optional<Document> document = documentRepository.findById(id);
+        if (!document.isPresent()) {
             logger.error("in DocumentService -> relocate -> " + ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS);
-            throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
+            throw new FileNotFoundException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
         }
-        Document doc = documentRepository.findById(id).get();
-        Folder oldParentFolder = doc.getParentFolder();
-        doc.setParentFolder(newParentFolder);
-        oldParentFolder.removeDocument(doc);
+
+        Folder oldParentFolder = document.get().getParentFolder();
+        document.get().setParentFolder(newParentFolder);
+        oldParentFolder.removeDocument(document.get());
+
         if (newParentFolder != null) {
-            newParentFolder.addDocument(doc);
+            newParentFolder.addDocument(document.get());
         }
         return documentRepository.updateParentFolderId(newParentFolder, id);
     }
@@ -337,18 +354,28 @@ public class DocumentService implements ServiceInterface {
      *
      * @param docId - gets document id .
      */
-    public void delete(Long docId) {
+    public void delete(Long docId) throws FileNotFoundException {
         logger.info("in DocumentService -> delete");
-
         databaseDocumentsCurrentContent.remove(docId);
         documentsContentLiveChanges.remove(docId);
-        if (!documentRepository.findById(docId).isPresent()) {
+
+        Optional<Document> document = documentRepository.findById(docId);
+        if (!document.isPresent()){
             logger.error("in DocumentService -> delete -> " + ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS);
-            throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
+            throw new FileNotFoundException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
+
         }
-        userDocumentRepository.deleteDocument(documentRepository.findById(docId).get());
+
+
+        userDocumentRepository.deleteDocument(document.get());
         documentRepository.deleteById(docId);
+        // CONSULT: can we get the number of lines affected to return to the user?
     }
+
+    public Boolean doesExist(Long id) {
+        return documentRepository.findById(id).isPresent();
+    }
+
 
     /**
      * get called by AbstartController in getAll function, thats need to return all the data files, when
@@ -368,22 +395,28 @@ public class DocumentService implements ServiceInterface {
         User user = userRepository.findById(userId).get();
         return documentRepository.findAllByParentFolderIsNull(user);
     }
-
     /**
      * getAllUsersInDocument is a function to retrive all users that's are linked to a specific document id.
      * @param documentId - document id we search on.
      * @return - list of UserDocument entity that contain all users and their permissions on that document.
      * @throws AccountNotFoundException -
      */
-    public List<UserDocument> getAllUsersInDocument(Long documentId) throws AccountNotFoundException {
+    public List<UsersInDocRes> getAllUsersInDocument(Long documentId) throws AccountNotFoundException {
         logger.info("in DocumentService -> getAllUsersInDocument");
-
-        if (!documentRepository.findById(documentId).isPresent()) {
+        if (!documentRepository.findById(documentId).isPresent()){
             logger.error("in DocumentService -> getAllUsersInDocument -> " + ExceptionMessage.NO_USER_IN_DATABASE);
             throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
+
         }
         Document document = documentRepository.findById(documentId).get();
-        return userDocumentRepository.findAllUsersInDocument(document);
+        // return userDocumentRepository.findAllUsersInDocument(document);
+
+        Set<Long> onlineUsers = getActiveUsers(null, documentId, Method.GET).stream().map(u -> u.getId()).collect(Collectors.toSet());
+        return userDocumentRepository.findAllUsersInDocument(document)
+                .stream()
+                .map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId()) ? UserStatus.ONLINE : UserStatus.OFFLINE))
+                .collect(Collectors.toList());
+        // List<UsersInDocRes> usersInDocRes = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId()) ? UserStatus.ONLINE : UserStatus.OFFLINE)).collect(Collectors.toList());
     }
 
     /**

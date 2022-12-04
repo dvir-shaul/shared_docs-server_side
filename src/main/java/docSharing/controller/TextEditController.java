@@ -5,7 +5,6 @@ import docSharing.entity.Log;
 import docSharing.entity.User;
 import docSharing.requests.LogReq;
 import docSharing.requests.OnlineUsersReq;
-import docSharing.response.UserStatus;
 import docSharing.response.UsersInDocRes;
 import docSharing.service.DocumentService;
 import docSharing.service.LogService;
@@ -22,12 +21,11 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 
+import java.io.FileNotFoundException;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
 
@@ -76,6 +74,8 @@ public class TextEditController {
         } catch (AccountNotFoundException e) {
             logger.error("in TextEditController -> receiveLog ->"+ e.getMessage());
             throw new RuntimeException(e);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -93,8 +93,7 @@ public class TextEditController {
     public List<UsersInDocRes> getOnlineUsers(@DestinationVariable Long documentId, @Payload OnlineUsersReq onlineUsersReq) {
         logger.info("in TextEditController -> getOnlineUsers");
         try {
-            Set<Long> onlineUsers = documentService.addUserToDocActiveUsers(onlineUsersReq.getUserId(), documentId, onlineUsersReq.getMethod()).stream().map(u -> u.getId()).collect(Collectors.toSet());
-            List<UsersInDocRes> all = documentService.getAllUsersInDocument(documentId).stream().map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId()) ? UserStatus.ONLINE : UserStatus.OFFLINE)).collect(Collectors.toList());
+            List<UsersInDocRes> all = documentService.getAllUsersInDocument(documentId);
             Collections.sort(all, new Comparator<UsersInDocRes>() {
                 public int compare(UsersInDocRes o1, UsersInDocRes o2) {
                     return o1.compareTo(o2);

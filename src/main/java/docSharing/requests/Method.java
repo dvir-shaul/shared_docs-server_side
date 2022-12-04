@@ -1,5 +1,5 @@
 package docSharing.requests;
 
 public enum Method {
-    ADD, REMOVE
+    ADD, REMOVE, GET
 }
