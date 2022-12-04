@@ -63,6 +63,7 @@ class FileController {
      */
     @RequestMapping(value = "folder/rename", method = RequestMethod.PATCH)
     public ResponseEntity<Response> renameFolder(@RequestParam Long folderId, @RequestParam String name, @RequestAttribute Long userId) {
+        logger.info("in FileController -> renameFolder");
         Response response = facadeController.rename(folderId, name, Folder.class);
         return new ResponseEntity<>(response, response.getStatus());
     }
@@ -75,6 +76,7 @@ class FileController {
      */
     @RequestMapping(value = "folder", method = RequestMethod.DELETE)
     public ResponseEntity<Response> deleteFolder(@RequestParam Long folderId, @RequestAttribute Long userId) {
+        logger.info("in FileController -> deleteFolder");
         Response response = facadeController.delete(folderId, Folder.class);
         return new ResponseEntity<>(response, response.getStatus());
     }
@@ -87,6 +89,7 @@ class FileController {
      */
     @RequestMapping(value = "document", method = RequestMethod.DELETE)
     public ResponseEntity<Response> deleteDocument(@RequestParam Long documentId, @RequestAttribute Long userId) {
+        logger.info("in FileController -> deleteDocument");
         Response response = facadeController.delete(documentId, Document.class);
         return new ResponseEntity<>(response, response.getStatus());
     }
@@ -99,6 +102,7 @@ class FileController {
      */
     @RequestMapping(value = "folder/relocate", method = RequestMethod.PATCH)
     public ResponseEntity<Response> relocateFolder(@RequestParam Long newParentFolderId, @RequestParam Long folderId, @RequestAttribute Long userId) {
+        logger.info("in FileController -> relocateFolder");
         Response response = facadeController.relocate(newParentFolderId, folderId, Folder.class);
         return new ResponseEntity<>(response, response.getStatus());
     }
@@ -112,6 +116,7 @@ class FileController {
      */
     @RequestMapping(value = "document/relocate", method = RequestMethod.PATCH)
     public ResponseEntity<Response> relocateDocument(@RequestParam Long newParentFolderId, @RequestParam Long documentId, @RequestAttribute Long userId) {
+        logger.info("in FileController -> relocateDocument");
         Response response = facadeController.relocate(newParentFolderId, documentId, Document.class);
         return new ResponseEntity<>(response, response.getStatus());
     }
@@ -124,6 +129,7 @@ class FileController {
      */
     @RequestMapping(value = "document/export", method = RequestMethod.GET)
     public ResponseEntity<Response> export(@RequestParam Long documentId, @RequestAttribute Long userId) {
+        logger.info("in FileController -> export");
         Response response = facadeController.export(documentId);
         return new ResponseEntity<>(response, response.getStatus());
 
@@ -137,6 +143,7 @@ class FileController {
      */
     @RequestMapping(value = "document/doesExists", method = RequestMethod.GET)
     public ResponseEntity<Response> doesDocumentExists(@RequestParam Long documentId, @RequestAttribute Long userId) {
+        logger.info("in FileController -> doesDocumentExists");
         Response response = facadeController.doesExist(documentId, Document.class);
         return new ResponseEntity<>(response, response.getStatus());
 
@@ -151,6 +158,7 @@ class FileController {
 
     @RequestMapping(value = "folder/doesExists", method = RequestMethod.GET)
     public ResponseEntity<Response> doesFolderExists(@RequestParam Long folderId, @RequestAttribute Long userId) {
+        logger.info("in FileController -> doesFolderExists");
         Response response = facadeController.doesExist(folderId, Folder.class);
         return new ResponseEntity<>(response, response.getStatus());
 
@@ -165,6 +173,7 @@ class FileController {
      */
     @RequestMapping(value = "document/rename", method = RequestMethod.PATCH)
     public ResponseEntity<Response> renameDocument(@RequestParam Long documentId, @RequestParam String name, @RequestAttribute Long userId) {
+        logger.info("in FileController -> renameDocument");
         Response response = facadeController.rename(documentId, name, Document.class);
         return new ResponseEntity<>(response, response.getStatus());
     }
@@ -177,6 +186,7 @@ class FileController {
      */
     @RequestMapping(value = "document", method = RequestMethod.GET)
     public ResponseEntity<Response> getDocumentName(@RequestParam Long documentId, @RequestAttribute Long userId) {
+        logger.info("in FileController -> getDocumentName");
         try {
             Document document = documentService.findById(documentId);
             FileRes fileResponse = new FileRes(document.getName(), document.getId(), Type.DOCUMENT, Permission.ADMIN, document.getUser().getEmail());
@@ -268,6 +278,7 @@ class FileController {
      */
     @RequestMapping(value = "document/getPath", method = RequestMethod.GET)
     public ResponseEntity<Response> getDocumentPath(@RequestParam Long documentId, @RequestAttribute Long userId) {
+        logger.info("in FileController -> getDocumentPath");
         try {
             Document document = documentService.findById(documentId);
             Response response = facadeController.getPath(document, Document.class);
@@ -289,6 +300,7 @@ class FileController {
      */
     @RequestMapping(value = "folder/getPath", method = RequestMethod.GET)
     public ResponseEntity<Response> getFolderPath(@RequestParam Long folderId, @RequestAttribute Long userId) {
+        logger.info("in FileController -> getFolderPath");
         try {
             Folder folder = folderService.findById(folderId);
             Response response = facadeController.getPath(folder, Folder.class);
@@ -311,6 +323,7 @@ class FileController {
      */
     @RequestMapping(value = "document/getContent", method = RequestMethod.GET)
     public ResponseEntity<Response> getContent(@RequestParam Long documentId, @RequestAttribute Long userId) {
+        logger.info("in FileController -> getContent");
         // FIXME: What if the document doesn't exist?
         return new ResponseEntity<>(new Response.Builder()
                 .data(documentService.getContent(documentId))

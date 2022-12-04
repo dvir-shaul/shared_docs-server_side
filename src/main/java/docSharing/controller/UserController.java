@@ -95,7 +95,6 @@ public class UserController {
         List<String> unregisteredUsers = new ArrayList<>();
         try {
             for (String email : emails) {
-
                 User user = null;
                 try {
                     user = userService.findByEmail(email);
@@ -140,6 +139,7 @@ public class UserController {
      */
     @RequestMapping(value = "sharedDocuments", method = RequestMethod.GET)
     public ResponseEntity<Response> getDocuments(@RequestAttribute Long userId) {
+        logger.info("in UserController -> getDocuments");
         return new ResponseEntity<>(new Response.Builder()
                 .data(userService.documentsOfUser(userId))
                 .message("Successfully managed to fetch all shared documents for a user!")
@@ -154,6 +154,7 @@ public class UserController {
      */
     @RequestMapping(value = "getUser", method = RequestMethod.GET)
     public ResponseEntity<Response> getUser(@RequestAttribute Long userId) {
+        logger.info("in UserController -> getUser");
         return new ResponseEntity<>(new Response.Builder()
                 .data(userService.getUser(userId))
                 .status(HttpStatus.OK)
@@ -170,6 +171,7 @@ public class UserController {
      */
     @RequestMapping(value = "document/getUser", method = RequestMethod.GET)
     public ResponseEntity<Response> getUserPermissionForSpecificDocument(@RequestParam Long documentId, @RequestAttribute Long userId) {
+        logger.info("in UserController -> getUserPermissionForSpecificDocument");
         try {
             User user = userService.findById(userId);
             Permission permission = documentService.getUserPermissionInDocument(userId, documentId);

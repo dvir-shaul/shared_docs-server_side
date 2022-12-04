@@ -41,8 +41,8 @@ public class FolderService implements ServiceInterface {
     public Folder findById(Long id) throws FileNotFoundException {
         logger.info("in FolderService -> findById");
         Optional<Folder> folder = folderRepository.findById(id);
-        if (!folder.isPresent()){
-            logger.error("in FolderService -> findById --> "+ExceptionMessage.NO_FOLDER_IN_DATABASE);
+        if (!folder.isPresent()) {
+            logger.error("in FolderService -> findById --> " + ExceptionMessage.NO_FOLDER_IN_DATABASE);
             throw new FileNotFoundException(ExceptionMessage.NO_FOLDER_IN_DATABASE.toString());
 
         }
@@ -58,33 +58,31 @@ public class FolderService implements ServiceInterface {
     public List<Folder> get(Long parentFolderId, Long userId) throws AccountNotFoundException {
         logger.info("in FolderService -> get");
 
-        if (!folderRepository.findById(parentFolderId).isPresent()){
-            logger.error("in FolderService -> get --> "+ExceptionMessage.NO_FOLDER_IN_DATABASE);
-
+        if (!folderRepository.findById(parentFolderId).isPresent()) {
+            logger.error("in FolderService -> get --> " + ExceptionMessage.NO_FOLDER_IN_DATABASE);
             throw new AccountNotFoundException(ExceptionMessage.NO_FOLDER_IN_DATABASE.toString());
-
         }
-        if (!userRepository.findById(userId).isPresent()){
-            logger.error("in FolderService -> get --> "+ExceptionMessage.NO_USER_IN_DATABASE);
+
+        if (!userRepository.findById(userId).isPresent()) {
+            logger.error("in FolderService -> get --> " + ExceptionMessage.NO_USER_IN_DATABASE);
             throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
-
         }
+
         Folder parentFolder = folderRepository.findById(parentFolderId).get();
         User user = userRepository.findById(userId).get();
         return folderRepository.findAllByParentFolderIdAndUserId(parentFolder, user);
     }
 
     /**
-     *
+     * function gets called when parent folder is null, called for basic built in folders.
      * @param userId - user's relation folders
      * @return list of folders
-     * @throws AccountNotFoundException -
      */
     public List<Folder> getAllWhereParentFolderIsNull(Long userId) throws AccountNotFoundException {
-        logger.info("in FolderService -> getAllWhereParentFolderIsNull");
+        logger.info("in FolderService -> getAllWhereParentFolderIsNull, userId:" + userId);
 
-        if (!userRepository.findById(userId).isPresent()){
-            logger.error("in FolderService -> getAllWhereParentFolderIsNull --> "+ExceptionMessage.NO_USER_IN_DATABASE);
+        if (!userRepository.findById(userId).isPresent()) {
+            logger.error("in FolderService -> getAllWhereParentFolderIsNull --> " + ExceptionMessage.NO_USER_IN_DATABASE);
             throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
         }
         User user = userRepository.findById(userId).get();
@@ -98,10 +96,11 @@ public class FolderService implements ServiceInterface {
      * @return id of the item that was saved to database.
      */
     public Long create(GeneralItem generalItem) {
+        logger.info("in FolderService -> create, item is:"+generalItem);
         if (generalItem.getParentFolder() != null) {
             Optional<Folder> folder = folderRepository.findById(generalItem.getParentFolder().getId());
-            if (!folder.isPresent()){
-                logger.error("in FolderService -> create --> "+ExceptionMessage.FOLDER_DOES_NOT_EXISTS);
+            if (!folder.isPresent()) {
+                logger.error("in FolderService -> create --> " + ExceptionMessage.FOLDER_DOES_NOT_EXISTS);
                 throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + generalItem.getParentFolder().getId());
 
             }
@@ -113,16 +112,22 @@ public class FolderService implements ServiceInterface {
         savedFolder.getUser().addFolder(savedFolder);
         return savedFolder.getId();
     }
-public List<FileRes> getPath(GeneralItem generalItem){
-    List<FileRes> path = new ArrayList<>();
-    Folder parentFolder = generalItem.getParentFolder();
+
+    /**
+     * getPath called every time a new file is opened in the client and return the path to the current file
+     */
+    public List<FileRes> getPath(GeneralItem generalItem) {
+        logger.info("in FolderService -> getPath, item is:"+generalItem);
+        List<FileRes> path = new ArrayList<>();
+        Folder parentFolder = generalItem.getParentFolder();
         path.add(0, new FileRes(generalItem.getName(), generalItem.getId(), Type.FOLDER, Permission.ADMIN, generalItem.getUser().getEmail()));
-    while (parentFolder != null) {
-        path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, generalItem.getUser().getEmail()));
-        parentFolder = parentFolder.getParentFolder();
+        while (parentFolder != null) {
+            path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, generalItem.getUser().getEmail()));
+            parentFolder = parentFolder.getParentFolder();
+        }
+        return path;
     }
-    return path;
-}
+
     /**
      * rename function gets an id of folder and new name to change the folder's name.
      *
@@ -131,11 +136,11 @@ public List<FileRes> getPath(GeneralItem generalItem){
      * @return rows affected in mysql.
      */
     public int rename(Long id, String name) {
-        logger.info("in FolderService -> rename");
+        logger.info("in FolderService -> rename, id:"+id+" name:"+name);
         if (folderRepository.findById(id).isPresent()) {
             return folderRepository.updateName(name, id);
         }
-        logger.error("in FolderService -> rename --> "+ExceptionMessage.FOLDER_DOES_NOT_EXISTS);
+        logger.error("in FolderService -> rename --> " + ExceptionMessage.FOLDER_DOES_NOT_EXISTS);
         throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
     }
 
@@ -148,19 +153,19 @@ public List<FileRes> getPath(GeneralItem generalItem){
      */
     public int relocate(Folder newParentFolder, Long id) throws FileNotFoundException {
         logger.info("in FolderService -> relocate");
-        if (newParentFolder != null && !folderRepository.findById(newParentFolder.getId()).isPresent()){
-            logger.error("in FolderService -> relocate --> "+ExceptionMessage.FOLDER_DOES_NOT_EXISTS);
+        if (newParentFolder != null && !folderRepository.findById(newParentFolder.getId()).isPresent()) {
+            logger.error("in FolderService -> relocate --> " + ExceptionMessage.FOLDER_DOES_NOT_EXISTS);
             throw new FileNotFoundException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
         }
 
         Optional<Folder> folder = folderRepository.findById(id);
-        if (!folder.isPresent()){
-            logger.error("in FolderService -> relocate --> "+ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS);
+        if (!folder.isPresent()) {
+            logger.error("in FolderService -> relocate --> " + ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS);
             throw new FileNotFoundException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
         }
 
-        if (newParentIsChild(newParentFolder, folder.get())){
-            logger.error("in FolderService -> relocate --> "+ExceptionMessage.CIRCULAR_FOLDERS);
+        if (newParentIsChild(newParentFolder, folder.get())) {
+            logger.error("in FolderService -> relocate --> " + ExceptionMessage.CIRCULAR_FOLDERS);
             throw new IllegalArgumentException(ExceptionMessage.CIRCULAR_FOLDERS.toString());
         }
 
@@ -178,7 +183,8 @@ public List<FileRes> getPath(GeneralItem generalItem){
 
     /**
      * newParentIsChild is  boolean method that check for relocate, deny a folder relocation to inner folder.
-     * @param targetFolder - the new folder location.
+     *
+     * @param targetFolder      - the new folder location.
      * @param destinationFolder - the folder we change the location.
      * @return - true if a folder is inner folder.
      */
@@ -200,6 +206,7 @@ public List<FileRes> getPath(GeneralItem generalItem){
 
     /**
      * delete function called when user want to delete specific folder and all its content
+     *
      * @param folderId - folder to delete.
      */
     public void delete(Long folderId) throws FileNotFoundException {
@@ -220,13 +227,14 @@ public List<FileRes> getPath(GeneralItem generalItem){
         folderRepository.delete(folder.get());
     }
 
-    public Boolean doesExist(Long id){
+    public Boolean doesExist(Long id) {
         return folderRepository.findById(id).isPresent();
     }
 
     /**
      * createRootFolders is a function that called when a user is signed in,
      * idea is that a user will have the basics folders and from those he will navigate through his own files.
+     *
      * @param user - given user.
      */
     public void createRootFolders(User user) {

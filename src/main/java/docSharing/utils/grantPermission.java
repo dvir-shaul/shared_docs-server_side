@@ -8,6 +8,9 @@ import java.util.List;
 public class grantPermission {
     public static List<String> list ;
 
+    /**
+     * items in URI that don't need to check for permission
+     */
     public grantPermission() {
         this.list = new ArrayList<>();
         list.add("getAll");

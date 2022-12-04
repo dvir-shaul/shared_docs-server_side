@@ -11,6 +11,8 @@ import docSharing.response.Response;
 import docSharing.service.*;
 import docSharing.utils.Regex;
 import docSharing.utils.Validations;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +25,7 @@ import java.util.List;
 
 @Component
 public class FacadeController {
+    private static Logger logger = LogManager.getLogger(FacadeController.class.getName());
 
     @Autowired
     DocumentService documentService;
@@ -37,6 +40,7 @@ public class FacadeController {
      * @return response entity with a List<FileRes> with all the folders & documents to send.
      */
     public Response getAll(Long parentFolderId, Long userId) {
+        logger.info("in FacadeController -> getAll, parentFolderId:"+parentFolderId+" userId:"+userId);
         try {
             List<Folder> folders;
             List<Document> documents;
@@ -55,6 +59,8 @@ public class FacadeController {
                     .build();
 
         } catch (AccountNotFoundException e) {
+            logger.error("in FacadeController -> getAll -> " +e.getMessage());
+
             // TODO: we need to throw more exceptions so we know what status to retrieve!
             return new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
@@ -81,6 +87,8 @@ public class FacadeController {
      * @return - ResponseEntity.
      */
     public Response create(GeneralItem item, Class c) {
+        logger.info("in FacadeController -> create, item:"+item+"of Class:"+c);
+
         // make sure we got all the data from the client
         try {
             Validations.validate(Regex.FILE_NAME.getRegex(), item.getName());
@@ -93,6 +101,8 @@ public class FacadeController {
                     .build();
 
         } catch (NullPointerException | IllegalArgumentException e) {
+            logger.error("in FacadeController -> create -> " +e.getMessage());
+
             return new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
                     .statusCode(400)
@@ -108,6 +118,8 @@ public class FacadeController {
      * @return
      */
     public Response getPath(GeneralItem item, Class c) {
+        logger.info("in FacadeController -> getPath, item:"+item+"of Class:"+c);
+
         return new Response.Builder()
                 .status(HttpStatus.OK)
                 .statusCode(200)
@@ -124,14 +136,18 @@ public class FacadeController {
      * @return - ResponseEntity.
      */
     public Response rename(Long id, String name, Class c) {
+        logger.info("in FacadeController -> rename, id"+id+" of Class:"+c);
+
         // FIXME: need to validate name using Validations.validate!
         //  it also checks if null and returns an exception so we need to catch it here.
-        if (name == null)
+        if (name == null) {
+            logger.error("in FacadeController -> rename -> name is null");
             return new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
                     .statusCode(400)
                     .message("You must include all and exact parameters for such an action: name")
                     .build();
+        }
 
         return new Response.Builder()
                 .status(HttpStatus.OK)
@@ -147,14 +163,19 @@ public class FacadeController {
      * @return - ResponseEntity.
      */
     public Response delete(Long id, Class c) {
+        logger.info("in FacadeController -> delete");
+
         // FIXME: We have this check in a Validation.validate function. Why not do that there and let it throw its exception?
         //  if we do it this way, we only return an exception response once, and not twice.
-        if (id == null)
+        if (id == null) {
+            logger.error("in FacadeController -> delete -> id is null");
             return new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
                     .statusCode(400)
                     .message("I'm sorry. In order for me to delete a document, you need to be more specific about its id... So what is it's id?")
                     .build();
+        }
+
         try {
             convertFromClassToService(c).delete(id);
             return new Response.Builder()
@@ -164,6 +185,7 @@ public class FacadeController {
                     .build();
 
         } catch (FileNotFoundException e) {
+            logger.error("in FacadeController -> delete -> "+e.getMessage());
             return new Response.Builder()
                     .status(HttpStatus.NOT_FOUND)
                     .statusCode(400)
@@ -180,14 +202,17 @@ public class FacadeController {
      * @return - ResponseEntity
      */
     public Response relocate(Long newParentId, Long id, Class c) {
+        logger.info("in FacadeController -> relocate, newParentId"+newParentId+" of Class:"+c);
+
         try {
-            if (id == null)
+            if (id == null) {
+                logger.error("in FacadeController -> relocate -> id is null");
                 return new Response.Builder()
                         .status(HttpStatus.BAD_REQUEST)
                         .statusCode(400)
                         .message("In order to relocate, an ID must be provided!")
                         .build();
-
+            }
             Folder parentFolder = null;
             if (newParentId != null) {
                 parentFolder = folderService.findById(newParentId);
@@ -200,6 +225,7 @@ public class FacadeController {
                     .build();
 
         } catch (FileNotFoundException e) {
+            logger.error("in FacadeController -> relocate -> "+e.getMessage());
             return new Response.Builder()
                     .message(e.getMessage())
                     .statusCode(400)
@@ -209,11 +235,11 @@ public class FacadeController {
     }
 
     /**
-     *
-     * @param documentId -
-     * @return -
+     * export from document id to a file;
      */
     public Response export(Long documentId) {
+        logger.info("in FacadeController -> export, documentId"+documentId);
+
         try {
             Document document = documentService.findById(documentId);
             ExportDoc exportDoc = new ExportDoc(document.getName(), document.getContent());
@@ -224,6 +250,8 @@ public class FacadeController {
                     .build();
 
         } catch (FileNotFoundException e) {
+            logger.error("in FacadeController -> export -> "+e.getMessage());
+
             return new Response.Builder()
                     .message(e.getMessage())
                     .statusCode(400)
@@ -239,12 +267,16 @@ public class FacadeController {
      * @return -
      */
     public Response doesExist(Long id, Class c) {
-        if (id == null)
+        logger.info("in FacadeController -> doesExist, id"+id+" of Class:"+c);
+
+        if (id == null) {
+            logger.error("in FacadeController -> doesExist -> id is null");
             return new Response.Builder()
                     .message("File of type " + c.getSimpleName() + " with an id of: " + id + " does not exist")
                     .status(HttpStatus.BAD_REQUEST)
                     .statusCode(400)
                     .build();
+        }
 
         return new Response.Builder()
                 .status(HttpStatus.OK)
@@ -262,6 +294,8 @@ public class FacadeController {
      * @return the service we need to use according to what file it is.
      */
     private ServiceInterface convertFromClassToService(Class c) {
+        logger.info("in FacadeController -> convertFromClassToService");
+
         if (c.equals(Document.class)) return documentService;
         if (c.equals(Folder.class)) return folderService;
         return null;
@@ -278,6 +312,8 @@ public class FacadeController {
      * @return - List<FileRes>
      */
     private List<FileRes> convertToFileRes(List<Folder> folders, List<Document> documents) {
+        logger.info("in FacadeController -> convertToFileRes");
+
         List<FileRes> fileResList = new ArrayList<>();
 
         for (Folder folder : folders)

@@ -52,6 +52,7 @@ public class AuthService {
         if (userRepository.findByEmail(email).get().getPassword().equals(password)) {
             return generateToken(user);
         }
+        logger.error("in AuthService -> login -> fail: " + ExceptionMessage.NOT_MATCH);
         throw new IllegalArgumentException(ExceptionMessage.NOT_MATCH.toString());
     }
 
@@ -71,7 +72,6 @@ public class AuthService {
      * @return generated token according to: io.jsonwebtoken.Jwts library
      */
     private String generateToken(User user) {
-        logger.info("in AuthService -> generateToken");
         return ConfirmationToken.createJWT(String.valueOf(user.getId()), "docs app", "login", 0);
     }
 
@@ -80,6 +80,7 @@ public class AuthService {
      * @return - id of user
      */
     public Long isValid(String token) throws AccountNotFoundException {
+        logger.info("in AuthService -> isValid");
         long id =  Validations.validateToken(token);
         if(userRepository.existsById(id))
             return id;

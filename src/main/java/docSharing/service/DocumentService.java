@@ -88,6 +88,7 @@ public class DocumentService implements ServiceInterface {
      * getPath return list with the path to current item to the client.
      */
     public List<FileRes> getPath(GeneralItem generalItem) {
+        logger.info("in DocumentService -> getPath");
         List<FileRes> path = new ArrayList<>();
         Folder parentFolder = generalItem.getParentFolder();
         while (parentFolder != null) {
