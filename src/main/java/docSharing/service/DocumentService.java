@@ -73,14 +73,19 @@ public class DocumentService implements ServiceInterface {
         return onlineUsersPerDoc.get(documentId);
     }
 
-    public List<FileRes> getPath(GeneralItem generalItem) {
-        List<FileRes> path = new ArrayList<>();
-        Folder parentFolder = generalItem.getParentFolder();
-        while (parentFolder != null) {
-            path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, generalItem.getUser().getEmail()));
-            parentFolder = parentFolder.getParentFolder();
+    public List<FileRes> getPath(Long documentId) {
+        try {
+            Document document = findById(documentId);
+            List<FileRes> path = new ArrayList<>();
+            Folder parentFolder = document.getParentFolder();
+            while (parentFolder != null) {
+                path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, document.getUser().getEmail()));
+                parentFolder = parentFolder.getParentFolder();
+            }
+            return path;
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
         }
-        return path;
     }
 
 
@@ -189,7 +194,10 @@ public class DocumentService implements ServiceInterface {
      * same as the user is needed to be assigned to the new document.
      * set Permission of the creator as an MODERATOR.
      *
-     * @param generalItem - document.
+     * @param parentFolder - parent folder of the document
+     * @param user - the owner of the document
+     * @param name - name of document
+     * @param content - the content of the document
      * @return id of document.
      */
     public Long create(Folder parentFolder, User user, String name, String content) {

@@ -14,6 +14,6 @@ public interface ServiceInterface {
     int relocate(Folder folderId, Long id) throws FileNotFoundException;
     void delete(Long id) throws FileNotFoundException;
     Boolean doesExist(Long id);
-    List<FileRes> getPath(GeneralItem generalItem);
+    List<FileRes> getPath(Long itemId);
 //    GeneralItem get(Long id);
 }

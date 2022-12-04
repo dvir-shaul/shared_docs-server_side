@@ -1,7 +1,6 @@
 package docSharing.controller;
 
 import docSharing.entity.*;
-import docSharing.requests.*;
 import docSharing.response.*;
 import docSharing.service.DocumentService;
 import docSharing.service.FolderService;
@@ -9,17 +8,13 @@ import docSharing.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.security.auth.login.AccountNotFoundException;
-import java.io.FileNotFoundException;
-import java.time.LocalDate;
-import java.util.*;
+
 
 @Controller
 @RequestMapping(value = "/file")
@@ -131,31 +126,13 @@ class FileController {
 
     @RequestMapping(value = "document/getPath", method = RequestMethod.GET)
     public ResponseEntity<Response> getDocumentPath(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        try {
-            Document document = documentService.findById(documentId);
-            Response response = facadeController.getPath(document, Document.class);
-            return new ResponseEntity<>(response, response.getStatus());
-
-        } catch (FileNotFoundException e) {
-            return new ResponseEntity<>(new Response.Builder()
-                    .status(HttpStatus.BAD_REQUEST)
-                    .message(e.getMessage())
-                    .build(), HttpStatus.BAD_REQUEST);
-        }
+        Response response = facadeController.getPath(documentId, Document.class);
+        return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "folder/getPath", method = RequestMethod.GET)
     public ResponseEntity<Response> getFolderPath(@RequestParam Long folderId, @RequestAttribute Long userId) {
-        try {
-            Folder folder = folderService.findById(folderId);
-            Response response = facadeController.getPath(folder, Folder.class);
-            return new ResponseEntity<>(response, response.getStatus());
-        } catch (FileNotFoundException e) {
-            return new ResponseEntity<>(new Response.Builder()
-                    .status(HttpStatus.BAD_REQUEST)
-                    .statusCode(400)
-                    .message(e.getMessage())
-                    .build(), HttpStatus.BAD_REQUEST);
-        }
+        Response response = facadeController.getPath(folderId, Folder.class);
+        return new ResponseEntity<>(response, response.getStatus());
     }
 }

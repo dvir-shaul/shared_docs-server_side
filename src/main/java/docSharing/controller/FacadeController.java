@@ -80,12 +80,12 @@ public class FacadeController {
         }
     }
 
-    public Response getPath(GeneralItem item, Class c) {
+    public Response getPath(Long itemId, Class c) {
         return new Response.Builder()
                 .status(HttpStatus.OK)
                 .statusCode(200)
                 .message("Successfully managed to retrieve path")
-                .data(convertFromClassToService(c).getPath(item))
+                .data(convertFromClassToService(c).getPath(itemId))
                 .build();
     }
 

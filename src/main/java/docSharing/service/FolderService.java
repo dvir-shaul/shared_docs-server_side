@@ -86,15 +86,20 @@ public class FolderService implements ServiceInterface {
         savedFolder.getUser().addFolder(savedFolder);
         return savedFolder.getId();
     }
-public List<FileRes> getPath(GeneralItem generalItem){
+public List<FileRes> getPath(Long folderId){
+    try {
+        Folder folder =findById(folderId);
     List<FileRes> path = new ArrayList<>();
-    Folder parentFolder = generalItem.getParentFolder();
-        path.add(0, new FileRes(generalItem.getName(), generalItem.getId(), Type.FOLDER, Permission.ADMIN, generalItem.getUser().getEmail()));
+    Folder parentFolder = folder.getParentFolder();
+        path.add(0, new FileRes(folder.getName(), folder.getId(), Type.FOLDER, Permission.ADMIN, folder.getUser().getEmail()));
     while (parentFolder != null) {
-        path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, generalItem.getUser().getEmail()));
+        path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, folder.getUser().getEmail()));
         parentFolder = parentFolder.getParentFolder();
     }
     return path;
+    } catch (FileNotFoundException e) {
+        throw new RuntimeException(e);
+    }
 }
     /**
      * rename function gets an id of folder and new name to change the folder's name.
