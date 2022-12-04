@@ -40,50 +40,10 @@ public class UserController {
         return new ResponseEntity<>(response, response.getStatus());
     }
 
-
-    // FIXME: Move to a different place. Too much logics for a controller!
-    //  maybe even take it out to a private separate function...
     @RequestMapping(value = "/share", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<Response> givePermissionToAll(@RequestBody List<String> emails, @RequestParam Long documentId, @RequestAttribute Long userId) {
-        List<String> unregisteredUsers = new ArrayList<>();
-        try {
-            for (String email : emails) {
-
-                User user = null;
-                try {
-                    user = userService.findByEmail(email);
-                } catch (AccountNotFoundException exception) {
-                    unregisteredUsers.add(email);
-                    continue;
-                }
-
-                Permission permission = documentService.getUserPermissionInDocument(user.getId(), documentId);
-                if (permission.equals(Permission.UNAUTHORIZED)) {
-                    Document document = documentService.findById(documentId);
-                    userService.updatePermission(documentId, user.getId(), Permission.VIEWER);
-                    String link = "http://localhost:3000/document/share/documentId=" + documentId + "&userId=" + user.getId();
-                    String body = Share.buildEmail(user.getName(), link, document.getName());
-                    EmailUtil.send(user.getEmail(), body, "You have been invited to view the document");
-                }
-
-                for (String unregisteredEmail : unregisteredUsers) {
-                    String inviteUserString = Invite.emailBody;
-                    EmailUtil.send(unregisteredEmail, inviteUserString, "Personal invitation");
-                }
-            }
-            return new ResponseEntity<>(new Response.Builder()
-                    .statusCode(200)
-                    .status(HttpStatus.OK)
-                    .data(documentService.getAllUsersInDocument(documentId))
-                    .build(), HttpStatus.OK);
-
-        } catch (MessagingException | IOException | AccountNotFoundException e) {
-            return new ResponseEntity<>(new Response.Builder()
-                    .message(e.getMessage())
-                    .statusCode(400)
-                    .status(HttpStatus.BAD_REQUEST)
-                    .build(), HttpStatus.BAD_REQUEST);
-        }
+        Response response = facadeController.givePermissionToAll(emails, documentId);
+        return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "sharedDocuments", method = RequestMethod.GET)

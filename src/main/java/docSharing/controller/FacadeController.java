@@ -359,7 +359,7 @@ public class FacadeController {
         }
     }
 
-    public Response givePermission(Long documentId, Long userId, Permission permission){
+    public Response givePermission(Long documentId, Long userId, Permission permission) {
         // FIXME: use Valdidations.validate for it.
         if (documentId == null || userId == null || permission == null) {
             return new Response.Builder()
@@ -382,6 +382,45 @@ public class FacadeController {
                     .statusCode(400)
                     .build();
         }
+    }
+
+    public Response givePermissionToAll(List<String> emails, Long documentId) {
+        try {
+            List<String> unregisteredUsers = new ArrayList<>();
+            for (String email : emails) {
+                User user = null;
+                try {
+                    user = userService.findByEmail(email);
+                } catch (AccountNotFoundException exception) {
+                    unregisteredUsers.add(email);
+                    continue;
+                }
+                Permission permission = documentService.getUserPermissionInDocument(user.getId(), documentId);
+                if (permission.equals(Permission.UNAUTHORIZED)) {
+                    Document document = documentService.findById(documentId);
+                    userService.updatePermission(documentId, user.getId(), Permission.VIEWER);
+                    String link = "http://localhost:3000/document/share/documentId=" + documentId + "&userId=" + user.getId();
+                    String body = Share.buildEmail(user.getName(), link, document.getName());
+                    EmailUtil.send(user.getEmail(), body, "You have been invited to view the document");
+                }
+            }
+            for (String unregisteredEmail : unregisteredUsers) {
+                String inviteUserString = Invite.emailBody;
+                EmailUtil.send(unregisteredEmail, inviteUserString, "Personal invitation");
+            }
+            return new Response.Builder()
+                    .statusCode(200)
+                    .status(HttpStatus.OK)
+                    .data(documentService.getAllUsersInDocument(documentId))
+                    .build();
+        } catch (MessagingException | IOException | AccountNotFoundException e) {
+            return new Response.Builder()
+                    .message(e.getMessage())
+                    .statusCode(400)
+                    .status(HttpStatus.BAD_REQUEST)
+                    .build();
+        }
+
     }
 
     /**

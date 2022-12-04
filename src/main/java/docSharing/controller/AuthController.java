@@ -2,26 +2,13 @@ package docSharing.controller;
 
 import docSharing.entity.User;
 import docSharing.response.Response;
-import docSharing.service.FolderService;
-import docSharing.service.UserService;
-import docSharing.utils.*;
-import docSharing.service.AuthService;
-import docSharing.utils.EmailUtil;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import javax.mail.MessagingException;
-import javax.security.auth.login.AccountNotFoundException;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
+
 
 @Controller
 @RequestMapping(value = "/user/auth")
