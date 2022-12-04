@@ -4,6 +4,7 @@ import docSharing.entity.*;
 import docSharing.requests.Type;
 import docSharing.response.ExportDoc;
 import docSharing.response.FileRes;
+import docSharing.response.JoinRes;
 import docSharing.response.Response;
 import docSharing.service.*;
 import docSharing.utils.*;
@@ -421,6 +422,43 @@ public class FacadeController {
                     .build();
         }
 
+    }
+
+    public Response getDocuments(Long userId) {
+        return new Response.Builder()
+                .data(userService.documentsOfUser(userId))
+                .message("Successfully managed to fetch all shared documents for a user!")
+                .statusCode(200)
+                .status(HttpStatus.OK)
+                .build();
+    }
+
+    public Response getUser(Long userId) {
+        return new Response.Builder()
+                .data(userService.getUser(userId))
+                .status(HttpStatus.OK)
+                .statusCode(200)
+                .message("Successfully managed to get the user from the database.")
+                .build();
+    }
+
+    public Response getUserPermissionForSpecificDocument(Long documentId, Long userId) {
+        try {
+            User user = userService.findById(userId);
+            Permission permission = documentService.getUserPermissionInDocument(userId, documentId);
+            return new Response.Builder()
+                    .data(new JoinRes(user.getName(), userId, permission))
+                    .message("Successfully managed to fetch a user with his permission")
+                    .status(HttpStatus.OK)
+                    .statusCode(200)
+                    .build();
+        } catch (AccountNotFoundException e) {
+            return new Response.Builder()
+                    .statusCode(400)
+                    .status(HttpStatus.BAD_REQUEST)
+                    .message(e.getMessage())
+                    .build();
+        }
     }
 
     /**
