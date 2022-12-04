@@ -1,23 +1,24 @@
 package docSharing.controller;
 
-import docSharing.entity.Document;
-import docSharing.entity.GeneralItem;
-import docSharing.entity.Folder;
-import docSharing.entity.Permission;
+import docSharing.entity.*;
 import docSharing.requests.Type;
-import docSharing.response.ExportDoc;
-import docSharing.response.FileRes;
-import docSharing.response.Response;
+import docSharing.response.*;
 import docSharing.service.*;
-import docSharing.utils.Regex;
-import docSharing.utils.Validations;
+import docSharing.utils.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+import javax.mail.MessagingException;
 import javax.security.auth.login.AccountNotFoundException;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +29,10 @@ public class FacadeController {
     DocumentService documentService;
     @Autowired
     FolderService folderService;
+    @Autowired
+    UserService userService;
+    @Autowired
+    AuthService authService;
 
     public Response getAll(Long parentFolderId, Long userId) {
         try {
@@ -57,29 +62,22 @@ public class FacadeController {
         }
     }
 
-//    public ResponseEntity<Response> get(Long id, Class c) {
-//        if (id == null)
-//            return ResponseEntity.badRequest().body(new Response.Builder()
-//                    .status(HttpStatus.BAD_REQUEST)
-//                    .message("In order to relocate, an ID must be provided!")
-//                    .build());
-//
-//        return ResponseEntity.ok().body(convertFromClassToService(c).get(id));
-//    }
-
-    public Response create(GeneralItem item, Class c) {
-        // make sure we got all the data from the client
+    public Response create(Long parentFolderId, String name, String content, Long userId, Class c) {
         try {
-            Validations.validate(Regex.FILE_NAME.getRegex(), item.getName());
+            Validations.validate(Regex.FILE_NAME.getRegex(), name);
 //            Validations.validate(Regex.ID.getRegex(), item.getParentFolderId().toString());
+            Folder parentFolder = null;
+            if (parentFolderId != null)
+                parentFolder = folderService.findById(parentFolderId);
+            User user = userService.findById(userId);
             return new Response.Builder()
                     .status(HttpStatus.OK)
                     .statusCode(200)
-                    .data(convertFromClassToService(c).create(item))
+                    .data(convertFromClassToService(c).create(parentFolder, user, name, content))
                     .message("item created successfully")
                     .build();
 
-        } catch (NullPointerException | IllegalArgumentException e) {
+        } catch (NullPointerException | IllegalArgumentException | FileNotFoundException | AccountNotFoundException e) {
             return new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
                     .statusCode(400)
@@ -88,12 +86,12 @@ public class FacadeController {
         }
     }
 
-    public Response getPath(GeneralItem item, Class c) {
+    public Response getPath(Long itemId, Class c) {
         return new Response.Builder()
                 .status(HttpStatus.OK)
                 .statusCode(200)
                 .message("Successfully managed to retrieve path")
-                .data(convertFromClassToService(c).getPath(item))
+                .data(convertFromClassToService(c).getPath(itemId))
                 .build();
     }
 
@@ -203,6 +201,49 @@ public class FacadeController {
                 .data(convertFromClassToService(c).doesExist(id))
                 .build();
     }
+
+    public Response getContent(Long documentId) {
+        return new Response.Builder()
+                .status(HttpStatus.OK)
+                .message("Successfully managed to retrieve the document's content")
+                .statusCode(200)
+                .data(documentService.getContent(documentId))
+                .build();
+    }
+
+    public Response getDocumentName(Long documentId) {
+        Document document = null;
+        try {
+            document = documentService.findById(documentId);
+            FileRes fileResponse = new FileRes(document.getName(), document.getId(), Type.DOCUMENT, Permission.ADMIN, document.getUser().getEmail());
+            return new Response.Builder()
+                    .statusCode(200)
+                    .status(HttpStatus.OK)
+                    .data(fileResponse)
+                    .message("Managed to get file name properly")
+                    .build();
+        } catch (FileNotFoundException e) {
+            return new Response.Builder()
+                    .message("Couldn't find such a file " + e)
+                    .status(HttpStatus.NOT_FOUND)
+                    .statusCode(401)
+                    .build();
+        }
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     /**

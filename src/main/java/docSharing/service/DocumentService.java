@@ -31,7 +31,8 @@ public class DocumentService implements ServiceInterface {
     UserDocumentRepository userDocumentRepository;
     @Autowired
     UserRepository userRepository;
-
+@Autowired
+LogRepository logRepository;
     @Scheduled(fixedDelay = 10 * 1000)
     public void updateDatabaseWithNewContent() {
         for (Map.Entry<Long, String> entry : documentsContentLiveChanges.entrySet()) {
@@ -73,14 +74,19 @@ public class DocumentService implements ServiceInterface {
         return onlineUsersPerDoc.get(documentId);
     }
 
-    public List<FileRes> getPath(GeneralItem generalItem) {
-        List<FileRes> path = new ArrayList<>();
-        Folder parentFolder = generalItem.getParentFolder();
-        while (parentFolder != null) {
-            path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, generalItem.getUser().getEmail()));
-            parentFolder = parentFolder.getParentFolder();
+    public List<FileRes> getPath(Long documentId) {
+        try {
+            Document document = findById(documentId);
+            List<FileRes> path = new ArrayList<>();
+            Folder parentFolder = document.getParentFolder();
+            while (parentFolder != null) {
+                path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, document.getUser().getEmail()));
+                parentFolder = parentFolder.getParentFolder();
+            }
+            return path;
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
         }
-        return path;
     }
 
 
@@ -189,16 +195,18 @@ public class DocumentService implements ServiceInterface {
      * same as the user is needed to be assigned to the new document.
      * set Permission of the creator as an MODERATOR.
      *
-     * @param generalItem - document.
+     * @param parentFolder - parent folder of the document
+     * @param user - the owner of the document
+     * @param name - name of document
+     * @param content - the content of the document
      * @return id of document.
      */
-    public Long create(GeneralItem generalItem) {
-        if (generalItem.getParentFolder() != null) {
-            Optional<Folder> folder = folderRepository.findById(generalItem.getParentFolder().getId());
-            if (!folder.isPresent())
-                throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + generalItem.getParentFolder().getId());
+    public Long create(Folder parentFolder, User user, String name, String content) {
+        if (parentFolder == null) {
+            throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + parentFolder.getId());
         }
-        Document savedDoc = documentRepository.save((Document) generalItem);
+        Document doc = Document.createDocument(user, name, parentFolder, content != null ? content : "");
+        Document savedDoc = documentRepository.save(doc);
         addToMap(savedDoc.getId());
         if (savedDoc.getParentFolder() != null) {
             savedDoc.getParentFolder().addDocument(savedDoc);
@@ -316,6 +324,9 @@ public class DocumentService implements ServiceInterface {
 
         userDocumentRepository.deleteDocument(document.get());
         documentRepository.deleteById(docId);
+        for (Log log: document.get().getLogs()) {
+            logRepository.delete(log);
+        }
         // CONSULT: can we get the number of lines affected to return to the user?
     }
 
@@ -331,13 +342,13 @@ public class DocumentService implements ServiceInterface {
         return documentRepository.findAllByParentFolderIsNull(user);
     }
 
-    public List<UsersInDocRes> getAllUsersInDocument(Long documentId) throws AccountNotFoundException {
+    public List<UsersInDocRes> getAllUsersInDocument(Long userId,Long documentId,Method method) throws AccountNotFoundException {
         if (!documentRepository.findById(documentId).isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
         Document document = documentRepository.findById(documentId).get();
         // return userDocumentRepository.findAllUsersInDocument(document);
 
-        Set<Long> onlineUsers = getActiveUsers(null, documentId, Method.GET).stream().map(u -> u.getId()).collect(Collectors.toSet());
+        Set<Long> onlineUsers = getActiveUsers(userId, documentId, method).stream().map(u -> u.getId()).collect(Collectors.toSet());
         return userDocumentRepository.findAllUsersInDocument(document)
                 .stream()
                 .map(u -> new UsersInDocRes(u.getUser().getId(), u.getUser().getName(), u.getUser().getEmail(), u.getPermission(), onlineUsers.contains(u.getUser().getId()) ? UserStatus.ONLINE : UserStatus.OFFLINE))

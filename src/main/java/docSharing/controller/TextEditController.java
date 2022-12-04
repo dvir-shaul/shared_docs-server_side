@@ -39,11 +39,8 @@ public class TextEditController {
 
     @MessageMapping("/document/{documentId}")
     @SendTo("/document/{documentId}")
-//    public Log receiveLog(@DestinationVariable Long documentId, @Payload Log log) {
     public LogReq receiveLog(@DestinationVariable Long documentId, @Payload LogReq logReq) {
-//        if (log.getData() == null || log.getAction() == null || log.getOffset() == null || log.getDocumentId() == null || log.getUserId() == null || log.getCreationDate() == null)
 //            // FIXME: What to do if anything fails? Do we do anything with the client?
-//            return null;
         try {
             // FIXME: what if there's no such a user? Do we handle it?
             User user = userService.findById(logReq.getUserId());
@@ -51,11 +48,9 @@ public class TextEditController {
             Document document = documentService.findById(documentId);
             // CONSULT: Why do we even get a logReq and not a normal Log. Then return a logRes?
             Log log = new Log(user, document, logReq.getOffset(), logReq.getData(), logReq.getAction(), LocalDateTime.now());
-            LogReq copyOfLog = new LogReq(log.getUser().getId(), log.getDocument().getId(), log.getOffset(), log.getData(), log.getAction());
-            String content = documentService.updateContent(log);
+            documentService.updateContent(log);
             logService.updateLogs(log);
-
-            return copyOfLog;
+            return logReq;
         } catch (AccountNotFoundException e) {
             throw new RuntimeException(e);
         } catch (FileNotFoundException e) {
@@ -63,13 +58,12 @@ public class TextEditController {
         }
     }
 
-    //return one map with status
 
     @MessageMapping("/document/onlineUsers/{documentId}")
     @SendTo("/document/onlineUsers/{documentId}")
     public List<UsersInDocRes> getOnlineUsers(@DestinationVariable Long documentId, @Payload OnlineUsersReq onlineUsersReq) {
         try {
-            List<UsersInDocRes> all = documentService.getAllUsersInDocument(documentId);
+            List<UsersInDocRes> all = documentService.getAllUsersInDocument(onlineUsersReq.getUserId(),documentId, onlineUsersReq.getMethod());
             Collections.sort(all, new Comparator<UsersInDocRes>() {
                 public int compare(UsersInDocRes o1, UsersInDocRes o2) {
                     return o1.compareTo(o2);
