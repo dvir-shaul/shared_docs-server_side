@@ -30,10 +30,8 @@ class FileController {
 
     @Autowired
     FacadeController facadeController;
-    // FIXME: there's no need for folderService since "AbstractController" does all the logic.
     @Autowired
     FolderService folderService;
-    // FIXME: there's no need for folderService since "DocumentController" does all the logic.
     @Autowired
     DocumentService documentService;
     @Autowired
@@ -41,54 +39,70 @@ class FileController {
 
     @RequestMapping(value = "getAll", method = RequestMethod.GET)
     public ResponseEntity<Response> getAll(@RequestParam(required = false) Long parentFolderId, @RequestAttribute Long userId) throws AccountNotFoundException {
-        return facadeController.getAll(parentFolderId, userId);
+        Response response = facadeController.getAll(parentFolderId, userId);
+        return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "folder/rename", method = RequestMethod.PATCH)
     public ResponseEntity<Response> renameFolder(@RequestParam Long folderId, @RequestParam String name, @RequestAttribute Long userId) {
-        return facadeController.rename(folderId, name, Folder.class);
+        Response response = facadeController.rename(folderId, name, Folder.class);
+        return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "document/rename", method = RequestMethod.PATCH)
     public ResponseEntity<Response> renameDocument(@RequestParam Long documentId, @RequestParam String name, @RequestAttribute Long userId) {
-        return facadeController.rename(documentId, name, Document.class);
+        Response response = facadeController.rename(documentId, name, Document.class);
+        return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "folder", method = RequestMethod.DELETE)
     public ResponseEntity<Response> deleteFolder(@RequestParam Long folderId, @RequestAttribute Long userId) {
-        return facadeController.delete(folderId, Folder.class);
+        Response response = facadeController.delete(folderId, Folder.class);
+        return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "document", method = RequestMethod.DELETE)
     public ResponseEntity<Response> deleteDocument(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        return facadeController.delete(documentId, Document.class);
+        Response response = facadeController.delete(documentId, Document.class);
+        return new ResponseEntity<>(response, response.getStatus());
+
     }
 
     @RequestMapping(value = "folder/relocate", method = RequestMethod.PATCH)
     public ResponseEntity<Response> relocateFolder(@RequestParam Long newParentFolderId, @RequestParam Long folderId, @RequestAttribute Long userId) {
-        return facadeController.relocate(newParentFolderId, folderId, Folder.class);
+        Response response = facadeController.relocate(newParentFolderId, folderId, Folder.class);
+        return new ResponseEntity<>(response, response.getStatus());
+
 
     }
 
     @RequestMapping(value = "document/relocate", method = RequestMethod.PATCH)
     public ResponseEntity<Response> relocateDocument(@RequestParam Long newParentFolderId, @RequestParam Long documentId, @RequestAttribute Long userId) {
-        return facadeController.relocate(newParentFolderId, documentId, Document.class);
+        Response response = facadeController.relocate(newParentFolderId, documentId, Document.class);
+        return new ResponseEntity<>(response, response.getStatus());
+
     }
 
     @RequestMapping(value = "document/export", method = RequestMethod.GET)
     public ResponseEntity<Response> export(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        return facadeController.export(documentId);
+        Response response = facadeController.export(documentId);
+        return new ResponseEntity<>(response, response.getStatus());
+
     }
 
 
     @RequestMapping(value = "document/doesExists", method = RequestMethod.GET)
     public ResponseEntity<Response> doesDocumentExists(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        return facadeController.doesExist(documentId, Document.class);
+        Response response = facadeController.doesExist(documentId, Document.class);
+        return new ResponseEntity<>(response, response.getStatus());
+
     }
 
     @RequestMapping(value = "folder/doesExists", method = RequestMethod.GET)
     public ResponseEntity<Response> doesFolderExists(@RequestParam Long folderId, @RequestAttribute Long userId) {
-        return facadeController.doesExist(folderId, Folder.class);
+        Response response = facadeController.doesExist(folderId, Folder.class);
+        return new ResponseEntity<>(response, response.getStatus());
+
     }
 
     @RequestMapping(value = "document/getContent", method = RequestMethod.GET)
@@ -134,8 +148,6 @@ class FileController {
             Folder folder = Folder.createFolder(name, parentFolder, user);
 //            FileRes folderResponse = new FileRes(name, null, Type.FOLDER, Permission.ADMIN, user.getEmail());
 
-            // CONSULT: I think we should return this response as an object everytime.
-            //  either if it's an OK status or BAD status.
             return new ResponseEntity<>(new Response.Builder()
                     .status(HttpStatus.CREATED)
                     .statusCode(200)
@@ -159,48 +171,10 @@ class FileController {
             Folder parentFolder = folderService.findById(parentFolderId);
             User user = userService.findById(userId);
             Document doc = Document.createDocument(user, name, parentFolder, content != null ? content : "");
-            return facadeController.create(doc, Document.class);
+            Response response = facadeController.create(doc, Document.class);
+            return new ResponseEntity<>(response, response.getStatus());
 
         } catch (FileNotFoundException | AccountNotFoundException e) {
-            return new ResponseEntity<>(new Response.Builder()
-                    .status(HttpStatus.BAD_REQUEST)
-                    .statusCode(400)
-                    .message(e.getMessage())
-                    .build(), HttpStatus.BAD_REQUEST);
-        }
-    }
-
-    //FIXME: this function has been split into two functions: getDocumentPath and getFolderPath. this should be removed once the client is updated.
-    @RequestMapping(value = "getPath", method = RequestMethod.GET)
-    public ResponseEntity<Response> getPath(@RequestParam Type type, @RequestParam Long fileId, @RequestAttribute Long userId) {
-        List<FileRes> path = new ArrayList<>();
-        GeneralItem generalItem = null;
-        try {
-            switch (type) {
-                case FOLDER:
-                    generalItem = folderService.findById(fileId);
-                    break;
-                case DOCUMENT:
-                    generalItem = documentService.findById(fileId);
-                    break;
-            }
-            Folder parentFolder = generalItem.getParentFolder();
-
-            if (type.equals(Type.FOLDER)) {
-                path.add(0, new FileRes(generalItem.getName(), generalItem.getId(), Type.FOLDER, Permission.ADMIN, generalItem.getUser().getEmail()));
-            }
-            while (parentFolder != null) {
-                path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, generalItem.getUser().getEmail()));
-                parentFolder = parentFolder.getParentFolder();
-            }
-            return new ResponseEntity<>(new Response.Builder()
-                    .status(HttpStatus.OK)
-                    .statusCode(200)
-                    .message("Successfully managed to retrieve the requested path")
-                    .data(path)
-                    .build(), HttpStatus.OK);
-
-        } catch (FileNotFoundException e) {
             return new ResponseEntity<>(new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
                     .statusCode(400)
@@ -213,7 +187,9 @@ class FileController {
     public ResponseEntity<Response> getDocumentPath(@RequestParam Long documentId, @RequestAttribute Long userId) {
         try {
             Document document = documentService.findById(documentId);
-            return facadeController.getPath(document, Document.class);
+            Response response = facadeController.getPath(document, Document.class);
+            return new ResponseEntity<>(response, response.getStatus());
+
         } catch (FileNotFoundException e) {
             return new ResponseEntity<>(new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
@@ -226,34 +202,13 @@ class FileController {
     public ResponseEntity<Response> getFolderPath(@RequestParam Long folderId, @RequestAttribute Long userId) {
         try {
             Folder folder = folderService.findById(folderId);
-            return facadeController.getPath(folder, Folder.class);
+            Response response = facadeController.getPath(folder, Folder.class);
+            return new ResponseEntity<>(response, response.getStatus());
         } catch (FileNotFoundException e) {
             return new ResponseEntity<>(new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
                     .statusCode(400)
                     .message(e.getMessage())
-                    .build(), HttpStatus.BAD_REQUEST);
-        }
-    }
-
-    // FIXME: this function has been relocated to userController, so this function will be removed once the client is updated
-    @RequestMapping(value = "document/getUser", method = RequestMethod.GET)
-    public ResponseEntity<?> getUser(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        try {
-            User user = userService.findById(userId);
-            Permission permission = documentService.getUserPermissionInDocument(userId, documentId);
-            return new ResponseEntity<>(new Response.Builder()
-                    .status(HttpStatus.OK)
-                    .statusCode(200)
-                    .data(new JoinRes(user.getName(), userId, permission))
-                    .message("Successfully managed to get the user from the database")
-                    .build(), HttpStatus.OK);
-
-        } catch (AccountNotFoundException e) {
-            return new ResponseEntity<>(new Response.Builder()
-                    .message(e.getMessage())
-                    .statusCode(400)
-                    .status(HttpStatus.BAD_REQUEST)
                     .build(), HttpStatus.BAD_REQUEST);
         }
     }
