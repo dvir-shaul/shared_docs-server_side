@@ -57,16 +57,6 @@ public class FacadeController {
         }
     }
 
-//    public ResponseEntity<Response> get(Long id, Class c) {
-//        if (id == null)
-//            return ResponseEntity.badRequest().body(new Response.Builder()
-//                    .status(HttpStatus.BAD_REQUEST)
-//                    .message("In order to relocate, an ID must be provided!")
-//                    .build());
-//
-//        return ResponseEntity.ok().body(convertFromClassToService(c).get(id));
-//    }
-
     public Response create(GeneralItem item, Class c) {
         // make sure we got all the data from the client
         try {
@@ -204,7 +194,14 @@ public class FacadeController {
                 .build();
     }
 
-
+public Response getContent(Long documentId){
+    return new Response.Builder()
+            .status(HttpStatus.OK)
+            .message("Successfully managed to retrieve the document's content")
+            .statusCode(200)
+            .data(documentService.getContent(documentId))
+            .build();
+}
     /**
      * This function gets an item as a parameter and extracts its class in order to return the correct service.
      *

@@ -107,13 +107,8 @@ class FileController {
 
     @RequestMapping(value = "document/getContent", method = RequestMethod.GET)
     public ResponseEntity<Response> getContent(@RequestParam Long documentId, @RequestAttribute Long userId) {
-        // FIXME: What if the document doesn't exist?
-        return new ResponseEntity<>(new Response.Builder()
-                .data(documentService.getContent(documentId))
-                .statusCode(200)
-                .data(HttpStatus.OK)
-                .message("Successfully managed to retrieve the document's content")
-                .build(), HttpStatus.OK);
+        Response response=facadeController.getContent(documentId);
+       return new ResponseEntity<>(response, response.getStatus());
     }
 
     @RequestMapping(value = "document", method = RequestMethod.GET)
@@ -146,8 +141,6 @@ class FileController {
             }
             User user = userService.findById(userId);
             Folder folder = Folder.createFolder(name, parentFolder, user);
-//            FileRes folderResponse = new FileRes(name, null, Type.FOLDER, Permission.ADMIN, user.getEmail());
-
             return new ResponseEntity<>(new Response.Builder()
                     .status(HttpStatus.CREATED)
                     .statusCode(200)
