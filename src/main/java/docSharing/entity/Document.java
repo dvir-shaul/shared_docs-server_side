@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import docSharing.utils.ExceptionMessage;
 
 import javax.persistence.*;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity(name = "Document")
@@ -13,8 +14,8 @@ public class Document extends GeneralItem {
     private Boolean isPrivate;
     @Column(name = "content", columnDefinition = "text")
     private String content;
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Log> logs;
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Log> logs=new HashSet<>();
 
     public Set<Log> getLogs() {
         return logs;
@@ -24,7 +25,7 @@ public class Document extends GeneralItem {
         this.logs = logs;
     }
 
-    private Document() {
+   public Document() {
         super();
         this.isPrivate = true;
     }

@@ -31,8 +31,9 @@ public class DocumentService implements ServiceInterface {
     UserDocumentRepository userDocumentRepository;
     @Autowired
     UserRepository userRepository;
-@Autowired
-LogRepository logRepository;
+    @Autowired
+    LogRepository logRepository;
+
     @Scheduled(fixedDelay = 10 * 1000)
     public void updateDatabaseWithNewContent() {
         for (Map.Entry<Long, String> entry : documentsContentLiveChanges.entrySet()) {
@@ -196,9 +197,9 @@ LogRepository logRepository;
      * set Permission of the creator as an MODERATOR.
      *
      * @param parentFolder - parent folder of the document
-     * @param user - the owner of the document
-     * @param name - name of document
-     * @param content - the content of the document
+     * @param user         - the owner of the document
+     * @param name         - name of document
+     * @param content      - the content of the document
      * @return id of document.
      */
     public Long create(Folder parentFolder, User user, String name, String content) {
@@ -321,12 +322,9 @@ LogRepository logRepository;
         Optional<Document> document = documentRepository.findById(docId);
         if (!document.isPresent())
             throw new FileNotFoundException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
-
         userDocumentRepository.deleteDocument(document.get());
+        logRepository.deleteByDocument(document.get());
         documentRepository.deleteById(docId);
-        for (Log log : document.get().getLogs()) {
-            logRepository.delete(log);
-        }
         // CONSULT: can we get the number of lines affected to return to the user?
     }
 
