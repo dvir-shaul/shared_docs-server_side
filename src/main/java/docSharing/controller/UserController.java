@@ -31,35 +31,13 @@ public class UserController {
     private UserService userService;
     @Autowired
     private DocumentService documentService;
-
+    @Autowired
+    private FacadeController facadeController;
 
     @RequestMapping(value = "/permission/give", method = RequestMethod.PATCH)
     public ResponseEntity<Response> givePermission(@RequestParam Long documentId, @RequestParam Long uid, @RequestParam Permission permission, @RequestAttribute Long userId) {
-        // FIXME: use Valdidations.validate for it.
-        if (documentId == null || uid == null || permission == null) {
-            return new ResponseEntity<>(new Response.Builder()
-                    .status(HttpStatus.BAD_REQUEST)
-                    .statusCode(400)
-                    .message("Could not continue due to lack of data. Required: documentId, uid, permission")
-                    .build(), HttpStatus.BAD_REQUEST);
-        }
-        try {
-            return new ResponseEntity<>(new Response.Builder()
-                    .data(documentService.getAllUsersInDocument(documentId))
-                    .status(HttpStatus.OK)
-                    .statusCode(200)
-                    .message("Successfully changed permission to user id:" + uid)
-                    .build(), HttpStatus.OK);
-
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(new Response.Builder()
-                    .status(HttpStatus.BAD_REQUEST)
-                    .statusCode(400)
-                    .message(e.getMessage())
-                    .build(), HttpStatus.BAD_REQUEST);
-        } catch (AccountNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        Response response = facadeController.givePermission(documentId, uid, permission);
+        return new ResponseEntity<>(response, response.getStatus());
     }
 
 
@@ -125,7 +103,7 @@ public class UserController {
                 .status(HttpStatus.OK)
                 .statusCode(200)
                 .message("Successfully managed to get the user from the database.")
-                .build(),HttpStatus.OK);
+                .build(), HttpStatus.OK);
     }
 
     @RequestMapping(value = "document/getUser", method = RequestMethod.GET)
@@ -138,14 +116,14 @@ public class UserController {
                     .message("Successfully managed to fetch a user with his permission")
                     .status(HttpStatus.OK)
                     .statusCode(200)
-                    .build(),HttpStatus.OK);
+                    .build(), HttpStatus.OK);
 
         } catch (AccountNotFoundException e) {
             return new ResponseEntity<>(new Response.Builder()
                     .statusCode(400)
                     .status(HttpStatus.BAD_REQUEST)
                     .message(e.getMessage())
-                    .build(),HttpStatus.BAD_REQUEST);
+                    .build(), HttpStatus.BAD_REQUEST);
         }
     }
 }

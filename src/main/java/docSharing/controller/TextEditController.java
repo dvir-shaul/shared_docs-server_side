@@ -39,11 +39,8 @@ public class TextEditController {
 
     @MessageMapping("/document/{documentId}")
     @SendTo("/document/{documentId}")
-//    public Log receiveLog(@DestinationVariable Long documentId, @Payload Log log) {
     public LogReq receiveLog(@DestinationVariable Long documentId, @Payload LogReq logReq) {
-//        if (log.getData() == null || log.getAction() == null || log.getOffset() == null || log.getDocumentId() == null || log.getUserId() == null || log.getCreationDate() == null)
 //            // FIXME: What to do if anything fails? Do we do anything with the client?
-//            return null;
         try {
             // FIXME: what if there's no such a user? Do we handle it?
             User user = userService.findById(logReq.getUserId());
@@ -54,7 +51,6 @@ public class TextEditController {
             LogReq copyOfLog = new LogReq(log.getUser().getId(), log.getDocument().getId(), log.getOffset(), log.getData(), log.getAction());
             String content = documentService.updateContent(log);
             logService.updateLogs(log);
-
             return copyOfLog;
         } catch (AccountNotFoundException e) {
             throw new RuntimeException(e);
@@ -63,7 +59,6 @@ public class TextEditController {
         }
     }
 
-    //return one map with status
 
     @MessageMapping("/document/onlineUsers/{documentId}")
     @SendTo("/document/onlineUsers/{documentId}")

@@ -359,6 +359,31 @@ public class FacadeController {
         }
     }
 
+    public Response givePermission(Long documentId, Long userId, Permission permission){
+        // FIXME: use Valdidations.validate for it.
+        if (documentId == null || userId == null || permission == null) {
+            return new Response.Builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .statusCode(400)
+                    .message("Could not continue due to lack of data. Required: documentId, uid, permission")
+                    .build();
+        }
+        try {
+            return new Response.Builder()
+                    .data(documentService.getAllUsersInDocument(documentId))
+                    .status(HttpStatus.OK)
+                    .statusCode(200)
+                    .message("Successfully changed permission to user id:" + userId)
+                    .build();
+        } catch (AccountNotFoundException e) {
+            return new Response.Builder()
+                    .message("failed to update a permission")
+                    .status(HttpStatus.BAD_REQUEST)
+                    .statusCode(400)
+                    .build();
+        }
+    }
+
     /**
      * This function gets an item as a parameter and extracts its class in order to return the correct service.
      *
