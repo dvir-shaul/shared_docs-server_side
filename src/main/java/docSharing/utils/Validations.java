@@ -58,7 +58,7 @@ public class Validations {
 
         if (token == null) {
             logger.error("in Validations -> validateToken -> "+ExceptionMessage.NULL_INPUT);
-            throw new NullPointerException(ExceptionMessage.NULL_INPUT.toString());
+            throw new IllegalArgumentException(ExceptionMessage.NULL_INPUT.toString());
         }
         if (token.startsWith("Bearer ")) {
             token = token.substring(7, token.length());

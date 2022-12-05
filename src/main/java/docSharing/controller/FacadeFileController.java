@@ -41,7 +41,6 @@ public class FacadeFileController {
      * @return - ResponseEntity.
      */
     /**
-     *
      * @param parentFolderId
      * @param name
      * @param content
@@ -50,7 +49,7 @@ public class FacadeFileController {
      * @return
      */
     public Response create(Long parentFolderId, String name, String content, Long userId, Class c) {
-        logger.info("in FacadeController -> create, item of Class:"+c);
+        logger.info("in FacadeController -> create, item of Class:" + c);
         try {
             Validations.validate(Regex.FILE_NAME.getRegex(), name);
 //            Validations.validate(Regex.ID.getRegex(), item.getParentFolderId().toString());
@@ -59,14 +58,14 @@ public class FacadeFileController {
                 parentFolder = folderService.findById(parentFolderId);
             User user = userService.findById(userId);
             return new Response.Builder()
-                    .status(HttpStatus.OK)
-                    .statusCode(200)
+                    .status(HttpStatus.CREATED)
+                    .statusCode(201)
                     .data(convertFromClassToService(c).create(parentFolder, user, name, content))
                     .message("item created successfully")
                     .build();
 
         } catch (NullPointerException | IllegalArgumentException | FileNotFoundException | AccountNotFoundException e) {
-            logger.error("in FacadeController -> create -> " +e.getMessage());
+            logger.error("in FacadeController -> create -> " + e.getMessage());
             return new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
                     .statusCode(400)
@@ -77,18 +76,27 @@ public class FacadeFileController {
     }
 
     /**
-     * 
      * @param itemId
      * @param c
      * @return
      */
     public Response getPath(Long itemId, Class c) {
-        return new Response.Builder()
-                .status(HttpStatus.OK)
-                .statusCode(200)
-                .message("Successfully managed to retrieve path")
-                .data(convertFromClassToService(c).getPath(itemId))
-                .build();
+        try {
+            List<FileRes> path = convertFromClassToService(c).getPath(itemId);
+            return new Response.Builder()
+                    .status(HttpStatus.OK)
+                    .statusCode(200)
+                    .message("Successfully managed to retrieve path")
+                    .data(path)
+                    .build();
+        } catch (FileNotFoundException e) {
+            return new Response.Builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .statusCode(400)
+                    .message("item does not exist")
+                    .data("")
+                    .build();
+        }
     }
 
 
@@ -101,7 +109,7 @@ public class FacadeFileController {
      * @return response entity with a List<FileRes> with all the folders & documents to send.
      */
     public Response getAll(Long parentFolderId, Long userId) {
-        logger.info("in FacadeController -> getAll, parentFolderId:"+parentFolderId+" userId:"+userId);
+        logger.info("in FacadeController -> getAll, parentFolderId:" + parentFolderId + " userId:" + userId);
         try {
             List<Folder> folders;
             List<Document> documents;
@@ -120,7 +128,7 @@ public class FacadeFileController {
                     .build();
 
         } catch (AccountNotFoundException e) {
-            logger.error("in FacadeController -> getAll -> " +e.getMessage());
+            logger.error("in FacadeController -> getAll -> " + e.getMessage());
 
             // TODO: we need to throw more exceptions so we know what status to retrieve!
             return new Response.Builder()
@@ -130,6 +138,7 @@ public class FacadeFileController {
                     .build();
         }
     }
+
     /**
      * rename a file, called from the fileController with a request to change name.
      *
@@ -139,12 +148,17 @@ public class FacadeFileController {
      * @return - ResponseEntity.
      */
     public Response rename(Long id, String name, Class c) {
-        logger.info("in FacadeController -> rename, id"+id+" of Class:"+c);
+        logger.info("in FacadeController -> rename, id" + id + " of Class:" + c);
+        try {
+            Validations.validate(Regex.FILE_NAME.getRegex(), name);
+            return new Response.Builder()
+                    .status(HttpStatus.OK)
+                    .statusCode(200)
+                    .message("Successfully renamed to: " + convertFromClassToService(c).rename(id, name))
+                    .build();
 
-        // FIXME: need to validate name using Validations.validate!
-        //  it also checks if null and returns an exception so we need to catch it here.
-        if (name == null || name.length()==0) {
-            logger.error("in FacadeController -> rename -> name is null");
+        } catch (IllegalArgumentException e) {
+            logger.error("in FacadeController -> rename -> name is not valid");
             return new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
                     .statusCode(400)
@@ -152,12 +166,8 @@ public class FacadeFileController {
                     .build();
         }
 
-        return new Response.Builder()
-                .status(HttpStatus.OK)
-                .statusCode(200)
-                .message("Successfully renamed to: " + convertFromClassToService(c).rename(id, name))
-                .build();
     }
+
     /**
      * delete a file, called from the fileController with a request to delete.
      *
@@ -167,19 +177,8 @@ public class FacadeFileController {
      */
     public Response delete(Long id, Class c) {
         logger.info("in FacadeController -> delete");
-
-        // FIXME: We have this check in a Validation.validate function. Why not do that there and let it throw its exception?
-        //  if we do it this way, we only return an exception response once, and not twice.
-        if (id == null) {
-            logger.error("in FacadeController -> delete -> id is null");
-            return new Response.Builder()
-                    .status(HttpStatus.BAD_REQUEST)
-                    .statusCode(400)
-                    .message("I'm sorry. In order for me to delete a document, you need to be more specific about its id... So what is it's id?")
-                    .build();
-        }
-
         try {
+            Validations.validate(Regex.ID.getRegex(), String.valueOf(id));
             convertFromClassToService(c).delete(id);
             return new Response.Builder()
                     .status(HttpStatus.OK)
@@ -187,8 +186,8 @@ public class FacadeFileController {
                     .message("An item answering to the id:" + id + " has been successfully erased from the database!")
                     .build();
 
-        } catch (FileNotFoundException e) {
-            logger.error("in FacadeController -> delete -> "+e.getMessage());
+        } catch (FileNotFoundException | IllegalArgumentException e) {
+            logger.error("in FacadeController -> delete -> " + e.getMessage());
             return new Response.Builder()
                     .status(HttpStatus.NOT_FOUND)
                     .statusCode(400)
@@ -196,6 +195,7 @@ public class FacadeFileController {
                     .build();
         }
     }
+
     /**
      * relocate a file, called from the fileController with a request to relocate.
      *
@@ -205,17 +205,10 @@ public class FacadeFileController {
      * @return - ResponseEntity
      */
     public Response relocate(Long newParentId, Long id, Class c) {
-        logger.info("in FacadeController -> relocate, newParentId"+newParentId+" of Class:"+c);
+        logger.info("in FacadeController -> relocate, newParentId" + newParentId + " of Class:" + c);
 
         try {
-            if (id == null) {
-                logger.error("in FacadeController -> relocate -> id is null");
-                return new Response.Builder()
-                        .status(HttpStatus.BAD_REQUEST)
-                        .statusCode(400)
-                        .message("In order to relocate, an ID must be provided!")
-                        .build();
-            }
+            Validations.validate(Regex.ID.getRegex(), String.valueOf(id));
             Folder parentFolder = null;
             if (newParentId != null) {
                 parentFolder = folderService.findById(newParentId);
@@ -227,8 +220,8 @@ public class FacadeFileController {
                     .data(convertFromClassToService(c).relocate(parentFolder, id))
                     .build();
 
-        } catch (FileNotFoundException e) {
-            logger.error("in FacadeController -> relocate -> "+e.getMessage());
+        } catch (FileNotFoundException | IllegalArgumentException e) {
+            logger.error("in FacadeController -> relocate -> " + e.getMessage());
             return new Response.Builder()
                     .message(e.getMessage())
                     .statusCode(400)
@@ -241,19 +234,19 @@ public class FacadeFileController {
      * export from document id to a file;
      */
     public Response export(Long documentId) {
-        logger.info("in FacadeController -> export, documentId"+documentId);
-
+        logger.info("in FacadeController -> export, documentId" + documentId);
         try {
             Document document = documentService.findById(documentId);
             ExportDoc exportDoc = new ExportDoc(document.getName(), document.getContent());
             return new Response.Builder()
                     .data(exportDoc)
                     .status(HttpStatus.OK)
+                    .statusCode(200)
                     .message("Export performed successfully")
                     .build();
 
         } catch (FileNotFoundException e) {
-            logger.error("in FacadeController -> export -> "+e.getMessage());
+            logger.error("in FacadeController -> export -> " + e.getMessage());
 
             return new Response.Builder()
                     .message(e.getMessage())
@@ -264,14 +257,12 @@ public class FacadeFileController {
     }
 
     /**
-     *
      * @param id -
-     * @param c -
+     * @param c  -
      * @return -
      */
     public Response doesExist(Long id, Class c) {
-        logger.info("in FacadeController -> doesExist, id"+id+" of Class:"+c);
-
+        logger.info("in FacadeController -> doesExist, id" + id + " of Class:" + c);
         if (id == null) {
             logger.error("in FacadeController -> doesExist -> id is null");
             return new Response.Builder()
@@ -289,16 +280,24 @@ public class FacadeFileController {
                 .build();
     }
 
-    public Response getContent(Long documentId) {
-        return new Response.Builder()
-                .status(HttpStatus.OK)
-                .message("Successfully managed to retrieve the document's content")
-                .statusCode(200)
-                .data(documentService.getContent(documentId))
-                .build();
+    public Response getContent(long documentId) {
+        try {
+            return new Response.Builder()
+                    .status(HttpStatus.OK)
+                    .message("Successfully managed to retrieve the document's content")
+                    .statusCode(200)
+                    .data(documentService.getContent(documentId))
+                    .build();
+        } catch (FileNotFoundException e) {
+            return new Response.Builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .message("Successfully managed to retrieve the document's content")
+                    .statusCode(400)
+                    .build();
+        }
     }
 
-    public Response getDocumentName(Long documentId) {
+    public Response getDocumentName(long documentId) {
         Document document = null;
         try {
             document = documentService.findById(documentId);
@@ -312,8 +311,8 @@ public class FacadeFileController {
         } catch (FileNotFoundException e) {
             return new Response.Builder()
                     .message("Couldn't find such a file " + e)
-                    .status(HttpStatus.NOT_FOUND)
-                    .statusCode(401)
+                    .status(HttpStatus.BAD_REQUEST)
+                    .statusCode(400)
                     .build();
         }
 

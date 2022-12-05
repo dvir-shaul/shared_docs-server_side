@@ -8,10 +8,15 @@ import docSharing.utils.Validations;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import javax.crypto.BadPaddingException;
 import javax.security.auth.login.AccountNotFoundException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.Optional;
+
 @Service
 @AllArgsConstructor
 public class AuthService {
@@ -22,6 +27,7 @@ public class AuthService {
 
     /**
      * register function method is used to register users to the  app with given inputs
+     *
      * @param email    - mail of user
      * @param password - password of user
      * @param name     - name of user
@@ -37,28 +43,31 @@ public class AuthService {
 
     /**
      * login to app and check if inputs was correct according to database
+     *
      * @param email    - mail of user
      * @param password - password
      * @return token for user to be unique on app
      */
     public String login(String email, String password) throws AccountNotFoundException {
         logger.info("in AuthService -> login");
-        if (! userRepository.findByEmail(email).isPresent()) {
+        Optional<User> user = userRepository.findByEmail(email);
+        if (!user.isPresent()) {
             logger.error("in AuthService -> login -> fail: " + ExceptionMessage.NO_ACCOUNT_IN_DATABASE + email);
             throw new AccountNotFoundException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE + email);
         }
-        User user = userRepository.findByEmail(email).get();
-        if (userRepository.findByEmail(email).get().getPassword().equals(password)) {
-            return generateToken(user);
+
+        if (!user.get().getPassword().equals(password)) {
+            logger.error("in AuthService -> login -> fail: " + ExceptionMessage.NOT_MATCH);
+            throw new IllegalArgumentException(ExceptionMessage.NOT_MATCH.toString());
         }
-        logger.error("in AuthService -> login -> fail: " + ExceptionMessage.NOT_MATCH);
-        throw new IllegalArgumentException(ExceptionMessage.NOT_MATCH.toString());
+        return generateToken(user.get());
     }
 
     /**
      * activate function meant to change the user column isActivated from originated value false to true.
      * Repository go to the unique row that has user email and changed that value.
      * Method used after a user clicks on the link he got on email.
+     *
      * @param id - user email
      */
     public int activate(Long id) {
@@ -76,15 +85,15 @@ public class AuthService {
 
     /**
      * called by permimssion filter to check if the token is a valid user token
+     *
      * @return - id of user
      */
     public Long isValid(String token) throws AccountNotFoundException {
         logger.info("in AuthService -> isValid");
-        long id =  Validations.validateToken(token);
-        if(userRepository.existsById(id))
-            return id;
-        throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
+        long id = Validations.validateToken(token);
+        if (!userRepository.existsById(id))
+            throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
 
+        return id;
     }
-
 }

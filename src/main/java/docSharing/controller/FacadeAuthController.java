@@ -38,7 +38,7 @@ public class FacadeAuthController {
         String password = user.getPassword();
 
         // make sure we got all the data from the client
-        if (name == null || email == null || password == null || user.getId() != null) {
+        if (name == null || email == null || password == null ) {
             logger.error("in AuthController -> register -> one of email, name, password is null");
             return new Response.Builder()
                     .message("You must include all and exact parameters for such an action: email, name, password")
@@ -47,7 +47,7 @@ public class FacadeAuthController {
                     .build();
         }
         try {
-            Validations.validate(Regex.NAME.getRegex(), name);
+//            Validations.validate(Regex.NAME.getRegex(), name);
             Validations.validate(Regex.EMAIL.getRegex(), email);
             Validations.validate(Regex.PASSWORD.getRegex(), password);
             User emailUser = authService.register(email, password, name);

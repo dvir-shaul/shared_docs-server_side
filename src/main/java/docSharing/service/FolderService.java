@@ -116,9 +116,8 @@ public class FolderService implements ServiceInterface {
     /**
      * getPath called every time a new file is opened in the client and return the path to the current file
      */
-    public List<FileRes> getPath(Long folderId) {
+    public List<FileRes> getPath(Long folderId) throws FileNotFoundException {
         logger.info("in FolderService -> getPath, item id is:" + folderId);
-        try {
             Folder folder = findById(folderId);
             List<FileRes> path = new ArrayList<>();
             Folder parentFolder = folder.getParentFolder();
@@ -128,9 +127,6 @@ public class FolderService implements ServiceInterface {
                 parentFolder = parentFolder.getParentFolder();
             }
             return path;
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     /**

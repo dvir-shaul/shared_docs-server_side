@@ -89,21 +89,17 @@ public class DocumentService implements ServiceInterface {
     /**
      * getPath return list with the path to current item to the client.
      */
-    public List<FileRes> getPath(Long documentId) {
+    public List<FileRes> getPath(Long documentId) throws FileNotFoundException {
         logger.info("in DocumentService -> getPath");
-
-        try {
-            Document document = findById(documentId);
-            List<FileRes> path = new ArrayList<>();
-            Folder parentFolder = document.getParentFolder();
-            while (parentFolder != null) {
-                path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, document.getUser().getEmail()));
-                parentFolder = parentFolder.getParentFolder();
-            }
-            return path;
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
+        Document document = findById(documentId);
+        List<FileRes> path = new ArrayList<>();
+        Folder parentFolder = document.getParentFolder();
+        while (parentFolder != null) {
+            path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, document.getUser().getEmail()));
+            parentFolder = parentFolder.getParentFolder();
         }
+        return path;
+
     }
 
 
@@ -276,17 +272,20 @@ public class DocumentService implements ServiceInterface {
      * @param documentId - document id
      * @return content in documentsContentLiveChanges
      */
-    public String getContent(Long documentId) {
+    public String getContent(Long documentId) throws FileNotFoundException {
         logger.info("in DocumentService -> getContent, docId:" + documentId);
-
-        String content = documentsContentLiveChanges.get(documentId);
-
-        if (content == null || content.length() == 0) {
-            String databaseContent = documentRepository.getContentFromDocument(documentId);
-            documentsContentLiveChanges.put(documentId, databaseContent);
-            databaseDocumentsCurrentContent.put(documentId, databaseContent);
+        if (documentRepository.findById(documentId).isPresent()) {
+            String content = documentsContentLiveChanges.get(documentId);
+            if (content == null || content.length() == 0) {
+                String databaseContent = documentRepository.getContentFromDocument(documentId);
+                documentsContentLiveChanges.put(documentId, databaseContent);
+                databaseDocumentsCurrentContent.put(documentId, databaseContent);
+            }
+            return documentsContentLiveChanges.get(documentId);
         }
-        return documentsContentLiveChanges.get(documentId);
+        else{
+            throw new FileNotFoundException(ExceptionMessage.NO_DOCUMENT_IN_DATABASE.toString());
+        }
     }
 
     /**
