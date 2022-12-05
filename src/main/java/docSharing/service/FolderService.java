@@ -141,7 +141,7 @@ public class FolderService implements ServiceInterface {
      * @return rows affected in mysql.
      */
     public int rename(Long id, String name) {
-        logger.info("in FolderService -> rename, id:" + id + " name:" + name);
+        logger.info("in FolderService -> rename, id:"+id+" name:"+name);
         if (folderRepository.findById(id).isPresent()) {
             return folderRepository.updateName(name, id);
         }

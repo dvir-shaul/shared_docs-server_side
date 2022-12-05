@@ -15,5 +15,4 @@ public interface ServiceInterface {
     void delete(Long id) throws FileNotFoundException;
     Boolean doesExist(Long id);
     List<FileRes> getPath(Long itemId);
-//    GeneralItem get(Long id);
 }

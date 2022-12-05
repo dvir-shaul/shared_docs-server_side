@@ -67,7 +67,7 @@ public class UserTest {
     }
     @Test
     public void setPassword_PasswordChanged(){
-        User user=User.createUser("test@test.com", "abcd123!", "test");
+        User user=User.createUser("test@test.com", "anotherPass", "test");
         user.setPassword("anotherPass");
         assertEquals(user.getPassword(),"anotherPass","password was not changed");
     }

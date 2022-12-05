@@ -74,7 +74,12 @@ public class User {
         user.setEmail(email);
         return user;
     }
-
+    public static User createUserForLoginTest(String email, String password) {
+        User user = new User();
+        user.setPassword(password);
+        user.setEmail(email);
+        return user;
+    }
     public Boolean getActivated() {
         return isActivated;
     }
@@ -137,25 +142,5 @@ public class User {
         return result;
     }
 
-//    @Override
-//    public int hashCode() {
-//        final int prime = 31;
-//        int result = 1;
-//        result = prime * result
-//                + ((importantField == null) ? 0 : importantField.hashCode());
-//        return result;
-//    }
 
-//    @Override
-//    public String toString() {
-//        return "User{" +
-//                "id=" + id +
-//                ", name='" + name + '\'' +
-//                ", email='" + email + '\'' +
-//                ", password='" + password + '\'' +
-//                ", isActivated=" + isActivated +
-//                ", documents=" + documents +
-//                ", folders=" + folders +
-//                '}';
-//    }
 }

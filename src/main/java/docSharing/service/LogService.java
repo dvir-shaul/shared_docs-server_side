@@ -4,6 +4,8 @@ import docSharing.entity.Log;
 import docSharing.entity.SendLogsToDatabase;
 import docSharing.repository.LogRepository;
 import docSharing.utils.debounce.Debouncer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,8 @@ import java.util.Map;
 
 @Service
 public class LogService {
+
+    private static Logger logger = LogManager.getLogger(LogService.class.getName());
 
     @Autowired
     LogRepository logRepository;
@@ -35,8 +39,16 @@ public class LogService {
             System.out.println("New log has been saved in the database: " + log);
         }
     }
-
+    /**
+     * This function called every time we get a new log,
+     * checks if a new data that was written to document was written before
+     * the logs that are online in chainedLogs map, if it ws before we will update the offsets accordingly.
+     *
+     * @param log - changes from
+     */
     public void updateLogs(Log log) {
+        logger.info("in LogService -> updateLogs");
+
         debouncer.call(log);
         Map<Long, Log> documentLogs = chainedLogs.get(log.getDocument().getId());
 
@@ -62,6 +74,7 @@ public class LogService {
      * @param newLog - new data that needed to chain to old log.
      */
     private void chainLogs(Map<Long, Log> documentLogs, Log newLog) {
+        logger.info("in LogService -> chainLogs");
 
         // if such a log doesn't exist in the cache, create a new entry for it in the map
         if (!documentLogs.containsKey(newLog.getUser().getId())) {
@@ -107,6 +120,8 @@ public class LogService {
      * @param log - changes from
      */
     private void updateLogsOffset(Map<Long, Log> documentLogs, Log log) {
+        logger.info("in LogService -> updateLogsOffset");
+
         documentLogs.replaceAll((userId, _log) -> {
             // create a copy of the log in case we need to modify it
             Log tempLog = Log.copy(_log);
@@ -162,6 +177,8 @@ public class LogService {
      * @return - updated content that was truncated from the 2 logs we have.
      */
     private String truncateLogs(Log currentLog, Log newLog) {
+        logger.info("in LogService -> truncateLogs");
+
         newLog.setOffset(newLog.getOffset() - (currentLog.getOffset()));
         if (currentLog.getData() == null) currentLog.setData("");
         return DocumentService.truncateString(currentLog.getData(), newLog);
@@ -177,6 +194,8 @@ public class LogService {
      * @return - updated content that was concatenated from the 2 logs we have.
      */
     private String concatenateLogs(Log currentLog, Log newLog) {
+        logger.info("in LogService -> concatenateLogs");
+
         int diff = Math.max(newLog.getOffset() - currentLog.getOffset(), 0);
         newLog.setOffset(diff);
         if (currentLog.getData() == null) currentLog.setData("");
