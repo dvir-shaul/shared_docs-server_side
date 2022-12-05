@@ -40,13 +40,9 @@ public class FacadeAuthController {
      */
     public Response register(User user) {
         logger.info("in FacadeAuthController -> register");
-
-        String email = user.getEmail();
-        String name = user.getName();
-        String password = user.getPassword();
-
         // make sure we got all the data from the client
-        if (name == null || email == null || password == null || user.getId() != null) {
+
+        if (Validations.validateWrongInputRegister(user)) {
             logger.error("in FacadeAuthController -> register -> one of email, name, password is null");
             return new Response.Builder()
                     .message("You must include all and exact parameters for such an action: email, name, password")
@@ -55,6 +51,10 @@ public class FacadeAuthController {
                     .build();
         }
         try {
+            String email = user.getEmail();
+            String name = user.getName();
+            String password = user.getPassword();
+
             Validations.validate(Regex.EMAIL.getRegex(), email);
             Validations.validate(Regex.PASSWORD.getRegex(), password);
             User emailUser = authService.register(email, password, name);

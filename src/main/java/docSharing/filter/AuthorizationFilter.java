@@ -1,6 +1,7 @@
 package docSharing.filter;
 
 import docSharing.service.AuthService;
+import docSharing.utils.ExceptionMessage;
 import docSharing.utils.Validations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
@@ -27,17 +28,15 @@ public class AuthorizationFilter extends GenericFilterBean {
 
     /**
      * this doFilter function is set to check if the user has the permission to enter the app controllers.
+     * checks if the request was according to what we need with token in the authorization Header.
      *
      * @param request  - request from client
      * @param response - response if the action can be done or not.
      * @param chain    - chain of filters to go through
-     * @throws IOException      -
-     * @throws ServletException -
      */
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         logger.info("in AuthorizationFilter -> doFilter");
-
         String url = ((HttpServletRequest) request).getRequestURL().toString();
         HttpServletRequest httpRequest = (HttpServletRequest) request;
 
@@ -47,24 +46,28 @@ public class AuthorizationFilter extends GenericFilterBean {
                 String token = httpRequest.getHeader("authorization");
                 if (token == null) {
                     logger.error("in AuthorizationFilter -> doFilter -> token is null");
-                    ((HttpServletResponse) response).sendError(HttpServletResponse.SC_UNAUTHORIZED,"Not Authorized");
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Could not find a token in the request");
+                    ((HttpServletResponse) response).setStatus(400);
+                    response.getOutputStream().write(ExceptionMessage.TOKEN_IS_NULL.toString().getBytes());
+                    return;
                 }
                 try {
-                    Long userId = authService.isValid(token);
+                    Long userId = authService.checkTokenToUserInDB(token);
                     request.setAttribute("userId", userId);
                 } catch (AccountNotFoundException e) {
                     logger.error("in AuthorizationFilter -> doFilter -> " + e.getMessage());
-                    ((HttpServletResponse) response).sendError(HttpServletResponse.SC_UNAUTHORIZED,"Not Authorized");
-                    throw new RuntimeException(e);
+                    //Servers send 404 instead of 403 Forbidden to hide the existence
+                    // of a resource from an unauthorized client.
+                    ((HttpServletResponse) response).setStatus(404);
+                    response.getOutputStream().write(ExceptionMessage.NO_USER_IN_DATABASE.toString().getBytes());
+                    return;
                 }
             } else {
                 logger.error("in AuthorizationFilter -> doFilter -> Could not find a token in the request");
-                ((HttpServletResponse) response).sendError(HttpServletResponse.SC_UNAUTHORIZED, "Not Authorized");
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Could not find a token in the request");
+                ((HttpServletResponse) response).setStatus(400);
+                response.getOutputStream().write(ExceptionMessage.WRONG_SEARCH.toString().getBytes());
+                return;
             }
         }
-
         chain.doFilter(request, response);
     }
 }

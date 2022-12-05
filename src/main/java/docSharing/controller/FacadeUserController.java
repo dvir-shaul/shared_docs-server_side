@@ -13,6 +13,7 @@ import docSharing.service.UserService;
 import docSharing.utils.EmailUtil;
 import docSharing.utils.Invite;
 import docSharing.utils.Share;
+import docSharing.utils.Validations;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +47,7 @@ public class FacadeUserController {
         logger.info("in FacadeUserController -> givePermission in documentId:"
                 + documentId + ", userId:" + userId + ", permission:" + permission);
         // FIXME: use Validations.validate for it.
-        if (documentId == null || userId == null || permission == null) {
+        if (Validations.validateWrongPermissionChange(permission)) {
             logger.error("in FacadeUserController -> givePermission -> on of documentId,uid,permission is null");
             return new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)

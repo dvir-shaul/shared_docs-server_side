@@ -55,14 +55,9 @@ public class TextEditController {
     @SendTo("/document/{documentId}")
     public LogReq receiveLog(@DestinationVariable Long documentId, @Payload LogReq logReq) {
         logger.info("in TextEditController -> receiveLog");
-
-        // FIXME: What to do if anything fails? Do we do anything with the client?
         try {
-            // FIXME: what if there's no such a user? Do we handle it?
             User user = userService.findById(logReq.getUserId());
-            // FIXME: what if there's no such a document? Do we check it?
             Document document = documentService.findById(documentId);
-            // CONSULT: Why do we even get a logReq and not a normal Log. Then return a logRes?
             Log log = new Log(user, document, logReq.getOffset(), logReq.getData(), logReq.getAction(), LocalDateTime.now());
             documentService.updateContent(log);
             logService.updateLogs(log);

@@ -4,6 +4,7 @@ import docSharing.entity.Log;
 import docSharing.entity.SendLogsToDatabase;
 import docSharing.repository.LogRepository;
 import docSharing.utils.debounce.Debouncer;
+import docSharing.utils.logAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -93,10 +94,10 @@ public class LogService {
 
         // if the new log is in the middle of the current log, it must be concatenated.
         else {
-            if (currentLog.getAction().equals("insert") && newLog.getAction().equals("delete")) {
+            if (currentLog.getAction().equals(logAction.INSERT) && newLog.getAction().equals(logAction.DELETE)) {
                 currentLog.setData(truncateLogs(currentLog, newLog));
                 // if the current log was attempting to delete, and now we want to insert, push the deleted log and create a new log
-            } else if (currentLog.getAction().equals("delete") && newLog.getAction().equals("insert")) {
+            } else if (currentLog.getAction().equals(logAction.DELETE) && newLog.getAction().equals(logAction.INSERT)) {
                 currentLog.setLastEditDate(newLog.getCreationDate());
                 currentLog.getUser().addLog(currentLog);
                 currentLog.getDocument().addLog(currentLog);
@@ -126,7 +127,7 @@ public class LogService {
             // create a copy of the log in case we need to modify it
             Log tempLog = Log.copy(_log);
             // if the offset is before other logs' offset, decrease its offset by the length of the log
-            if (log.getAction().equals("delete") && log.getOffset() <= _log.getOffset()) {
+            if (log.getAction().equals(logAction.DELETE) && log.getOffset() <= _log.getOffset()) {
                 tempLog.setOffset(_log.getOffset() - log.getData().length());
             }
 
@@ -135,7 +136,7 @@ public class LogService {
 
 
                 // if the offset is before other logs' offset, increase its offset by the length of the log
-                if (log.getAction().equals("insert") && log.getOffset() <= _log.getOffset()) {
+                if (log.getAction().equals(logAction.INSERT) && log.getOffset() <= _log.getOffset()) {
                     tempLog.setOffset(_log.getOffset() + log.getData().length());
                 }
 

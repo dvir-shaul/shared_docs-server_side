@@ -13,4 +13,8 @@ public enum logAction {
     public String toString() {
         return text;
     }
+
+    public String getText() {
+        return text;
+    }
 }

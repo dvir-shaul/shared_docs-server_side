@@ -90,7 +90,7 @@ public class AuthService {
      *
      * @return - id of user
      */
-    public Long isValid(String token) throws AccountNotFoundException {
+    public Long checkTokenToUserInDB(String token) throws AccountNotFoundException {
         logger.info("in AuthService -> isValid");
         long id = Validations.validateToken(token);
         if (userRepository.existsById(id))

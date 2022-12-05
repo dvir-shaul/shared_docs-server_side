@@ -140,9 +140,7 @@ public class FacadeFileController {
     public Response rename(Long id, String name, Class c) {
         logger.info("in FacadeController -> rename, id" + id + " of Class:" + c);
 
-        // FIXME: need to validate name using Validations.validate!
-        //  it also checks if null and returns an exception so we need to catch it here.
-        if (name == null || name.length() == 0) {
+        if (Validations.validateWrongName(name)) {
             logger.error("in FacadeController -> rename -> name is null");
             return new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
@@ -169,9 +167,8 @@ public class FacadeFileController {
     public Response delete(Long id, Class c) {
         logger.info("in FacadeFileController -> delete ,id:" + id + " of Class:" + c);
 
-        // FIXME: We have this check in a Validation.validate function. Why not do that there and let it throw its exception?
-        //  if we do it this way, we only return an exception response once, and not twice.
-        if (id == null) {
+
+        if (Validations.validateIdNull(id)) {
             logger.error("in FacadeController -> delete -> id is null");
             return new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
@@ -210,7 +207,7 @@ public class FacadeFileController {
         logger.info("in FacadeFileController -> relocate, newParentId" + newParentId + " of Class:" + c);
 
         try {
-            if (id == null) {
+            if (Validations.validateIdNull(id)) {
                 logger.error("in FacadeController -> relocate -> id is null");
                 return new Response.Builder()
                         .status(HttpStatus.BAD_REQUEST)
@@ -219,7 +216,7 @@ public class FacadeFileController {
                         .build();
             }
             Folder parentFolder = null;
-            if (newParentId != null) {
+            if (! Validations.validateIdNull(newParentId)) {
                 parentFolder = folderService.findById(newParentId);
             }
             return new Response.Builder()
@@ -279,7 +276,7 @@ public class FacadeFileController {
     public Response doesExist(Long id, Class c) {
         logger.info("in FacadeFileController -> doesExist, id" + id + " of Class:" + c);
 
-        if (id == null) {
+        if (Validations.validateIdNull(id)) {
             logger.error("in FacadeController -> doesExist -> id is null");
             return new Response.Builder()
                     .message("File of type " + c.getSimpleName() + " with an id of: " + id + " does not exist")
