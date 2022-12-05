@@ -44,7 +44,8 @@ public class AuthController {
      * A token will be returned in a successful request.
      *
      * @param user - user's details with email and password to check if correct
-     * @return ResponseEntity with our Response with user's token and status 200 if good or 400 if something went wrong.     */
+     * @return ResponseEntity with our Response with user's token and status 200 if good or 400 if something went wrong.
+     */
     @RequestMapping(value = "login", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<Response> login(@RequestBody User user) {
         logger.info("in AuthController -> login");

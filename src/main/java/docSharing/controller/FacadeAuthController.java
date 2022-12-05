@@ -78,6 +78,7 @@ public class FacadeAuthController {
                     .message(e.getMessage()).build();
         }
     }
+
     /**
      * Login function is responsible for logging user into the system.
      * This function accepts only 2 parameters: email, password.
@@ -94,7 +95,7 @@ public class FacadeAuthController {
         try {
             userInDb = userService.findByEmail(user.getEmail());
             if (!userInDb.getActivated()) {
-                logger.error("in FacadeAuthController -> login -> user email:"+user.getEmail()+" ,"+ExceptionMessage.USER_NOT_ACTIVATED);
+                logger.error("in FacadeAuthController -> login -> user email:" + user.getEmail() + " ," + ExceptionMessage.USER_NOT_ACTIVATED);
                 return new Response.Builder()
                         .message(ExceptionMessage.USER_NOT_ACTIVATED.toString())
                         .status(HttpStatus.FORBIDDEN)
@@ -127,6 +128,7 @@ public class FacadeAuthController {
                     .build();
         }
     }
+
     /**
      * Activate function is responsible for activating email links.
      * If the link is not expired, make the user activated in the database.

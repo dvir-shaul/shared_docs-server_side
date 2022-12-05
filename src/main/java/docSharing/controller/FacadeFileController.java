@@ -216,7 +216,7 @@ public class FacadeFileController {
                         .build();
             }
             Folder parentFolder = null;
-            if (! Validations.validateIdNull(newParentId)) {
+            if (!Validations.validateIdNull(newParentId)) {
                 parentFolder = folderService.findById(newParentId);
             }
             return new Response.Builder()

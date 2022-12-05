@@ -235,14 +235,14 @@ public class FolderService implements ServiceInterface {
         logger.info("in FolderService -> delete");
         Optional<Folder> folder = folderRepository.findById(folderId);
         if (!folder.isPresent()) {
-            logger.error("in FolderService -> relocate --> folderId:" +folderId+"->"+ ExceptionMessage.FOLDER_DOES_NOT_EXISTS);
+            logger.error("in FolderService -> relocate --> folderId:" + folderId + "->" + ExceptionMessage.FOLDER_DOES_NOT_EXISTS);
             throw new FileNotFoundException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
         }
         folder.get().getDocuments().forEach(document -> {
             try {
                 documentService.delete(document.getId());
             } catch (FileNotFoundException e) {
-                logger.error("in FolderService -> relocate -->"+e.getMessage());
+                logger.error("in FolderService -> relocate -->" + e.getMessage());
                 throw new RuntimeException(e);
             }
         });

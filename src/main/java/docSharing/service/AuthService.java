@@ -67,7 +67,7 @@ public class AuthService {
      * Method used after a user clicks on the link he got on email.
      *
      * @param id - user email
-     * @return   - should be always 1, which is rows affected in the database.
+     * @return - should be always 1, which is rows affected in the database.
      */
     public int activate(Long id) {
         logger.info("in AuthService -> activate");
@@ -95,7 +95,7 @@ public class AuthService {
         long id = Validations.validateToken(token);
         if (userRepository.existsById(id))
             return id;
-        logger.error("in AuthService -> isValid ->"+ExceptionMessage.NO_USER_IN_DATABASE);
+        logger.error("in AuthService -> isValid ->" + ExceptionMessage.NO_USER_IN_DATABASE);
         throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
     }
 }

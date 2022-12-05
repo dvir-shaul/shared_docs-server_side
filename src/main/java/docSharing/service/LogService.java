@@ -40,6 +40,7 @@ public class LogService {
             System.out.println("New log has been saved in the database: " + log);
         }
     }
+
     /**
      * This function called every time we get a new log,
      * checks if a new data that was written to document was written before
