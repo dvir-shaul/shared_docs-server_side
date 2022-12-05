@@ -46,7 +46,7 @@ public class FacadeAuthController {
                     .statusCode(400)
                     .build();
         }
-        Validations.validate(Regex.NAME.getRegex(), name);
+//        Validations.validate(Regex.NAME.getRegex(), name);
         Validations.validate(Regex.EMAIL.getRegex(), email);
         Validations.validate(Regex.PASSWORD.getRegex(), password);
         User emailUser = authService.register(email, password, name);
