@@ -23,14 +23,14 @@ public class Validations {
         logger.info("in Validations -> validate");
 
         if (data == null) {
-            logger.error("in Validations -> validate -> " + ExceptionMessage.EMPTY_NOTNULL_FIELD);
+            logger.error("in Validations -> validate -> data == null ->" + ExceptionMessage.EMPTY_NOTNULL_FIELD);
             throw new NullPointerException(ExceptionMessage.EMPTY_NOTNULL_FIELD.toString());
         }
 
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(data);
         if (!matcher.matches()) {
-            logger.error("in Validations -> validate -> " + ExceptionMessage.VALIDATION_FAILED);
+            logger.error("in Validations -> validate -> !matcher.matches()->" + ExceptionMessage.VALIDATION_FAILED);
             throw new IllegalArgumentException(ExceptionMessage.VALIDATION_FAILED.toString() + data);
         }
     }

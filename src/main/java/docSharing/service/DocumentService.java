@@ -433,6 +433,11 @@ public class DocumentService implements ServiceInterface {
             logger.error("in DocumentService -> getAllUsersInDocument -> " + ExceptionMessage.NO_USER_IN_DATABASE);
             throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
         }
+        Optional<User> optUser = userRepository.findById(userId);
+        if (!optUser.isPresent()) {
+            logger.warn("in DocumentService -> getAllUsersInDocument -> " + ExceptionMessage.NO_USER_IN_DATABASE);
+
+        }
         Document document = optDocument.get();
         Set<Long> onlineUsers = getActiveUsers(userId, documentId, method).stream().map(u -> u.getId()).collect(Collectors.toSet());
         return userDocumentRepository.findAllUsersInDocument(document)

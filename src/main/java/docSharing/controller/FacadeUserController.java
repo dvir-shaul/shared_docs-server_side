@@ -46,7 +46,6 @@ public class FacadeUserController {
     public Response givePermission(Long documentId, Long userId, Permission permission) {
         logger.info("in FacadeUserController -> givePermission in documentId:"
                 + documentId + ", userId:" + userId + ", permission:" + permission);
-        // FIXME: use Validations.validate for it.
         if (Validations.validateWrongPermissionChange(permission)) {
             logger.error("in FacadeUserController -> givePermission -> on of documentId,uid,permission is null");
             return new Response.Builder()
