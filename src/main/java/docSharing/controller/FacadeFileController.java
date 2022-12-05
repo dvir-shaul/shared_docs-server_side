@@ -9,6 +9,7 @@ import docSharing.service.DocumentService;
 import docSharing.service.FolderService;
 import docSharing.service.ServiceInterface;
 import docSharing.service.UserService;
+import docSharing.utils.ExceptionMessage;
 import docSharing.utils.Regex;
 import docSharing.utils.Validations;
 import org.apache.logging.log4j.LogManager;
@@ -163,12 +164,11 @@ public class FacadeFileController {
                     .message("Successfully renamed to: " + convertFromClassToService(c).rename(id, name))
                     .build();
 
-        } catch (IllegalArgumentException e) {
-            logger.error("in FacadeController -> rename -> name is not valid");
+        } catch (FileNotFoundException e) {
             return new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
                     .statusCode(400)
-                    .message("You must include all and exact parameters for such an action: name")
+                    .message(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString())
                     .build();
         }
 
@@ -277,7 +277,7 @@ public class FacadeFileController {
      * @return - a Response with status code and a Boolean.
      */
     public Response doesExist(long id, Class c) {
-        logger.info("in FacadeController -> doesExist, id"+id+" of Class:"+c);
+        logger.info("in FacadeController -> doesExist, id" + id + " of Class:" + c);
 
         return new Response.Builder()
                 .status(HttpStatus.OK)

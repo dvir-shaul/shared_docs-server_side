@@ -54,7 +54,7 @@ class FacadeAuthControllerTest {
     }
 
     @Test
-    void register_goodUser_Successfully() {
+    void register_goodUser_Successfully() throws AccountNotFoundException {
         given(authService.register(goodUser.getEmail(), goodUser.getPassword(), goodUser.getName())).willReturn(goodUser);
         doNothing().when(folderService).createRootFolders(goodUser);
         assertEquals(201, facadeAuthController.register(goodUser).getStatusCode(), "register with good user parameters did not return 201");
