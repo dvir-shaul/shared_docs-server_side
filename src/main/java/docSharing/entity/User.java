@@ -127,7 +127,6 @@ public class User {
 
         User user = (User) o;
 
-        if (id != user.id) return false;
         if (!Objects.equals(name, user.name)) return false;
         if (!Objects.equals(email, user.email)) return false;
         return Objects.equals(password, user.password);

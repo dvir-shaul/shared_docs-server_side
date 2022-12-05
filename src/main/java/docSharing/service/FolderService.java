@@ -127,9 +127,8 @@ public class FolderService implements ServiceInterface {
      * @param folderId - folder id in the database.
      * @return - List of FileRes
      */
-    public List<FileRes> getPath(Long folderId) {
+    public List<FileRes> getPath(long folderId) throws FileNotFoundException {
         logger.info("in FolderService -> getPath, item id is:" + folderId);
-        try {
             Folder folder = findById(folderId);
             List<FileRes> path = new ArrayList<>();
             Folder parentFolder = folder.getParentFolder();
@@ -139,10 +138,6 @@ public class FolderService implements ServiceInterface {
                 parentFolder = parentFolder.getParentFolder();
             }
             return path;
-        } catch (FileNotFoundException e) {
-            logger.error("in FolderService -> getPath --> " + e.getMessage());
-            throw new RuntimeException(e);
-        }
     }
 
     /**
@@ -239,12 +234,7 @@ public class FolderService implements ServiceInterface {
             throw new FileNotFoundException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
         }
         folder.get().getDocuments().forEach(document -> {
-            try {
                 documentService.delete(document.getId());
-            } catch (FileNotFoundException e) {
-                logger.error("in FolderService -> relocate -->" + e.getMessage());
-                throw new RuntimeException(e);
-            }
         });
         for (Folder f : folder.get().getFolders()) {
             delete(f.getId());

@@ -39,16 +39,7 @@ public class FacadeAuthController {
      */
     public Response register(User user) {
         logger.info("in FacadeAuthController -> register");
-        // make sure we got all the data from the client
 
-        if (Validations.validateWrongInputRegister(user)) {
-            logger.error("in FacadeAuthController -> register -> one of email, name, password is null");
-            return new Response.Builder()
-                    .message("You must include all and exact parameters for such an action: email, name, password")
-                    .status(HttpStatus.BAD_REQUEST)
-                    .statusCode(400)
-                    .build();
-        }
         try {
             String email = user.getEmail();
             String name = user.getName();
