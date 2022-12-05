@@ -16,7 +16,7 @@ public class Validations {
      * @param regex - the type we check on from email or password.
      * @param data - the input to check on.
      */
-    public static void validate(String regex, String data) {
+    public static void validate(String regex, String data) throws IllegalArgumentException,NullPointerException {
         logger.info("in Validations -> validate");
 
         if (data == null){

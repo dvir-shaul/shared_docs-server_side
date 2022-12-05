@@ -218,10 +218,10 @@ class FileController {
     }
 
     /**
-     * getPath is a GET method that called from the client when we enter a folder inside the client side,
+     * getPath is a GET method that called from the client when we enter a document inside the client side,
      * and want to present the client the new path he has done so far.
      * @param userId - the user that creates this request.
-     * @return - ResponseEntity with a message.
+     * @return - ResponseEntity<Response> with a status code and the path.
      */
     @RequestMapping(value = "document/getPath", method = RequestMethod.GET)
     public ResponseEntity<Response> getDocumentPath(@RequestParam Long documentId, @RequestAttribute Long userId) {
@@ -234,7 +234,7 @@ class FileController {
      * getPath is a GET method that called from the client when we enter a folder inside the client side,
      * and want to present the client the new path he has done so far.
      * @param userId - the user that creates this request.
-     * @return - ResponseEntity with a message.
+     * @return - ResponseEntity<Response> with a status code and the path.
      */
     @RequestMapping(value = "folder/getPath", method = RequestMethod.GET)
     public ResponseEntity<Response> getFolderPath(@RequestParam Long folderId, @RequestAttribute Long userId) {

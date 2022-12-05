@@ -50,6 +50,7 @@ public class PermissionFilter extends GenericFilterBean {
      * this doFilter function is set to check if the user has the permission to do the action he
      * wanted, according to his role that saved in the userDocumentRepository, this repo has the information
      * about all document and all the users that watch each document and his role.
+     * we split the URI of the request into a list of string and make the checks based on the URI.
      *
      * @param request  - request from client
      * @param response - response if the action can be done or not.
@@ -61,7 +62,6 @@ public class PermissionFilter extends GenericFilterBean {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         logger.info("in PermissionFilter -> doFilter");
         HttpServletRequest httpRequest = (HttpServletRequest) request;
-        HttpServletResponse httpResponse = (HttpServletResponse) response;
 
         List<String> list = List.of(httpRequest.getRequestURI().split("/"));
 
@@ -89,12 +89,12 @@ public class PermissionFilter extends GenericFilterBean {
                 }
 
             }
-        }catch (ResponseStatusException | AccountNotFoundException e){
-            ((HttpServletResponse) response).sendError(HttpServletResponse.SC_UNAUTHORIZED,"Not Authorized");
+        } catch (ResponseStatusException | AccountNotFoundException e) {
+            ((HttpServletResponse) response).sendError(HttpServletResponse.SC_UNAUTHORIZED, "Not Authorized");
             throw new IllegalAccessError("Not Authorized");
         }
         if (!flag) {
-            ((HttpServletResponse) response).sendError(HttpServletResponse.SC_UNAUTHORIZED,ExceptionMessage.WRONG_SEARCH.toString());
+            ((HttpServletResponse) response).sendError(HttpServletResponse.SC_UNAUTHORIZED, ExceptionMessage.WRONG_SEARCH.toString());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ExceptionMessage.WRONG_SEARCH.toString());
         }
 
@@ -172,7 +172,7 @@ public class PermissionFilter extends GenericFilterBean {
                 if (httpRequest.getMethod().equals(HttpMethod.PATCH.toString())) {// relocate / rename
                     if (userDocument.getPermission().equals(Permission.MODERATOR)) {
                         return true;
-                    }else{
+                    } else {
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.UNAUTHORIZED_USER.toString());
                     }
                 }
@@ -181,13 +181,6 @@ public class PermissionFilter extends GenericFilterBean {
                 }
                 return true;
             }
-            // FIXME: What to do on text edit with logs/getContent/onlineUsers?
-//            if (httpRequest.getMethod().equals(HttpMethod.POST.toString())) {// text edit controller
-//                if (userDocument.getPermission().equals(Permission.VIEWER)) {//viewer can't add logs on a document
-//                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.UNAUTHORIZED_USER.toString());
-//                }
-//                return true;
-//            }
         }
         return false;
     }
@@ -216,14 +209,17 @@ public class PermissionFilter extends GenericFilterBean {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ExceptionMessage.UNAUTHORIZED_USER.toString());
             }
         }
-        if (httpRequest.getMethod().equals(HttpMethod.POST.toString()) ) {
+        if (httpRequest.getMethod().equals(HttpMethod.POST.toString())) {
             return true;
         }
         return false;
     }
 
     /**
+     * @param docId  - document id in the database.
+     * @param userId - user id in the database.
      * @return - entity of UserDocument.
+     * @throws ResponseStatusException - HttpStatus.BAD_REQUEST.
      */
     public UserDocument getUserDocument(Long docId, Long userId) throws ResponseStatusException {
         logger.info("in PermissionFilter -> getUserDocument");
@@ -238,7 +234,9 @@ public class PermissionFilter extends GenericFilterBean {
     }
 
     /**
+     * @param docId - document id in the database.
      * @return - entity of Document.
+     * @throws ResponseStatusException - HttpStatus.BAD_REQUEST.
      */
     public Document getDocument(Long docId) throws ResponseStatusException {
         logger.info("in PermissionFilter -> getDocument");
@@ -252,11 +250,12 @@ public class PermissionFilter extends GenericFilterBean {
     }
 
     /**
+     * @param userId - user id in the database.
      * @return - entity of User.
+     * @throws ResponseStatusException - HttpStatus.BAD_REQUEST.
      */
     public User getUser(Long userId) throws ResponseStatusException {
         logger.info("in PermissionFilter -> getUser");
-
         Optional<User> optUser = userRepository.findById(userId);
         if (!optUser.isPresent()) {
             logger.error("in PermissionFilter -> getUser ->" + ExceptionMessage.NO_USER_IN_DATABASE);

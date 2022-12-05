@@ -1,6 +1,7 @@
 package docSharing.service;
 
 import docSharing.entity.*;
+import docSharing.utils.logAction;
 import docSharing.repository.*;
 import docSharing.requests.Method;
 import docSharing.requests.Type;
@@ -86,8 +87,13 @@ public class DocumentService implements ServiceInterface {
         return onlineUsersPerDoc.get(documentId);
     }
 
+
     /**
-     * getPath return list with the path to current item to the client.
+     * getPath called from FacadeFileController when we enter a folder or document inside the client side,
+     * and want to present the client the new path he has done so far.
+     *
+     * @param documentId - document id in the database.
+     * @return - List of FileRes
      */
     public List<FileRes> getPath(Long documentId) {
         logger.info("in DocumentService -> getPath");
@@ -102,6 +108,7 @@ public class DocumentService implements ServiceInterface {
             }
             return path;
         } catch (FileNotFoundException e) {
+            logger.error("in DocumentService -> getPath -> " + e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -119,6 +126,7 @@ public class DocumentService implements ServiceInterface {
         logger.info("in DocumentService -> updateContent");
 
         if (!documentRepository.findById(log.getDocument().getId()).isPresent()) {
+            logger.error("in DocumentService -> DocumentService -> " + ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS);
             throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString() + log.getDocument().getId());
         }
         if (!documentsContentLiveChanges.containsKey(log.getDocument().getId())) {
@@ -378,15 +386,16 @@ public class DocumentService implements ServiceInterface {
      * checks if document id is existed in database.
      *
      * @param id - of document
-     * @param id - of document
+     * @return - true if documentRepository.findById(id).isPresent()
      */
     public Boolean doesExist(Long id) {
+        logger.info("in DocumentService -> doesExist, current file id: " + id);
         return documentRepository.findById(id).isPresent();
     }
 
 
     /**
-     * get called by AbstartController in getAll function, thats need to return all the data files, when
+     * get called by FacadeFileController in getAll function, that's need to return all the data files, when
      * the parent folder is null.
      *
      * @param userId - user's id that files are belonged to.
@@ -405,7 +414,7 @@ public class DocumentService implements ServiceInterface {
     }
 
     /**
-     * getAllUsersInDocument is a function to retrive all users that's are linked to a specific document id.
+     * getAllUsersInDocument is a function to retrieve all users that's are linked to a specific document id.
      *
      * @param documentId - document id we search on.
      * @return - list of UserDocument entity that contain all users and their permissions on that document.
@@ -426,6 +435,7 @@ public class DocumentService implements ServiceInterface {
     }
 
     /**
+     * getUserPermissionInDocument sends back to the client the
      * @param userId     - user's id in database.
      * @param documentId - document id in data base.
      * @return - the permission that the specific user's id have in the document id.
