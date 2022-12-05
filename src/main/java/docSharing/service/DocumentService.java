@@ -1,7 +1,6 @@
 package docSharing.service;
 
 import docSharing.entity.*;
-import docSharing.utils.logAction;
 import docSharing.repository.*;
 import docSharing.requests.Method;
 import docSharing.requests.Type;
@@ -62,21 +61,21 @@ public class DocumentService implements ServiceInterface {
      * @param method     - ADD/ REMOVE
      * @return set of current users that viewing the document.
      */
-    public Set<User> getActiveUsers(Long userId, Long documentId, Method method) throws AccountNotFoundException {
+    public Set<User> getActiveUsers(long userId, long documentId, Method method) throws AccountNotFoundException {
         logger.info("in DocumentService -> getActiveUsers");
         onlineUsersPerDoc.putIfAbsent(documentId, new HashSet<>());
         if (method != Method.GET) {
-            if (!userRepository.findById(userId).isPresent()) {
+            Optional<User> user = userRepository.findById(userId);
+            if (!user.isPresent()) {
                 logger.error("in DocumentService -> addUserToDocActiveUsers -> " + ExceptionMessage.NO_USER_IN_DATABASE.toString());
                 throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
             }
-            User user = userRepository.findById(userId).get();
             switch (method) {
                 case ADD:
-                    onlineUsersPerDoc.get(documentId).add(user);
+                    onlineUsersPerDoc.get(documentId).add(user.get());
                     break;
                 case REMOVE:
-                    onlineUsersPerDoc.get(documentId).remove(user);
+                    onlineUsersPerDoc.get(documentId).remove(user.get());
                     break;
                 default:
                     break;
@@ -363,8 +362,9 @@ public class DocumentService implements ServiceInterface {
      * also remove from the maps of content we have on service.
      *
      * @param docId - gets document id .
+     * @return
      */
-    public void delete(long docId) throws FileNotFoundException {
+    public int delete(long docId) throws FileNotFoundException {
         logger.info("in DocumentService -> delete");
 
         databaseDocumentsCurrentContent.remove(docId);
@@ -378,6 +378,7 @@ public class DocumentService implements ServiceInterface {
         userDocumentRepository.deleteDocument(document.get());
         logRepository.deleteByDocument(document.get());
         documentRepository.deleteById(docId);
+        return 1;
     }
 
     /**
