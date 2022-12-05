@@ -98,6 +98,7 @@ class FileControllerTest {
         // org.springframework.dao.InvalidDataAccessApiUsageException: detached entity passed to persist: docSharing.entity.Folder;
         // nested exception is org.hibernate.PersistentObjectException: detached entity passed to persist: docSharing.entity.Folder
 //        Folder f = folderRepository.findByNameAndUser("folder",userRepository.findByEmail("testUser@gmail.com").get());
+//        System.out.println(f);
 //        assertEquals(fileController.createDocument(f.getId(),"newDoc","",userRepository.findByEmail("testUser@gmail.com").get().getId()).toString(),"tt");
     }
 
@@ -149,14 +150,14 @@ class FileControllerTest {
         assertEquals(facadeController.getPath(folderRepository.findByNameAndUser("folder",user),Folder.class).getStatus().toString().substring(0,3),
                 "200");
     }
-    @Test
-    void deleteFolder_givenFolder_success() {
-        //org.hibernate.LazyInitializationException:
-        // failed to lazily initialize a collection of role: docSharing.entity.Folder.documents, could not initialize proxy - no Session
+//    @Test
+//    void deleteFolder_givenFolder_success() {
+//        //org.hibernate.LazyInitializationException:
+//        // failed to lazily initialize a collection of role: docSharing.entity.Folder.documents, could not initialize proxy - no Session
 //        User user = userRepository.findByEmail("testUser@gmail.com").get();
 //        assertEquals(facadeController.delete(folderRepository.findByNameAndUser("folder",user).getId(),Folder.class).toString().substring(1,4),
 //                "200");
-    }
+//    }
 
 //    @Test
 //    void deleteDocument_givenDoc_success() {

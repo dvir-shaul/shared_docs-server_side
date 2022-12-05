@@ -53,14 +53,12 @@ class AuthControllerTest {
     void register_badUserEmail_BAD_REQUEST() {
         assertEquals(authController.register(badUser).toString().substring(1,4),
                 ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ExceptionMessage.VALIDATION_FAILED+badUser.getEmail()).toString().substring(1,4));
-
     }
     @Test
     void register_badUserPassword_BAD_REQUEST() {
         badUser=User.createUser(goodUser.getEmail(),"1","dvir");
         assertEquals(authController.register(badUser).toString().substring(1,4),
                 ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ExceptionMessage.VALIDATION_FAILED+badUser.getPassword()).toString().substring(1,4));
-
     }
 
     @Test

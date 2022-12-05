@@ -13,22 +13,20 @@ public class Document extends GeneralItem {
     private Boolean isPrivate;
     @Column(name = "content", columnDefinition = "text")
     private String content;
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Log> logs;
-
-    public Set<Log> getLogs() {
-        return logs;
-    }
-
-    public void setLogs(Set<Log> logs) {
-        this.logs = logs;
-    }
 
     private Document() {
         super();
         this.isPrivate = true;
     }
 
+    //    public static Document createDocument(String name, Folder parentFolder) {
+//        Document document = new Document();
+//        document.setName(name);
+//        document.setParentFolder(parentFolder);
+//        return document;
+//    }
     public void addLog(Log log) {
         this.logs.add(log);
     }

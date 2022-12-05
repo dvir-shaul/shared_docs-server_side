@@ -32,8 +32,7 @@ public interface FolderRepository extends JpaRepository<Folder, Long> {
     @Query("SELECT f FROM Folder f WHERE f.parentFolder=?1 and f.user=?2")
     List<Folder> findAllByParentFolderIdAndUserId(Folder parentFolder, User user);
 
-//    @Transactional
-//    @Modifying
-//    @Query("Delete Folder f WHERE f.id = ?2")
-//    void deleteById(Long id);
+    @Query("SELECT f FROM Folder f WHERE f.name=?1 and f.user=?2")
+    Folder findByNameAndUser(String name,User user);
+    List<Folder> findAllByParentFolderId(Long parentFolderId);
 }

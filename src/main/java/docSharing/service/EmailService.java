@@ -1,6 +1,4 @@
-package docSharing.utils;
-
-ackage docSharing.utils;
+package docSharing.service;
 
 
 import com.google.api.client.auth.oauth2.Credential;
@@ -17,13 +15,19 @@ import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.Message;
 import docSharing.entity.User;
+import docSharing.utils.Activation;
+import docSharing.utils.ConfirmationToken;
+import lombok.AllArgsConstructor;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.stereotype.Component;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
 
 import javax.mail.MessagingException;
 import javax.mail.Session;
+import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.io.ByteArrayOutputStream;
@@ -35,29 +39,31 @@ import java.util.Set;
 
 import static com.google.api.services.gmail.GmailScopes.GMAIL_SEND;
 import static javax.mail.Message.RecipientType.TO;
-@Component
-public class EmailUtil{
 
-    private static Logger logger = LogManager.getLogger(EmailUtil.class.getName());
+@Service
+public class EmailService{
+
+    private static Logger logger = LogManager.getLogger(EmailService.class.getName());
 
     //private final JavaMailSender mailSender;
     private static final String TEST_EMAIL = "shareddocs.app@gmail.com";
     private final Gmail service;
 
+    public EmailService() throws Exception {
+        logger.info("in EmailService -> EmailService");
 
-     public EmailUtil() throws Exception {
-         logger.info("in EmailService -> EmailService");
-         NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
-            GsonFactory jsonFactory = GsonFactory.getDefaultInstance();
-            service = new Gmail.Builder(httpTransport, jsonFactory, getCredentials(httpTransport, jsonFactory))
-                    .setApplicationName("shared-docs")
-                    .build();
-        }
+        NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
+        GsonFactory jsonFactory = GsonFactory.getDefaultInstance();
+        service = new Gmail.Builder(httpTransport, jsonFactory, getCredentials(httpTransport, jsonFactory))
+                .setApplicationName("shared-docs")
+                .build();
+    }
+
     private static Credential getCredentials(final NetHttpTransport httpTransport, GsonFactory jsonFactory)
             throws IOException {
         logger.info("in EmailService -> getCredentials");
 
-        GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(jsonFactory, new InputStreamReader(EmailUtil.class.getResourceAsStream("../../credentials.json")));
+        GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(jsonFactory, new InputStreamReader(EmailService.class.getResourceAsStream("../../credentials.json")));
 
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
                 httpTransport, jsonFactory, clientSecrets, Set.of(GMAIL_SEND))
