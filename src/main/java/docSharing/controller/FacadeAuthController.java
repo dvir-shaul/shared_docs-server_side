@@ -45,7 +45,7 @@ public class FacadeAuthController {
             String name = user.getName();
             String password = user.getPassword();
 
-            Validations.validate(Regex.NAME.getRegex(), name);
+            //Validations.validate(Regex.NAME.getRegex(), name);
             Validations.validate(Regex.EMAIL.getRegex(), email);
             Validations.validate(Regex.PASSWORD.getRegex(), password);
 
@@ -61,7 +61,8 @@ public class FacadeAuthController {
                     .data(true)
                     .status(HttpStatus.CREATED)
                     .build();
-        } catch (MessagingException | IllegalArgumentException | NullPointerException | IOException e) {
+        } catch (MessagingException | IllegalArgumentException | NullPointerException | IOException |
+                 AccountNotFoundException e) {
             logger.error("in FacadeAuthController -> register -> " + e.getMessage());
             return new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)

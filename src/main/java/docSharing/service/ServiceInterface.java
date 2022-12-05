@@ -9,8 +9,8 @@ import java.io.FileNotFoundException;
 import java.util.List;
 
 public interface ServiceInterface {
-    Long create(Folder parentFolder, User user, String name, String content);
-    int rename(long id, String name);
+    Long create(Folder parentFolder, User user, String name, String content) throws FileNotFoundException;
+    int rename(long id, String name) throws FileNotFoundException;
     int relocate(Folder folderId, long id) throws FileNotFoundException;
     void delete(long id) throws FileNotFoundException;
     Boolean doesExist(long id);

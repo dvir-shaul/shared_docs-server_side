@@ -258,7 +258,14 @@ public class FolderService implements ServiceInterface {
      *
      * @param user - given user.
      */
-    public void createRootFolders(User user) {
+    public void createRootFolders(User user) throws AccountNotFoundException {
+        if(user==null){
+            logger.error("in FolderService -> createRootFolder:"  + "->" + ExceptionMessage.NULL_INPUT);
+            throw new NullPointerException(ExceptionMessage.NULL_INPUT.toString());
+        }
+        if(!userRepository.findById(user.getId()).isPresent()){
+            throw new AccountNotFoundException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
+        }
         logger.info("in FolderService -> createRootFolders");
         Folder general = Folder.createFolder("General", null, user);
         folderRepository.save(general);

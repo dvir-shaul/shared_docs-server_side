@@ -116,7 +116,7 @@ public class DocumentService implements ServiceInterface {
      *
      * @param log - log with new data.
      */
-    public String updateContent(Log log) {
+    public String updateContent(Log log) throws FileNotFoundException {
         logger.info("in DocumentService -> updateContent");
         if (log == null) {
             throw new NullPointerException(ExceptionMessage.NULL_INPUT.toString());
@@ -124,7 +124,7 @@ public class DocumentService implements ServiceInterface {
         Optional<Document> document = documentRepository.findById(log.getDocument().getId());
         if (!document.isPresent()) {
             logger.error("in DocumentService -> DocumentService -> " + ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS);
-            throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString() + log.getDocument().getId());
+            throw new FileNotFoundException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString() + log.getDocument().getId());
         }
         if (!documentsContentLiveChanges.containsKey(log.getDocument().getId())) {
             Document doc = document.get();
@@ -162,7 +162,7 @@ public class DocumentService implements ServiceInterface {
      * @return entity of Document from database
      * @throws FileNotFoundException - no document in database with given id.
      */
-    public Document findById(Long id) throws FileNotFoundException {
+    public Document findById(long id) throws FileNotFoundException {
         logger.info("in DocumentService -> findById");
         Optional<Document> document = documentRepository.findById(id);
         if (!document.isPresent()) {
@@ -177,42 +177,26 @@ public class DocumentService implements ServiceInterface {
      *
      * @param id - of document
      */
-    void addToMap(long id) {
+    private void addToMap(long id) {
         logger.info("in DocumentService -> addToMap");
         documentsContentLiveChanges.put(id, "");
         databaseDocumentsCurrentContent.put(id, "");
     }
 
-    /**
-     * getDocById called to send back the document entity.
-     *
-     * @param id - document id
-     * @return - Document entity
-     * @throws AccountNotFoundException - Could not locate this document in the database.
-     */
-    public Document getDocById(Long id) throws AccountNotFoundException {
-        logger.info("in DocumentService -> getDocById with docId:" + id);
-        Optional<Document> optDocument = documentRepository.findById(id);
-        if (!optDocument.isPresent()) {
-            logger.error("in DocumentService -> getDocById -> " + ExceptionMessage.NO_DOCUMENT_IN_DATABASE);
-            throw new AccountNotFoundException(ExceptionMessage.NO_DOCUMENT_IN_DATABASE.toString());
-        }
-        return optDocument.get();
-    }
 
     /**
-     * this function gets called when we want to show to te client all the documents that in a specific folder.
+     * this function gets called when we want to show to the client all the documents that in a specific folder.
      *
      * @param parentFolderId - parent folder
      * @param userId         - current user
      * @return list with all the document entities.
      */
-    public List<Document> get(Long parentFolderId, Long userId) throws AccountNotFoundException {
+    public List<Document> get(long parentFolderId, long userId) throws AccountNotFoundException, FileNotFoundException {
         logger.info("in DocumentService -> get with userId: " + userId + ", parentFolderId: " + parentFolderId);
         Optional<Folder> optFolder = folderRepository.findById(parentFolderId);
         if (!optFolder.isPresent()) {
             logger.error("in DocumentService -> get -> " + ExceptionMessage.NO_FOLDER_IN_DATABASE);
-            throw new AccountNotFoundException(ExceptionMessage.NO_FOLDER_IN_DATABASE.toString());
+            throw new FileNotFoundException(ExceptionMessage.NO_FOLDER_IN_DATABASE.toString());
         }
 
         Optional<User> optUser = userRepository.findById(userId);
@@ -238,11 +222,15 @@ public class DocumentService implements ServiceInterface {
      * @param content      - the content of the document
      * @return id of document.
      */
-    public Long create(Folder parentFolder, User user, String name, String content) {
+    public Long create(Folder parentFolder, User user, String name, String content) throws FileNotFoundException {
         logger.info("in DocumentService -> create, item :" + name);
         if (parentFolder == null) {
             logger.error("in DocumentService -> create -> " + ExceptionMessage.FOLDER_DOES_NOT_EXISTS);
-            throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + parentFolder.getId());
+            throw new IllegalArgumentException(ExceptionMessage.NULL_INPUT.toString());
+        }
+        if (!folderRepository.findById(parentFolder.getId()).isPresent()) {
+            logger.error("in DocumentService -> create -> " + ExceptionMessage.FOLDER_DOES_NOT_EXISTS);
+            throw new FileNotFoundException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
         }
         Document doc = Document.createDocument(user, name, parentFolder, content != null ? content : "");
         Document savedDoc = documentRepository.save(doc);
@@ -267,14 +255,14 @@ public class DocumentService implements ServiceInterface {
      * @param name       - new document name to change to.
      * @return - rows that was affected in database (1).
      */
-    public int rename(long documentId, String name) {
+    public int rename(long documentId, String name) throws FileNotFoundException {
         logger.info("in DocumentService -> rename, documentId:" + documentId + " name:" + name);
 
         if (documentRepository.findById(documentId).isPresent()) {
             return documentRepository.updateName(name, documentId);
         }
         logger.error("in DocumentService -> rename -> " + ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS);
-        throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
+        throw new FileNotFoundException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
     }
 
 
@@ -295,6 +283,7 @@ public class DocumentService implements ServiceInterface {
             }
             return documentsContentLiveChanges.get(documentId);
         } else {
+            logger.error("in DocumentService -> getContent -> " + ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS);
             throw new FileNotFoundException(ExceptionMessage.NO_DOCUMENT_IN_DATABASE.toString());
         }
     }
@@ -309,6 +298,10 @@ public class DocumentService implements ServiceInterface {
      */
     public static String concatenateStrings(String text, Log log) {
         logger.info("in DocumentService -> concatenateStrings");
+        if(text==null||log==null){
+            logger.error("in DocumentService -> concatenateStrings");
+            throw new NullPointerException(ExceptionMessage.NULL_INPUT.toString());
+        }
 
         String beforeCut = text.substring(0, log.getOffset());
         String afterCut = text.substring(log.getOffset());
@@ -325,7 +318,10 @@ public class DocumentService implements ServiceInterface {
      */
     public static String truncateString(String text, Log log) {
         logger.info("in DocumentService -> truncateString");
-
+        if(text==null||log==null){
+            logger.error("in DocumentService -> truncateString");
+            throw new NullPointerException(ExceptionMessage.NULL_INPUT.toString());
+        }
         String beforeCut = text.substring(0, log.getOffset());
         String afterCut = text.substring(log.getOffset() + log.getData().length());
         return beforeCut.concat(afterCut);
@@ -489,7 +485,7 @@ public class DocumentService implements ServiceInterface {
         if (userDocument == null) {
             throw new NullPointerException(ExceptionMessage.NULL_INPUT.toString());
         }
-        if(userDocumentRepository.find(userDocument.getDocument(), userDocument.getUser()).isPresent()){
+        if (userDocumentRepository.find(userDocument.getDocument(), userDocument.getUser()).isPresent()) {
             throw new IllegalArgumentException(ExceptionMessage.MULTIPLE_PRIMARY_KEY.toString());
         }
         return userDocumentRepository.save(userDocument);
