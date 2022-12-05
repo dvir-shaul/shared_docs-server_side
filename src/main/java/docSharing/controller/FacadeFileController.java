@@ -118,9 +118,14 @@ public class FacadeFileController {
                     .build();
 
         } catch (AccountNotFoundException e) {
-            logger.error("in FacadeController -> getAll -> " + e.getMessage());
-
-            // TODO: we need to throw more exceptions so we know what status to retrieve!
+            logger.error("in FacadeController -> getAll -> AccountNotFoundException->" + e.getMessage());
+            return new Response.Builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .message(e.getMessage())
+                    .statusCode(400)
+                    .build();
+        } catch (FileNotFoundException e) {
+            logger.error("in FacadeController -> getAll -> FileNotFoundException-> " + e.getMessage());
             return new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
                     .message(e.getMessage())

@@ -55,12 +55,12 @@ public class FolderService implements ServiceInterface {
      * @param userId         - current user that ask for the list of folders
      * @return - list of inner folders in parent folder.
      */
-    public List<Folder> get(Long parentFolderId, Long userId) throws AccountNotFoundException {
+    public List<Folder> get(Long parentFolderId, Long userId) throws AccountNotFoundException,FileNotFoundException {
         logger.info("in FolderService -> get");
         Optional<Folder> optFolder = folderRepository.findById(parentFolderId);
         if (!optFolder.isPresent()) {
             logger.error("in FolderService -> get --> " + ExceptionMessage.NO_FOLDER_IN_DATABASE);
-            throw new AccountNotFoundException(ExceptionMessage.NO_FOLDER_IN_DATABASE.toString());
+            throw new FileNotFoundException(ExceptionMessage.NO_FOLDER_IN_DATABASE.toString());
         }
 
         Optional<User> optUser = userRepository.findById(userId);

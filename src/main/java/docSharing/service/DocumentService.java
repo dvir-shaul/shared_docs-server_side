@@ -404,15 +404,15 @@ public class DocumentService implements ServiceInterface {
      *
      * @param userId - user's id that files are belonged to.
      * @return - list of documents.
-     * @throws AccountNotFoundException-
+     * @throws IllegalArgumentException - no userId in database
      */
-    public List<Document> getAllWhereParentFolderIsNull(Long userId) throws AccountNotFoundException {
+    public List<Document> getAllWhereParentFolderIsNull(Long userId) throws IllegalArgumentException {
         logger.info("in DocumentService -> getAllWhereParentFolderIsNull, current userId: " + userId);
 
         Optional<User> optUser = userRepository.findById(userId);
         if (!optUser.isPresent()) {
             logger.error("in DocumentService -> getAllWhereParentFolderIsNull -> " + ExceptionMessage.NO_USER_IN_DATABASE);
-            throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
+            throw new IllegalArgumentException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
         }
         User user = optUser.get();
         return documentRepository.findAllByParentFolderIsNull(user);
@@ -423,15 +423,15 @@ public class DocumentService implements ServiceInterface {
      *
      * @param documentId - document id we search on.
      * @return - list of UserDocument entity that contain all users and their permissions on that document.
-     * @throws AccountNotFoundException -
+     * @throws IllegalArgumentException - no user in database
      */
-    public List<UsersInDocRes> getAllUsersInDocument(Long userId, Long documentId, Method method) throws AccountNotFoundException {
+    public List<UsersInDocRes> getAllUsersInDocument(Long userId, Long documentId, Method method) throws IllegalArgumentException {
         logger.info("in DocumentService -> getAllUsersInDocument");
 
         Optional<Document> optDocument = documentRepository.findById(documentId);
         if (!optDocument.isPresent()) {
             logger.error("in DocumentService -> getAllUsersInDocument -> " + ExceptionMessage.NO_USER_IN_DATABASE);
-            throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
+            throw new IllegalArgumentException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
         }
         Optional<User> optUser = userRepository.findById(userId);
         if (!optUser.isPresent()) {
@@ -458,17 +458,17 @@ public class DocumentService implements ServiceInterface {
      * @return - the permission that the specific user's id have in the document id.
      * @throws AccountNotFoundException -
      */
-    public Permission getUserPermissionInDocument(Long userId, Long documentId) throws AccountNotFoundException {
+    public Permission getUserPermissionInDocument(Long userId, Long documentId) throws FileNotFoundException,IllegalArgumentException {
         logger.info("in DocumentService -> getUserPermissionInDocument, current userId: " + userId + ", documentId: " + documentId);
         Optional<Document> optDocument = documentRepository.findById(documentId);
         if (!optDocument.isPresent()) {
             logger.error("in DocumentService -> getAllUsersInDocument -> " + ExceptionMessage.NO_DOCUMENT_IN_DATABASE);
-            throw new AccountNotFoundException(ExceptionMessage.NO_DOCUMENT_IN_DATABASE.toString());
+            throw new FileNotFoundException(ExceptionMessage.NO_DOCUMENT_IN_DATABASE.toString());
         }
         Optional<User> optUser = userRepository.findById(userId);
         if (!optUser.isPresent()) {
             logger.error("in DocumentService -> getAllUsersInDocument -> " + ExceptionMessage.NO_USER_IN_DATABASE);
-            throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
+            throw new IllegalArgumentException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
         }
         User user = optUser.get();
         Document document = optDocument.get();

@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 
 import javax.mail.MessagingException;
 import javax.security.auth.login.AccountNotFoundException;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,7 +63,7 @@ public class FacadeUserController {
                     .statusCode(200)
                     .message("Successfully changed permission to user id:" + userId)
                     .build();
-        } catch (AccountNotFoundException e) {
+        } catch (IllegalArgumentException e) {
             logger.error("in FacadeUserController -> givePermission -> " + e.getMessage());
             return new Response.Builder()
                     .message("failed to update a permission")
@@ -111,7 +112,7 @@ public class FacadeUserController {
                     .status(HttpStatus.OK)
                     .data(documentService.getAllUsersInDocument(null, documentId, Method.GET))
                     .build();
-        } catch (MessagingException | IOException | AccountNotFoundException e) {
+        } catch (MessagingException | IOException | IllegalArgumentException e) {
             logger.error("in FacadeUserController -> givePermissionToAll -> " + e.getMessage());
             return new Response.Builder()
                     .message(e.getMessage())
@@ -198,8 +199,16 @@ public class FacadeUserController {
                     .status(HttpStatus.OK)
                     .statusCode(200)
                     .build();
-        } catch (AccountNotFoundException e) {
+        }
+        catch (AccountNotFoundException e) {
             logger.error("in FacadeUserController -> getUserPermissionForSpecificDocument -> AccountNotFoundException->" + e.getMessage());
+            return new Response.Builder()
+                    .statusCode(400)
+                    .status(HttpStatus.BAD_REQUEST)
+                    .message(e.getMessage())
+                    .build();
+        }catch (FileNotFoundException e) {
+            logger.error("in FacadeUserController -> getUserPermissionForSpecificDocument -> FileNotFoundException->" + e.getMessage());
             return new Response.Builder()
                     .statusCode(400)
                     .status(HttpStatus.BAD_REQUEST)
