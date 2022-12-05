@@ -254,6 +254,8 @@ public class FolderService implements ServiceInterface {
         return folderRepository.findById(id).isPresent();
     }
 
+
+
     /**
      * createRootFolders is a function that called when a user is signed in,
      * idea is that a user will have the basics folders and from those he will navigate through his own files.
