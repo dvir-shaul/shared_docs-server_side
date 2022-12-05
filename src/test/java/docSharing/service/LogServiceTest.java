@@ -84,6 +84,17 @@ class LogServiceTest {
                 ()->logService.updateLogs(log));
     }
     @Test
+    public void givenLogInDB_newLogEditDatNull_assertDoesNotThrow() {
+        given(folderRepository.findById(folder.getId())).willReturn(null);
+        Folder folder2 = Folder.createFolder("test", folder, user);
+        given(folderRepository.save(folder2)).willReturn(folder);
+        Map<Long, Log> documentLogs = new HashMap<>();
+        documentLogs.put(1L,log);
+        logService.updateLogs(log);
+        log.setLastEditDate(null);
+        assertDoesNotThrow(()->logService.updateLogs(log));
+    }
+    @Test
     public void givenLogInDB_newLogOffsetNull_assertThrow() {
         given(folderRepository.findById(folder.getId())).willReturn(null);
         Folder folder2 = Folder.createFolder("test", folder, user);
