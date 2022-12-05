@@ -8,7 +8,6 @@ import docSharing.response.FileRes;
 import docSharing.response.UserStatus;
 import docSharing.response.UsersInDocRes;
 import docSharing.utils.ExceptionMessage;
-import docSharing.utils.debounce.Debouncer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -411,7 +410,7 @@ public class DocumentService implements ServiceInterface {
      * @return - list of UserDocument entity that contain all users and their permissions on that document.
      * @throws AccountNotFoundException -
      */
-    public List<UsersInDocRes> getAllUsersInDocument(Long userId, Long documentId, Method method) throws AccountNotFoundException {
+    public List<UsersInDocRes> getAllUsersInDocument(Long userId, long documentId, Method method) throws AccountNotFoundException {
         logger.info("in DocumentService -> getAllUsersInDocument");
         if (!documentRepository.findById(documentId).isPresent()) {
             logger.error("in DocumentService -> getAllUsersInDocument -> " + ExceptionMessage.NO_USER_IN_DATABASE);
@@ -431,7 +430,7 @@ public class DocumentService implements ServiceInterface {
      * @return - the permission that the specific user's id have in the document id.
      * @throws AccountNotFoundException -
      */
-    public Permission getUserPermissionInDocument(Long userId, Long documentId) throws AccountNotFoundException {
+    public Permission getUserPermissionInDocument(long userId, long documentId) throws AccountNotFoundException {
         logger.info("in DocumentService -> getUserPermissionInDocument, current userId: " + userId + ", documentId: " + documentId);
         if (!documentRepository.findById(documentId).isPresent()) {
             logger.error("in DocumentService -> getAllUsersInDocument -> " + ExceptionMessage.NO_DOCUMENT_IN_DATABASE);

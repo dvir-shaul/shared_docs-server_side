@@ -33,9 +33,9 @@ public class FacadeUserController {
     UserService userService;
     private static Logger logger = LogManager.getLogger(FacadeUserController.class.getName());
 
-    public Response givePermission(Long documentId, Long userId, Permission permission) {
+    public Response givePermission(long documentId, long userId, Permission permission) {
         // FIXME: use Valdidations.validate for it.
-        if (documentId == null || userId == null || permission == null) {
+        if (permission == null) {
             logger.error("in UserController -> givePermission -> on of documentId,uid,permission is null");
             return new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
@@ -60,7 +60,7 @@ public class FacadeUserController {
         }
     }
 
-    public Response givePermissionToAll(List<String> emails, Long documentId) {
+    public Response givePermissionToAll(List<String> emails, long documentId) {
         try {
             List<String> unregisteredUsers = new ArrayList<>();
             for (String email : emails) {
@@ -81,6 +81,7 @@ public class FacadeUserController {
                 }
             }
             for (String unregisteredEmail : unregisteredUsers) {
+                // make sure that in the correct email format -> otherwise skip.
                 String inviteUserString = Invite.emailBody;
                 EmailUtil.send(unregisteredEmail, inviteUserString, "Personal invitation");
             }
@@ -90,7 +91,7 @@ public class FacadeUserController {
                     .data(documentService.getAllUsersInDocument(null, documentId, Method.GET))
                     .build();
         } catch (MessagingException | IOException | AccountNotFoundException e) {
-            logger.error("in UserController -> givePermissionToAll -> " +e.getMessage());
+            logger.error("in UserController -> givePermissionToAll -> " + e.getMessage());
             return new Response.Builder()
                     .message(e.getMessage())
                     .statusCode(400)
@@ -100,7 +101,7 @@ public class FacadeUserController {
 
     }
 
-    public Response getDocuments(Long userId) {
+    public Response getDocuments(long userId) {
         try {
             List<FileRes> docsOfUser = userService.documentsOfUser(userId);
             return new Response.Builder()
@@ -111,7 +112,6 @@ public class FacadeUserController {
                     .build();
         } catch (IllegalArgumentException e) {
             return new Response.Builder()
-                    .data("")
                     .message(e.getMessage())
                     .statusCode(400)
                     .status(HttpStatus.BAD_REQUEST)
@@ -119,7 +119,7 @@ public class FacadeUserController {
         }
     }
 
-    public Response getUser(Long userId) {
+    public Response getUser(long userId) {
         try {
             UserRes userRes = userService.getUser(userId);
             return new Response.Builder()
@@ -130,7 +130,6 @@ public class FacadeUserController {
                     .build();
         } catch (IllegalArgumentException e) {
             return new Response.Builder()
-                    .data("")
                     .message(e.getMessage())
                     .statusCode(400)
                     .status(HttpStatus.BAD_REQUEST)
@@ -138,7 +137,7 @@ public class FacadeUserController {
         }
     }
 
-    public Response getUserPermissionForSpecificDocument(Long documentId, Long userId) {
+    public Response getUserPermissionForSpecificDocument(long documentId, long userId) {
         try {
             User user = userService.findById(userId);
             Permission permission = documentService.getUserPermissionInDocument(userId, documentId);

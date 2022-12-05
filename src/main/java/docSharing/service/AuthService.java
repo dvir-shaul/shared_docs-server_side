@@ -12,6 +12,9 @@ import javax.security.auth.login.AccountNotFoundException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.Optional;
+
 @Service
 @AllArgsConstructor
 public class AuthService {
@@ -43,16 +46,18 @@ public class AuthService {
      */
     public String login(String email, String password) throws AccountNotFoundException {
         logger.info("in AuthService -> login");
-        if (! userRepository.findByEmail(email).isPresent()) {
+        Optional<User> user = userRepository.findByEmail(email);
+        if (!user.isPresent()) {
             logger.error("in AuthService -> login -> fail: " + ExceptionMessage.NO_ACCOUNT_IN_DATABASE + email);
             throw new AccountNotFoundException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE + email);
         }
-        User user = userRepository.findByEmail(email).get();
-        if (userRepository.findByEmail(email).get().getPassword().equals(password)) {
-            return generateToken(user);
+
+        if (!user.get().getPassword().equals(password)) {
+            logger.error("in AuthService -> login -> fail: " + ExceptionMessage.NOT_MATCH);
+            throw new IllegalArgumentException(ExceptionMessage.NOT_MATCH.toString());
         }
-        logger.error("in AuthService -> login -> fail: " + ExceptionMessage.NOT_MATCH);
-        throw new IllegalArgumentException(ExceptionMessage.NOT_MATCH.toString());
+
+        return generateToken(user.get());
     }
 
     /**

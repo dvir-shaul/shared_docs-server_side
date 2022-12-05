@@ -6,8 +6,7 @@ import docSharing.service.AuthService;
 import docSharing.service.FolderService;
 import docSharing.service.UserService;
 import docSharing.utils.*;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +37,7 @@ public class FacadeAuthController {
         String password = user.getPassword();
 
         // make sure we got all the data from the client
-        if (name == null || email == null || password == null || user.getId() != null) {
+        if (name == null || email == null || password == null) {
             logger.error("in AuthController -> register -> one of email, name, password is null");
             return new Response.Builder()
                     .message("You must include all and exact parameters for such an action: email, name, password")
@@ -47,7 +46,7 @@ public class FacadeAuthController {
                     .build();
         }
         try {
-            Validations.validate(Regex.NAME.getRegex(), name);
+//            Validations.validate(Regex.NAME.getRegex(), name);
             Validations.validate(Regex.EMAIL.getRegex(), email);
             Validations.validate(Regex.PASSWORD.getRegex(), password);
             User emailUser = authService.register(email, password, name);
@@ -62,7 +61,7 @@ public class FacadeAuthController {
                     .data(true)
                     .status(HttpStatus.CREATED)
                     .build();
-        } catch (MessagingException | IOException e) {
+        } catch (MessagingException | IllegalArgumentException | NullPointerException | IOException e) {
             logger.error("in AuthController -> register -> " + e.getMessage());
             return new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
@@ -105,7 +104,7 @@ public class FacadeAuthController {
             return new Response.Builder()
                     .message("You must include all and exact parameters for such an action: email, name, password")
                     .status(HttpStatus.UNAUTHORIZED)
-                    .statusCode(400)
+                    .statusCode(401)
                     .build();
         }
     }
@@ -148,19 +147,20 @@ public class FacadeAuthController {
                         .build();
             }
 
-        } catch (UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException | UnsupportedJwtException | MalformedJwtException | SignatureException |
+                 IllegalArgumentException e) {
             logger.error("in AuthController -> activate -> " + e.getMessage());
             return new Response.Builder()
                     .message("failed to activate account")
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .statusCode(500)
+                    .status(HttpStatus.BAD_REQUEST)
+                    .statusCode(400)
                     .build();
         } catch (AccountNotFoundException e) {
             logger.error("in AuthController -> activate -> " + e.getMessage());
             return new Response.Builder()
                     .message("invalid token")
-                    .status(HttpStatus.BAD_REQUEST)
-                    .statusCode(400)
+                    .status(HttpStatus.FORBIDDEN)
+                    .statusCode(403)
                     .build();
         }
     }
