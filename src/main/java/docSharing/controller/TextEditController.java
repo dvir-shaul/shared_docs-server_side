@@ -92,7 +92,7 @@ public class TextEditController {
                 }
             });
             return all;
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | AccountNotFoundException e) {
             logger.debug("in TextEditController -> getOnlineUsers -> no users to get online");
             return null;
         }

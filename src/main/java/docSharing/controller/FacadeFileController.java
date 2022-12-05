@@ -185,7 +185,7 @@ public class FacadeFileController {
     public Response delete(Long id, Class c) {
         logger.info("in FacadeController -> delete");
         try {
-            Validations.validateIdNull(id)
+            Validations.validateIdNull(id);
             Validations.validate(Regex.ID.getRegex(), String.valueOf(id));
             convertFromClassToService(c).delete(id);
             return new Response.Builder()
@@ -212,7 +212,7 @@ public class FacadeFileController {
      * @param c           - the class of the item, need to know to what service sends the request.
      * @return - ResponseEntity
      */
-    public Response relocate(long newParentId, long id, Class c) {
+    public Response relocate(Long newParentId, long id, Class c) {
         logger.info("in FacadeFileController -> relocate, newParentId" + newParentId + " of Class:" + c);
 
         try {

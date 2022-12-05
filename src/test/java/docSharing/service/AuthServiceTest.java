@@ -1,7 +1,4 @@
 package docSharing.service;//package docSharing.service;
-//
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 import docSharing.entity.User;
 import docSharing.repository.UserRepository;
@@ -12,7 +9,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
@@ -22,10 +18,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.security.auth.login.AccountNotFoundException;
-
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
@@ -108,17 +100,17 @@ public class AuthServiceTest {
     @Test
     @DisplayName("given invalid token throw exception")
     public void givenInvalidToken_whenValidatingToken_thenThrowIllegalException() {
-        assertThrows(IllegalArgumentException.class, () -> authService.isValid("invalidToken"), "invalid token did not throw illegal argument exception");
+        assertThrows(IllegalArgumentException.class, () -> authService.checkTokenToUserInDB("invalidToken"), "invalid token did not throw illegal argument exception");
     }
     @Test
     @DisplayName("given null token throw exception")
     public void givenNullToken_whenValidatingToken_thenThrowIllegalException() {
-        assertThrows(IllegalArgumentException.class, () -> authService.isValid(null), "null token did not throw illegal argument exception");
+        assertThrows(NullPointerException.class, () -> authService.checkTokenToUserInDB(null), "null token did not throw illegal argument exception");
     }
     @Test
     @DisplayName("given valid token of user that does not exist")
     public void givenTokenOfUserThatNotExists_whenValidatingToken_thenThrowAccountNotFoundException() {
-        assertThrows(AccountNotFoundException.class, () -> authService.isValid("Bearer eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIxIiwiaWF0IjoxNjY5OTAzOTgwLCJzdWIiOiJsb2dpbiIsImlzcyI6ImRvY3MgYXBwIn0.83vs6fa8rGm6kyrZz4K8YYBcIO2N0aBu_lQz-QPFaus"
+        assertThrows(AccountNotFoundException.class, () -> authService.checkTokenToUserInDB("Bearer eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIxIiwiaWF0IjoxNjY5OTAzOTgwLCJzdWIiOiJsb2dpbiIsImlzcyI6ImRvY3MgYXBwIn0.83vs6fa8rGm6kyrZz4K8YYBcIO2N0aBu_lQz-QPFaus"
         ), "valid token of user that does not exist did not throw account not found exception");
     }
 }

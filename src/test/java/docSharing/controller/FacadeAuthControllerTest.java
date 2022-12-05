@@ -1,8 +1,5 @@
 package docSharing.controller;
 
-import docSharing.entity.User;
-import docSharing.service.AuthService;
-import docSharing.service.UserService;
 import com.google.api.services.gmail.Gmail;
 import docSharing.entity.User;
 import docSharing.repository.UserRepository;
@@ -33,8 +30,6 @@ class FacadeAuthControllerTest {
     @Mock
     private FolderService folderService;
     @Mock
-    private UserRepository userRepository;
-    @Mock
     private static Gmail service;
 
     @InjectMocks
@@ -60,8 +55,8 @@ class FacadeAuthControllerTest {
 
     @Test
     void register_goodUser_Successfully() {
-        EmailUtil emailUtil = spy(EmailUtil.class);
         given(authService.register(goodUser.getEmail(), goodUser.getPassword(), goodUser.getName())).willReturn(goodUser);
+        doNothing().when(folderService).createRootFolders(goodUser);
         assertEquals(201, facadeAuthController.register(goodUser).getStatusCode(), "register with good user parameters did not return 201");
     }
 
@@ -82,7 +77,6 @@ class FacadeAuthControllerTest {
 
     @Test
     void register_withSameEmailAgain_BAD_REQUEST() {
-        when(authService.register(goodUser.getEmail(), goodUser.getPassword(), goodUser.getName())).thenThrow(new IllegalArgumentException("test to reregister with same existing email"));
         assertEquals(400, facadeAuthController.register(goodUser).getStatusCode(), "register with good user parameters did not return 400");
     }
 

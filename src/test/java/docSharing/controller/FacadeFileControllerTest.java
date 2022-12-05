@@ -111,7 +111,7 @@ class FacadeFileControllerTest {
         assertEquals(400, facadeFileController.getPath(goodFolder.getId(), Folder.class).getStatusCode(), "get path of existing folder did not return 400");
     }
     @Test
-    void getAll_goodParameters_successfully() throws AccountNotFoundException {
+    void getAll_goodParameters_successfully() throws AccountNotFoundException, FileNotFoundException {
         List<Folder> folders=new ArrayList<>();
         List<Document> documents=new ArrayList<>();
         given(folderService.get(goodFolder.getId(), user.getId())).willReturn(folders);
@@ -120,7 +120,7 @@ class FacadeFileControllerTest {
     }
 
     @Test
-    void getAll_folderDoesNotExist_badRequest() throws AccountNotFoundException {
+    void getAll_folderDoesNotExist_badRequest() throws AccountNotFoundException, FileNotFoundException {
         given(folderService.get(goodFolder.getId(), user.getId())).willThrow(new AccountNotFoundException("folder does not exist"));
         assertEquals(400, facadeFileController.getAll(goodFolder.getId(), user.getId()).getStatusCode(), "get all with invalid parameters did not return 400");
     }
@@ -197,10 +197,6 @@ class FacadeFileControllerTest {
         given(folderService.doesExist(goodFolder.getId())).willReturn(false);
         assertEquals(200, facadeFileController.doesExist(goodFolder.getId(), Folder.class).getStatusCode());
     }
-    @Test
-    void doesExist_Null_badRequest()  {
-        assertEquals(400, facadeFileController.doesExist(null, Folder.class).getStatusCode());
-    }
 
     @Test
     void getContent_validDocument_OK() throws FileNotFoundException {
@@ -220,7 +216,7 @@ class FacadeFileControllerTest {
     @Test
     void getDocumentName_invalidDocument_badRequest() throws FileNotFoundException {
         given(documentService.findById(goodDocument.getId())).willThrow(new FileNotFoundException("document does not exist"));
-        assertEquals(400, facadeFileController.getDocumentName(goodDocument.getId()).getStatusCode());
+        assertEquals(404, facadeFileController.getDocumentName(goodDocument.getId()).getStatusCode());
     }
 
 }

@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 
 import javax.security.auth.login.AccountNotFoundException;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -74,31 +75,31 @@ public class UserService {
      * @param userId     - user's id in database
      * @param permission - the new Permission
      */
-    public void updatePermission(Long docId, Long userId, Permission permission) {
+    public int updatePermission(Long docId, Long userId, Permission permission) throws FileNotFoundException, AccountNotFoundException {
         logger.info("in UserService -> updatePermission");
         Optional<Document> document = documentRepository.findById(docId);
         if (!document.isPresent()) {
             logger.error("in UserService -> updatePermission --> " + ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS);
-            throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
+            throw new FileNotFoundException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
         }
         Optional<User> user = userRepository.findById(userId);
         if (!user.isPresent()) {
             logger.error("in UserService -> updatePermission --> " + ExceptionMessage.NO_ACCOUNT_IN_DATABASE);
-            throw new IllegalArgumentException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
+            throw new AccountNotFoundException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
         }
         if (permission.equals(Permission.UNAUTHORIZED)) {
-            userDocumentRepository.deleteUserFromDocument(user.get(), document.get());
-            return;
+            return userDocumentRepository.deleteUserFromDocument(user.get(), document.get());
         }
         Optional<UserDocument> optUserDocument = userDocumentRepository.find(document.get(), user.get());
         if (optUserDocument.isPresent()) {
-            userDocumentRepository.updatePermission(permission, document.get(), user.get());
+            return userDocumentRepository.updatePermission(permission, document.get(), user.get());
         } else {
             UserDocument userDocument = new UserDocument();
             userDocument.setUser(user.get());
             userDocument.setDocument(document.get());
             userDocument.setPermission(permission);
             userDocumentRepository.save(userDocument);
+            return 1;
         }
     }
 
@@ -109,12 +110,12 @@ public class UserService {
      * @param userId - user's id
      * @return list of FileRes
      */
-    public List<FileRes> documentsOfUser(Long userId) {
+    public List<FileRes> documentsOfUser(Long userId) throws AccountNotFoundException {
         logger.info("in UserService -> documentsOfUser");
         Optional<User> user = userRepository.findById(userId);
         if (!user.isPresent()) {
             logger.error("in UserService -> documentsOfUser --> " + ExceptionMessage.NO_ACCOUNT_IN_DATABASE);
-            throw new IllegalArgumentException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
+            throw new AccountNotFoundException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
         }
         List<UserDocument> userDocuments = userDocumentRepository.findByUser(user.get());
         List<FileRes> userDocumentResList = new ArrayList<>();
@@ -133,13 +134,13 @@ public class UserService {
      * @param userId - user id in database.
      * @return - entity of UserRes that's contain name,email and id.
      */
-    public UserRes getUser(Long userId) {
+    public UserRes getUser(Long userId) throws AccountNotFoundException {
         logger.info("in UserService -> getUser");
 
         Optional<User> user = userRepository.findById(userId);
         if (!user.isPresent()) {
             logger.error("in UserService -> getUser --> " + ExceptionMessage.NO_ACCOUNT_IN_DATABASE);
-            throw new IllegalArgumentException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
+            throw new AccountNotFoundException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
         }
         return new UserRes(user.get().getName(), user.get().getEmail(), user.get().getId());
     }
