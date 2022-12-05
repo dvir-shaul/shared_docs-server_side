@@ -5,7 +5,6 @@ import docSharing.repository.*;
 import docSharing.requests.Type;
 import docSharing.response.FileRes;
 import docSharing.utils.ExceptionMessage;
-import docSharing.utils.logAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,23 +54,21 @@ public class FolderService implements ServiceInterface {
      * @param userId         - current user that ask for the list of folders
      * @return - list of inner folders in parent folder.
      */
-    public List<Folder> get(Long parentFolderId, Long userId) throws AccountNotFoundException,FileNotFoundException {
+    public List<Folder> get(long parentFolderId, long userId) throws AccountNotFoundException, FileNotFoundException {
         logger.info("in FolderService -> get");
-        Optional<Folder> optFolder = folderRepository.findById(parentFolderId);
-        if (!optFolder.isPresent()) {
+        Optional<Folder> folder = folderRepository.findById(parentFolderId);
+        if (!folder.isPresent()) {
             logger.error("in FolderService -> get --> " + ExceptionMessage.NO_FOLDER_IN_DATABASE);
             throw new FileNotFoundException(ExceptionMessage.NO_FOLDER_IN_DATABASE.toString());
         }
 
-        Optional<User> optUser = userRepository.findById(userId);
-        if (!optUser.isPresent()) {
+        Optional<User> user = userRepository.findById(userId);
+        if (!user.isPresent()) {
             logger.error("in FolderService -> get --> " + ExceptionMessage.NO_USER_IN_DATABASE);
             throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
         }
 
-        Folder parentFolder = optFolder.get();
-        User user = optUser.get();
-        return folderRepository.findAllByParentFolderIdAndUserId(parentFolder, user);
+        return folderRepository.findAllByParentFolderIdAndUserId(folder.get(), user.get());
     }
 
     /**
@@ -82,15 +79,14 @@ public class FolderService implements ServiceInterface {
      * @param userId - user's relation folders
      * @return - list of folders
      */
-    public List<Folder> getAllWhereParentFolderIsNull(Long userId) throws AccountNotFoundException {
+    public List<Folder> getAllWhereParentFolderIsNull(long userId) throws AccountNotFoundException {
         logger.info("in FolderService -> getAllWhereParentFolderIsNull, userId:" + userId);
-        Optional<User> optUser = userRepository.findById(userId);
-        if (!optUser.isPresent()) {
+        Optional<User> user = userRepository.findById(userId);
+        if (!user.isPresent()) {
             logger.error("in FolderService -> getAllWhereParentFolderIsNull --> " + ExceptionMessage.NO_USER_IN_DATABASE);
             throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
         }
-        User user = optUser.get();
-        return folderRepository.findAllByParentFolderIsNull(user);
+        return folderRepository.findAllByParentFolderIsNull(user.get());
     }
 
     /**
@@ -105,12 +101,16 @@ public class FolderService implements ServiceInterface {
      * @param content      - not in use here
      * @return id of the item that was saved to database.
      */
-    public Long create(Folder parentFolder, User user, String name, String content) {
+    public Long create(Folder parentFolder, User user, String name, String content) throws FileNotFoundException {
         logger.info("in FolderService -> create, item :" + name);
-        if (parentFolder == null) {
-            logger.error("in FolderService -> create --> " + ExceptionMessage.FOLDER_DOES_NOT_EXISTS);
-            throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
+
+        if (parentFolder != null) {
+            Optional<Folder> folder = folderRepository.findById(parentFolder.getId());
+            if (!folder.isPresent()) {
+                throw new FileNotFoundException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
+            }
         }
+
         Folder folder = Folder.createFolder(name, parentFolder, user);
         Folder savedFolder = folderRepository.save(folder);
         if (savedFolder.getParentFolder() != null) {
@@ -129,15 +129,15 @@ public class FolderService implements ServiceInterface {
      */
     public List<FileRes> getPath(long folderId) throws FileNotFoundException {
         logger.info("in FolderService -> getPath, item id is:" + folderId);
-            Folder folder = findById(folderId);
-            List<FileRes> path = new ArrayList<>();
-            Folder parentFolder = folder.getParentFolder();
-            path.add(0, new FileRes(folder.getName(), folder.getId(), Type.FOLDER, Permission.ADMIN, folder.getUser().getEmail()));
-            while (parentFolder != null) {
-                path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, folder.getUser().getEmail()));
-                parentFolder = parentFolder.getParentFolder();
-            }
-            return path;
+        Folder folder = findById(folderId);
+        List<FileRes> path = new ArrayList<>();
+        Folder parentFolder = folder.getParentFolder();
+        path.add(0, new FileRes(folder.getName(), folder.getId(), Type.FOLDER, Permission.ADMIN, folder.getUser().getEmail()));
+        while (parentFolder != null) {
+            path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, folder.getUser().getEmail()));
+            parentFolder = parentFolder.getParentFolder();
+        }
+        return path;
     }
 
     /**
@@ -147,13 +147,13 @@ public class FolderService implements ServiceInterface {
      * @param name - new name of the document.
      * @return rows affected in mysql.
      */
-    public int rename(long id, String name) {
+    public int rename(long id, String name) throws FileNotFoundException {
         logger.info("in FolderService -> rename, id:" + id + " name:" + name);
-        if (folderRepository.findById(id).isPresent()) {
-            return folderRepository.updateName(name, id);
+        if (!folderRepository.findById(id).isPresent()) {
+            logger.error("in FolderService -> rename --> " + ExceptionMessage.FOLDER_DOES_NOT_EXISTS);
+            throw new FileNotFoundException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
         }
-        logger.error("in FolderService -> rename --> " + ExceptionMessage.FOLDER_DOES_NOT_EXISTS);
-        throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
+        return folderRepository.updateName(name, id);
     }
 
     /**
@@ -225,8 +225,9 @@ public class FolderService implements ServiceInterface {
      * delete function called when user want to delete specific folder and all its content
      *
      * @param folderId - folder to delete.
+     * @return int - amount of lines affected
      */
-    public void delete(long folderId) throws FileNotFoundException {
+    public int delete(long folderId) throws FileNotFoundException {
         logger.info("in FolderService -> delete");
         Optional<Folder> folder = folderRepository.findById(folderId);
         if (!folder.isPresent()) {
@@ -240,6 +241,7 @@ public class FolderService implements ServiceInterface {
             delete(f.getId());
         }
         folderRepository.delete(folder.get());
+        return 1;
     }
 
     /**
@@ -260,8 +262,12 @@ public class FolderService implements ServiceInterface {
      *
      * @param user - given user.
      */
-    public void createRootFolders(User user) {
+    public void createRootFolders(User user) throws AccountNotFoundException {
         logger.info("in FolderService -> createRootFolders");
+
+        if(!userRepository.findById(user.getId()).isPresent())
+            throw new AccountNotFoundException(ExceptionMessage.ACCOUNT_DOES_NOT_EXISTS.toString());
+
         Folder general = Folder.createFolder("General", null, user);
         folderRepository.save(general);
         Folder personal = Folder.createFolder("Personal", null, user);

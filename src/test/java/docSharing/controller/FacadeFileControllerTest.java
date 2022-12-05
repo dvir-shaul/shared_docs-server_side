@@ -70,7 +70,7 @@ class FacadeFileControllerTest {
     }
 
     @Test
-    void createFolder_goodFolder_Successfully() throws AccountNotFoundException {
+    void createFolder_goodFolder_Successfully() throws AccountNotFoundException, FileNotFoundException {
         given(userService.findById(user.getId())).willReturn(user);
         given(folderService.create(null, user, "test", null)).willReturn(goodFolder.getId());
         assertEquals(201, facadeFileController.create(null, "test", null, user.getId(), Folder.class).getStatusCode(), "create document with good parameters did not return 201");
@@ -134,7 +134,7 @@ class FacadeFileControllerTest {
         assertEquals(400, facadeFileController.rename(goodDocument.getId(), "@", Document.class).getStatusCode());
     }
     @Test
-    void rename_validFolderName_OK(){
+    void rename_validFolderName_OK() throws FileNotFoundException {
         given(folderService.rename(goodFolder.getId(), goodFolder.getName())).willReturn(1);
         assertEquals(200, facadeFileController.rename(goodFolder.getId(), goodFolder.getName(), Folder.class).getStatusCode());
     }
