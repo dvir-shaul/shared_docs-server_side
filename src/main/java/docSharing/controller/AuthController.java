@@ -12,7 +12,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 
-
 @Controller
 @RequestMapping(value = "/user/auth")
 @AllArgsConstructor
@@ -28,7 +27,8 @@ public class AuthController {
      * Register function is responsible for creating new users and adding them to the database.
      * Users will use their personal information to create a new account: email, password, name.
      *
-     * @param user
+     * @param user - User with email, name and password
+     * @return ResponseEntity with our Response with data and status 201 if good or 400 if something went wrong.
      */
     @RequestMapping(value = "register", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<Response> register(@RequestBody User user) {
@@ -44,7 +44,7 @@ public class AuthController {
      * A token will be returned in a successful request.
      *
      * @param user - user's details with email and password to check if correct
-     * @return token
+     * @return ResponseEntity with our Response with user's token and status 200 if good or 400 if something went wrong.
      */
     @RequestMapping(value = "login", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<Response> login(@RequestBody User user) {
@@ -59,13 +59,11 @@ public class AuthController {
      * If the link is expired, resend a new link to the user with a new token.
      *
      * @param token - A link with activation token
-     * @return
+     * @return ResponseEntity<Response>  with data and status 200 if good or 400 if something went wrong.
      */
     @RequestMapping(value = "activate", method = RequestMethod.POST)
     public ResponseEntity<Response> activate(@RequestParam String token) {
         logger.info("in AuthController -> activate");
-
-
         Response response = facadeAuthController.activate(token);
         return new ResponseEntity<>(response, response.getStatus());
     }

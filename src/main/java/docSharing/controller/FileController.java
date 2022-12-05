@@ -38,8 +38,9 @@ class FileController {
     /**
      * getAll function called from the client when we enter a new folder, and it should send the client a list with all
      * the folders & documents to present the client.
+     *
      * @param parentFolderId - folder id.
-     * @param userId - the user id.
+     * @param userId         - the user id.
      * @return - List<FileRes> with all the folders & documents to send.
      */
     @RequestMapping(value = "getAll", method = RequestMethod.GET)
@@ -48,11 +49,13 @@ class FileController {
         Response response = facadeFileController.getAll(parentFolderId, userId);
         return new ResponseEntity<>(response, response.getStatus());
     }
+
     /**
      * renameFolder is a request from the client to change a given folder's name.
+     *
      * @param folderId - the folder that will change its name.
-     * @param name - new name.
-     * @param userId - user that sends this request.
+     * @param name     - new name.
+     * @param userId   - user that sends this request.
      * @return - ResponseEntity with a message.
      */
     @RequestMapping(value = "folder/rename", method = RequestMethod.PATCH)
@@ -65,9 +68,10 @@ class FileController {
 
     /**
      * renameDocument is a request from the client to change a given document's name.
+     *
      * @param documentId -  the document that will change its name.
-     * @param name -  new name.
-     * @param userId - user that sends this request.
+     * @param name       -  new name.
+     * @param userId     - user that sends this request.
      * @return - ResponseEntity with a message.
      */
     @RequestMapping(value = "document/rename", method = RequestMethod.PATCH)
@@ -80,8 +84,9 @@ class FileController {
     /**
      * deleteFolder is a DELETE method that called from the client to delete a folder.
      * all the folder's content (documents and inner folders) will be deleted also.
+     *
      * @param folderId - the folder that will be deleted.
-     * @param userId - the user that creates this request.
+     * @param userId   - the user that creates this request.
      * @return - ResponseEntity with a message.
      */
     @RequestMapping(value = "folder", method = RequestMethod.DELETE)
@@ -90,11 +95,13 @@ class FileController {
         Response response = facadeFileController.delete(folderId, Folder.class);
         return new ResponseEntity<>(response, response.getStatus());
     }
+
     /**
      * deleteDocument is a DELETE method that called from the client to delete a document.
      * all the document's content will be deleted also.
+     *
      * @param documentId - the document that will be deleted.
-     * @param userId - the user that creates this request.
+     * @param userId     - the user that creates this request.
      * @return - ResponseEntity with a message.
      */
     @RequestMapping(value = "document", method = RequestMethod.DELETE)
@@ -103,11 +110,13 @@ class FileController {
         Response response = facadeFileController.delete(documentId, Document.class);
         return new ResponseEntity<>(response, response.getStatus());
     }
+
     /**
-     *  relocateFolder is a PATCH method that called from the client to relocate a folder's location.
+     * relocateFolder is a PATCH method that called from the client to relocate a folder's location.
+     *
      * @param newParentFolderId - the new location of the folder.
-     * @param folderId - what folder we need to relocate.
-     * @param userId - the user that creates this request.
+     * @param folderId          - what folder we need to relocate.
+     * @param userId            - the user that creates this request.
      * @return - ResponseEntity with a message.
      */
     @RequestMapping(value = "folder/relocate", method = RequestMethod.PATCH)
@@ -119,9 +128,10 @@ class FileController {
 
     /**
      * relocateDocument is a PATCH method that called from the client to relocate a document's location.
+     *
      * @param newParentFolderId - the new location of the document.
-     * @param documentId - what document we need to relocate.
-     * @param userId - the user that creates this request.
+     * @param documentId        - what document we need to relocate.
+     * @param userId            - the user that creates this request.
      * @return - ResponseEntity with a message.
      */
     @RequestMapping(value = "document/relocate", method = RequestMethod.PATCH)
@@ -133,8 +143,9 @@ class FileController {
 
     /**
      * export is a GET method that called from the client to export a document content onto a file.
+     *
      * @param documentId - the document that will be exported.
-     * @param userId - the user that creates this request.
+     * @param userId     - the user that creates this request.
      * @return - ResponseEntity with a message.
      */
     @RequestMapping(value = "document/export", method = RequestMethod.GET)
@@ -147,8 +158,9 @@ class FileController {
 
     /**
      * doesDocumentExists is a get method that checks if a given document id is exist in our database.
+     *
      * @param documentId - the document id to search.
-     * @param userId - the user that creates this request.
+     * @param userId     - the user that creates this request.
      * @return - ResponseEntity with a message.
      */
     @RequestMapping(value = "document/doesExists", method = RequestMethod.GET)
@@ -161,8 +173,9 @@ class FileController {
 
     /**
      * doesFolderExists is a get method that checks if a given document id is exist in our database.
+     *
      * @param folderId - the folder id to search.
-     * @param userId - the user that creates this request.
+     * @param userId   - the user that creates this request.
      * @return - ResponseEntity with a message.
      */
 
@@ -177,8 +190,9 @@ class FileController {
 
     /**
      * getDocumentName
+     *
      * @param documentId - doc id
-     * @param userId - user id
+     * @param userId     - user id
      * @return -
      */
     @RequestMapping(value = "document", method = RequestMethod.GET)
@@ -190,9 +204,10 @@ class FileController {
 
     /**
      * createFolder is a request from the client to create a new folder in a specific location.
+     *
      * @param parentFolderId - create a folder inside this folder id.
-     * @param name - name of the new folder.
-     * @param userId - the user that creates the new folder.
+     * @param name           - name of the new folder.
+     * @param userId         - the user that creates the new folder.
      * @return ResponseEntity with a message.
      */
     @RequestMapping(value = "folder", method = RequestMethod.POST)
@@ -204,10 +219,11 @@ class FileController {
 
     /**
      * createDocument is a request from the client to create a new document in a specific folder location.
+     *
      * @param parentFolderId- create a document inside this folder id.
-     * @param name - name of the new folder.
-     * @param content - the content of a document, with data if it was from import a file request.
-     * @param userId - the user that creates the new folder
+     * @param name            - name of the new folder.
+     * @param content         - the content of a document, with data if it was from import a file request.
+     * @param userId          - the user that creates the new folder
      * @return - ResponseEntity with a message.
      */
     @RequestMapping(value = "document", method = RequestMethod.POST, consumes = "application/json")
@@ -218,10 +234,11 @@ class FileController {
     }
 
     /**
-     * getPath is a GET method that called from the client when we enter a folder inside the client side,
+     * getPath is a GET method that called from the client when we enter a document inside the client side,
      * and want to present the client the new path he has done so far.
+     *
      * @param userId - the user that creates this request.
-     * @return - ResponseEntity with a message.
+     * @return - ResponseEntity<Response> with a status code and the path.
      */
     @RequestMapping(value = "document/getPath", method = RequestMethod.GET)
     public ResponseEntity<Response> getDocumentPath(@RequestParam Long documentId, @RequestAttribute Long userId) {
@@ -233,8 +250,9 @@ class FileController {
     /**
      * getPath is a GET method that called from the client when we enter a folder inside the client side,
      * and want to present the client the new path he has done so far.
+     *
      * @param userId - the user that creates this request.
-     * @return - ResponseEntity with a message.
+     * @return - ResponseEntity<Response> with a status code and the path.
      */
     @RequestMapping(value = "folder/getPath", method = RequestMethod.GET)
     public ResponseEntity<Response> getFolderPath(@RequestParam Long folderId, @RequestAttribute Long userId) {
@@ -242,10 +260,12 @@ class FileController {
         Response response = facadeFileController.getPath(folderId, Folder.class);
         return new ResponseEntity<>(response, response.getStatus());
     }
+
     /**
      * getContent
+     *
      * @param documentId - doc id
-     * @param userId - user id
+     * @param userId     - user id
      * @return -
      */
     @RequestMapping(value = "document/getContent", method = RequestMethod.GET)

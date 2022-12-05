@@ -1,5 +1,8 @@
 package docSharing.controller;
 
+import docSharing.entity.User;
+import docSharing.service.AuthService;
+import docSharing.service.UserService;
 import com.google.api.services.gmail.Gmail;
 import docSharing.entity.User;
 import docSharing.repository.UserRepository;

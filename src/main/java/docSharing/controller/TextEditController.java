@@ -44,42 +44,39 @@ public class TextEditController {
     LogService logService;
 
     /**
-     *  receiveLog is a function that's called from the client when we have changes in a specific document id,
-     *  it contains the logReq with new data to update the document content.
+     * receiveLog is a function that's called from the client when we have changes in a specific document id,
+     * it contains the logReq with new data to update the document content.
+     *
      * @param documentId - document id in database.
-     * @param logReq - log request with: userId, documentId, offset, data, action.
+     * @param logReq     - log request with: userId, documentId, offset, data, action.
      * @return -LogReq from the client.
      */
     @MessageMapping("/document/{documentId}")
     @SendTo("/document/{documentId}")
     public LogReq receiveLog(@DestinationVariable Long documentId, @Payload LogReq logReq) {
         logger.info("in TextEditController -> receiveLog");
-
-            // FIXME: What to do if anything fails? Do we do anything with the client?
         try {
-            // FIXME: what if there's no such a user? Do we handle it?
             User user = userService.findById(logReq.getUserId());
-            // FIXME: what if there's no such a document? Do we check it?
             Document document = documentService.findById(documentId);
-            // CONSULT: Why do we even get a logReq and not a normal Log. Then return a logRes?
             Log log = new Log(user, document, logReq.getOffset(), logReq.getData(), logReq.getAction(), LocalDateTime.now());
             documentService.updateContent(log);
             logService.updateLogs(log);
             return logReq;
         } catch (AccountNotFoundException e) {
-            logger.fatal("in TextEditController -> receiveLog ->"+ e.getMessage());
+            logger.fatal("in TextEditController -> receiveLog ->" + e.getMessage());
             throw new RuntimeException(e);
         } catch (FileNotFoundException e) {
-            logger.fatal("in TextEditController -> receiveLog ->"+ e.getMessage());
+            logger.fatal("in TextEditController -> receiveLog ->" + e.getMessage());
             throw new RuntimeException(e);
         }
     }
 
 
     /**
-     * getOnlineUsers called with an document id and user with method add or remove,
+     * getOnlineUsers called with a document id and user with method add or remove,
      * goal is to keep an update list of users that use a document.
-     * @param documentId - document id in database.
+     *
+     * @param documentId     - document id in database.
      * @param onlineUsersReq - new request with user and method ADD, REMOVE the user from the document.
      * @return - list of users that use the given document's id.
      */
@@ -95,7 +92,7 @@ public class TextEditController {
                 }
             });
             return all;
-        } catch (AccountNotFoundException e) {
+        } catch (IllegalArgumentException e) {
             logger.debug("in TextEditController -> getOnlineUsers -> no users to get online");
             return null;
         }

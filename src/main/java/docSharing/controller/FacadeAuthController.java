@@ -6,8 +6,7 @@ import docSharing.service.AuthService;
 import docSharing.service.FolderService;
 import docSharing.service.UserService;
 import docSharing.utils.*;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,25 +30,25 @@ public class FacadeAuthController {
     private UserService userService;
     private static Logger logger = LogManager.getLogger(FacadeAuthController.class.getName());
 
-
+    /**
+     * Register function is responsible for creating new users and adding them to the database.
+     * Users will use their personal information to create a new account: email, password, name.
+     *
+     * @param user - User with email, name and password
+     * @return Response with status 201 if good or 400 if something went wrong.
+     */
     public Response register(User user) {
-        String email = user.getEmail();
-        String name = user.getName();
-        String password = user.getPassword();
+        logger.info("in FacadeAuthController -> register");
 
-        // make sure we got all the data from the client
-        if (name == null || email == null || password == null ) {
-            logger.error("in AuthController -> register -> one of email, name, password is null");
-            return new Response.Builder()
-                    .message("You must include all and exact parameters for such an action: email, name, password")
-                    .status(HttpStatus.BAD_REQUEST)
-                    .statusCode(400)
-                    .build();
-        }
         try {
-//            Validations.validate(Regex.NAME.getRegex(), name);
+            String email = user.getEmail();
+            String name = user.getName();
+            String password = user.getPassword();
+
+            Validations.validate(Regex.NAME.getRegex(), name);
             Validations.validate(Regex.EMAIL.getRegex(), email);
             Validations.validate(Regex.PASSWORD.getRegex(), password);
+
             User emailUser = authService.register(email, password, name);
             folderService.createRootFolders(emailUser);
             String token = ConfirmationToken.createJWT(Long.toString(emailUser.getId()), "docs-app", "activation email", 5 * 1000 * 60);
@@ -62,8 +61,8 @@ public class FacadeAuthController {
                     .data(true)
                     .status(HttpStatus.CREATED)
                     .build();
-        } catch (MessagingException | IOException e) {
-            logger.error("in AuthController -> register -> " + e.getMessage());
+        } catch (MessagingException | IllegalArgumentException | NullPointerException | IOException e) {
+            logger.error("in FacadeAuthController -> register -> " + e.getMessage());
             return new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
                     .data(false)
@@ -72,11 +71,23 @@ public class FacadeAuthController {
         }
     }
 
+    /**
+     * Login function is responsible for logging user into the system.
+     * This function accepts only 2 parameters: email, password.
+     * If the credentials match to the database's information, it will allow the user to use its functionalities.
+     * A token will be returned in a successful request.
+     *
+     * @param user - user's details with email and password to check if correct
+     * @return Response with user's token and status 200 if good or 400 if something went wrong.
+     */
     public Response login(User user) {
+        logger.info("in FacadeAuthController -> login");
+
         User userInDb = null;
         try {
             userInDb = userService.findByEmail(user.getEmail());
             if (!userInDb.getActivated()) {
+                logger.error("in FacadeAuthController -> login -> user email:" + user.getEmail() + " ," + ExceptionMessage.USER_NOT_ACTIVATED);
                 return new Response.Builder()
                         .message(ExceptionMessage.USER_NOT_ACTIVATED.toString())
                         .status(HttpStatus.FORBIDDEN)
@@ -94,23 +105,32 @@ public class FacadeAuthController {
                     .status(HttpStatus.OK)
                     .build();
         } catch (IllegalArgumentException | NullPointerException e) {
-            logger.error("in AuthController -> login -> " + e.getMessage());
+            logger.error("in FacadeAuthController -> login -> " + e.getMessage());
             return new Response.Builder()
                     .message("You must include all and exact parameters for such an action: email, name, password")
                     .status(HttpStatus.FORBIDDEN)
                     .statusCode(400)
                     .build();
         } catch (AccountNotFoundException e) {
-            logger.error("in AuthController -> login -> " + e.getMessage());
+            logger.error("in FacadeAuthController -> login -> AccountNotFoundException-> " + e.getMessage());
             return new Response.Builder()
                     .message("You must include all and exact parameters for such an action: email, name, password")
                     .status(HttpStatus.UNAUTHORIZED)
-                    .statusCode(400)
+                    .statusCode(401)
                     .build();
         }
     }
 
+    /**
+     * Activate function is responsible for activating email links.
+     * If the link is not expired, make the user activated in the database.
+     * If the link is expired, resend a new link to the user with a new token.
+     *
+     * @param token - A link with activation token
+     * @return Response with data and status 200 if good or 400 if something went wrong.
+     */
     public Response activate(String token) {
+        logger.info("in FacadeAuthController -> activate");
         try {
             String parsedToken = null;
             parsedToken = URLDecoder.decode(token, StandardCharsets.UTF_8.toString()).replaceAll(" ", ".");
@@ -140,7 +160,7 @@ public class FacadeAuthController {
                         .status(HttpStatus.GONE)
                         .build();
             } catch (AccountNotFoundException ex) {
-                logger.error("in AuthController -> activate -> " + e.getMessage());
+                logger.error("in FacadeAuthController -> activate ->AccountNotFoundException-> " + e.getMessage());
                 return new Response.Builder()
                         .message("activation link expired, failed to send new link")
                         .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -148,19 +168,20 @@ public class FacadeAuthController {
                         .build();
             }
 
-        } catch (UnsupportedEncodingException e) {
-            logger.error("in AuthController -> activate -> " + e.getMessage());
+        } catch (UnsupportedEncodingException | UnsupportedJwtException | MalformedJwtException | SignatureException |
+                 IllegalArgumentException e) {
+            logger.error("in FacadeAuthController -> activate -> " + e.getMessage());
             return new Response.Builder()
                     .message("failed to activate account")
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .statusCode(500)
-                    .build();
-        } catch (AccountNotFoundException e) {
-            logger.error("in AuthController -> activate -> " + e.getMessage());
-            return new Response.Builder()
-                    .message("invalid token")
                     .status(HttpStatus.BAD_REQUEST)
                     .statusCode(400)
+                    .build();
+        } catch (AccountNotFoundException e) {
+            logger.error("in FacadeAuthController -> activate -> AccountNotFoundException ->" + e.getMessage());
+            return new Response.Builder()
+                    .message("invalid token")
+                    .status(HttpStatus.FORBIDDEN)
+                    .statusCode(403)
                     .build();
         }
     }

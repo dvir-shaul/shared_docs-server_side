@@ -1,5 +1,6 @@
 package docSharing.requests;
 
+import docSharing.utils.logAction;
 import lombok.*;
 
 @AllArgsConstructor
@@ -12,5 +13,5 @@ public class LogReq {
     private Long documentId;
     private int offset;
     private String data;
-    private String action;
+    private logAction action;
 }

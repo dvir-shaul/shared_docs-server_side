@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 @Service
 @AllArgsConstructor
 public class Activation {
+
     /**
      * buildEmail is a function that used from the authController and emailService.
      * build a email to send the user in email to make him activate.

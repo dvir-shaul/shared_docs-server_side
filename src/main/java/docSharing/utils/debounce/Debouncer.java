@@ -28,11 +28,6 @@ public class Debouncer<T> {
         } while (prev != null && !prev.extend()); // Exit only if new task was added to map, or existing task was extended successfully
     }
 
-    // STOP ALL RUNNING TASKS
-//    public void terminate() {
-//        schedule.shutdownNow();
-//    }
-
     // The task that wakes up when the wait time elapses
     private class TimerTask implements Runnable {
         private final Log log;
