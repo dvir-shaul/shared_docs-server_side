@@ -1,9 +1,6 @@
 package docSharing.controller;
 
-import docSharing.entity.Document;
-import docSharing.entity.Folder;
-import docSharing.entity.Permission;
-import docSharing.entity.User;
+import docSharing.entity.*;
 import docSharing.requests.Type;
 import docSharing.response.ExportDoc;
 import docSharing.response.FileRes;
@@ -39,9 +36,18 @@ public class FacadeFileController {
     /**
      * create is a request from the client to create a new file in a specific folder location.
      *
-     * @param item - item of kind folder or document.
+     * @param parentFolderId - item of kind folder or document.
      * @param c    - the class of the item, need to know to what service sends the request.
      * @return - ResponseEntity.
+     */
+    /**
+     *
+     * @param parentFolderId
+     * @param name
+     * @param content
+     * @param userId
+     * @param c
+     * @return
      */
     public Response create(Long parentFolderId, String name, String content, Long userId, Class c) {
         logger.info("in FacadeController -> create, item of Class:"+c);
@@ -71,14 +77,12 @@ public class FacadeFileController {
     }
 
     /**
-     *
-     * @param item
+     * 
+     * @param itemId
      * @param c
      * @return
      */
-    public Response getPath(GeneralItem item, Class c) {
-        logger.info("in FacadeController -> getPath, item:"+item+"of Class:"+c);
-
+    public Response getPath(Long itemId, Class c) {
         return new Response.Builder()
                 .status(HttpStatus.OK)
                 .statusCode(200)

@@ -6,7 +6,6 @@ import docSharing.repository.FolderRepository;
 import docSharing.repository.UserDocumentRepository;
 import docSharing.repository.UserRepository;
 import docSharing.service.AuthService;
-import docSharing.service.EmailService;
 import docSharing.utils.ExceptionMessage;
 import docSharing.utils.Params;
 import docSharing.utils.Validations;

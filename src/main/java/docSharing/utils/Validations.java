@@ -1,8 +1,5 @@
 package docSharing.utils;
 
-import docSharing.entity.GeneralItem;
-import docSharing.service.AuthService;
-import docSharing.service.EmailService;
 import io.jsonwebtoken.Claims;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
