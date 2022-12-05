@@ -57,79 +57,12 @@ public class FolderServiceTest {
         folder.setId(1L);
     }
 //    @Test
-//    void givenFolderObject_whenCreateFolder_thenReturnFolderId() {
+//    public void givenFolderObject_whenCreateFolder_thenReturnFolderId() {
 //        given(folderRepository.findById(folder.getId())).willReturn(null);
 //        given(folderRepository.save(folder)).willReturn(folder);
 //       // assertThat(folderService.create(folder)).isEqualTo(folder.getId());
 //    }
-
-//    @Test
-//    void getActiveUsers_givenCorrectInformationWithGetMethod_returnUsersList() {
-//
-//        given(userRepository.findById(1L)).willReturn(Optional.of(user));
-//        assertEquals(HashSet.class, documentService);
-//    }
-
-    @Test
-    void findById_givenCorrectUser_returnsUserSucessfully() throws FileNotFoundException {
-        given(folderRepository.findById(1L)).willReturn(Optional.of(folder));
-        assertEquals(folder, folderService.findById(1L));
-    }
-
-    @Test
-    void findById_givenWrongUser_throwsException() {
-        given(folderRepository.findById(1L)).willReturn(Optional.empty());
-        assertThrows(FileNotFoundException.class, () -> folderService.findById(1L));
-    }
-
-    @Test
-    void get_givenWrongInformation_throwFileNotFoundException() {
-        given(folderRepository.findById(1L)).willReturn(Optional.empty());
-        assertThrows(FileNotFoundException.class, () -> folderService.get(1L, 1L));
-    }
-
-    @Test
-    void get_givenWrongInformation_throwAccountNotFound() {
-        given(folderRepository.findById(1L)).willReturn(Optional.of(folder));
-        given(userRepository.findById(1L)).willReturn(Optional.empty());
-        assertThrows(AccountNotFoundException.class, () -> folderService.get(1L, 1L));
-    }
-
-    @Test
-    void get_givenCorrectInformation_returnListOfFolders() throws FileNotFoundException, AccountNotFoundException {
-        List<Folder> folderList = new ArrayList<>();
-        given(folderRepository.findById(1L)).willReturn(Optional.of(folder));
-        given(userRepository.findById(1L)).willReturn(Optional.of(user));
-        given(folderRepository.findAllByParentFolderIdAndUserId(folder, user)).willReturn(folderList);
-        assertEquals(folderList.getClass(), folderService.get(1L, 1L).getClass());
-    }
-
-    @Test
-    void getAllWhereParentFolderIsNull_givenCorrectUserId_returnsListOfFolders() throws AccountNotFoundException {
-        List<Folder> folderList = new ArrayList<>();
-        given(userRepository.findById(1L)).willReturn(Optional.of(user));
-        given(folderRepository.findAllByParentFolderIsNull(user)).willReturn(folderList);
-        assertEquals(folderList.getClass(), folderService.getAllWhereParentFolderIsNull(1L).getClass());
-    }
-
-    @Test
-    void getAllWhereParentFolderIsNull_givenWrongUserId_throwsAccountNotFoundException() {
-        given(userRepository.findById(1L)).willReturn(Optional.empty());
-        assertThrows(AccountNotFoundException.class, () -> folderService.getAllWhereParentFolderIsNull(1L));
-    }
-
-    @Test
-    void create_WithIncorrectParentFolder_ThrowsFileNotFoundException() {
-        given(folderRepository.findById(1L)).willReturn(Optional.empty());
-        assertThrows(FileNotFoundException.class, () -> folderService.create(folder, user, "hey", null));
-    }
-
-//    @Test
-//    void create_withCorrectParameters_returnFolderSuccessfully() throws FileNotFoundException {
-//        given(folderRepository.findById(1L)).willReturn(Optional.of(parentFolder));
-//        given(folderRepository.save(folder)).willReturn(folder);
-//        assertEquals(folder, folderService.create(folder, user, "hey", null));
-//    }
+//}
 
     @Test
     void getPath_withLegalArgument_returnList() throws FileNotFoundException {

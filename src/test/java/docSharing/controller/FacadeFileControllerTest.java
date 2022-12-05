@@ -51,7 +51,7 @@ class FacadeFileControllerTest {
     }
 
     @Test
-    void createDocument_goodDocument_Successfully() throws AccountNotFoundException {
+    void createDocument_goodDocument_Successfully() throws AccountNotFoundException, FileNotFoundException {
         given(userService.findById(user.getId())).willReturn(user);
         given(documentService.create(null, user, "test", null)).willReturn(goodDocument.getId());
         assertEquals(201, facadeFileController.create(null, "test", null, user.getId(), Document.class).getStatusCode(), "create document with good parameters did not return 201");
@@ -125,7 +125,7 @@ class FacadeFileControllerTest {
         assertEquals(400, facadeFileController.getAll(goodFolder.getId(), user.getId()).getStatusCode(), "get all with invalid parameters did not return 400");
     }
     @Test
-    void rename_validDocumentName_OK(){
+    void rename_validDocumentName_OK() throws FileNotFoundException {
         given(documentService.rename(goodDocument.getId(), goodDocument.getName())).willReturn(1);
         assertEquals(200, facadeFileController.rename(goodDocument.getId(), goodDocument.getName(), Document.class).getStatusCode());
     }
