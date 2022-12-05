@@ -23,10 +23,11 @@ public class UserController {
 
     /**
      * givePermission is a PATCH function for changing the user role.
+     *
      * @param documentId - the document id in database
-     * @param uid - the user id in database that will change his permission
+     * @param uid        - the user id in database that will change his permission
      * @param permission - the new permission
-     * @param userId - the user id that sent this request
+     * @param userId     - the user id that sent this request
      * @return ResponseEntity with the message, if it worked or not.
      */
     @RequestMapping(value = "/permission/give", method = RequestMethod.PATCH)
@@ -39,9 +40,10 @@ public class UserController {
     /**
      * givePermissionToAll is a POST function for sharing a document with given a list of emails.
      * if the user's email is not in our database it will send him an invitation to register the app.
-     * @param emails - list with emails to share the document.
+     *
+     * @param emails     - list with emails to share the document.
      * @param documentId - document id in database.
-     * @param userId - the user that sends this request
+     * @param userId     - the user that sends this request
      * @return ResponseEntity with a message.
      */
 
@@ -54,6 +56,7 @@ public class UserController {
 
     /**
      * getDocuments is a GET method that sends all the document the user have linked with him.
+     *
      * @param userId - id in database.
      * @return - list with document.
      */
@@ -63,10 +66,12 @@ public class UserController {
         Response response = facadeUserController.getDocuments(userId);
         return new ResponseEntity<>(response, response.getStatus());
     }
+
     /**
      * getUser is a GET method that sends an entity of user to the client.
+     *
      * @param userId - user's id in database.
-     * @return - entity of UserRes that's contain name,email and id.
+     * @return - ResponseEntity<Response> with data entity of UserRes that's contain name,email and id.
      */
     @RequestMapping(value = "getUser", method = RequestMethod.GET)
     public ResponseEntity<Response> getUser(@RequestAttribute Long userId) {
@@ -76,10 +81,11 @@ public class UserController {
     }
 
     /**
+     * getUserPermissionForSpecificDocument is a GET method that sends an entity of user to the client.
      *
-     * @param documentId
-     * @param userId
-     * @return
+     * @param documentId - document id in the database.
+     * @param userId     - user id in the database.
+     * @return - ResponseEntity<Response> with data entity of JoinRes entity that contain the name, permission and id of a user.
      */
     @RequestMapping(value = "document/getUser", method = RequestMethod.GET)
     public ResponseEntity<Response> getUserPermissionForSpecificDocument(@RequestParam Long documentId, @RequestAttribute Long userId) {
