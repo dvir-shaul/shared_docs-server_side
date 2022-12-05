@@ -71,27 +71,26 @@ public class UserService {
      */
     public void updatePermission(Long docId, Long userId, Permission permission) {
         logger.info("in UserService -> updatePermission");
-
-        if (!documentRepository.findById(docId).isPresent()) {
+        Optional<Document> document = documentRepository.findById(docId);
+        if (!document.isPresent()) {
             logger.error("in UserService -> updatePermission --> "+ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS );
             throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
         }
-        if (!userRepository.findById(userId).isPresent()) {
+        Optional<User> user = userRepository.findById(userId);
+        if (!user.isPresent()) {
             logger.error("in UserService -> updatePermission --> "+ExceptionMessage.NO_ACCOUNT_IN_DATABASE );
             throw new IllegalArgumentException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
         }
-        Document doc = documentRepository.findById(docId).get();
-        User user = userRepository.findById(userId).get();
-        if(permission.equals(Permission.UNAUTHORIZED)){
-            userDocumentRepository.deleteUserFromDocument(user,doc);
+        if (permission.equals(Permission.UNAUTHORIZED)) {
+            userDocumentRepository.deleteUserFromDocument(user.get(), document.get());
             return;
         }
-        if (userDocumentRepository.find(doc, user).isPresent()) {
-            userDocumentRepository.updatePermission(permission, doc, user);
+        if (userDocumentRepository.find(document.get(), user.get()).isPresent()) {
+            userDocumentRepository.updatePermission(permission, document.get(), user.get());
         } else {
             UserDocument userDocument = new UserDocument();
-            userDocument.setUser(user);
-            userDocument.setDocument(doc);
+            userDocument.setUser(user.get());
+            userDocument.setDocument(document.get());
             userDocument.setPermission(permission);
             userDocumentRepository.save(userDocument);
         }

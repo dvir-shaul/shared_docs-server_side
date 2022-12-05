@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import docSharing.utils.ExceptionMessage;
 
 import javax.persistence.*;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity(name = "Document")
@@ -14,19 +15,21 @@ public class Document extends GeneralItem {
     @Column(name = "content", columnDefinition = "text")
     private String content;
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Log> logs;
+    private Set<Log> logs=new HashSet<>();
 
-    private Document() {
+    public Set<Log> getLogs() {
+        return logs;
+    }
+
+    public void setLogs(Set<Log> logs) {
+        this.logs = logs;
+    }
+
+   public Document() {
         super();
         this.isPrivate = true;
     }
 
-    //    public static Document createDocument(String name, Folder parentFolder) {
-//        Document document = new Document();
-//        document.setName(name);
-//        document.setParentFolder(parentFolder);
-//        return document;
-//    }
     public void addLog(Log log) {
         this.logs.add(log);
     }

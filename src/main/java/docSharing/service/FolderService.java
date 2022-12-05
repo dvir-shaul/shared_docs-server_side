@@ -1,10 +1,7 @@
 package docSharing.service;
 
 import docSharing.entity.*;
-import docSharing.repository.DocumentRepository;
-import docSharing.repository.FolderRepository;
-import docSharing.repository.UserDocumentRepository;
-import docSharing.repository.UserRepository;
+import docSharing.repository.*;
 import docSharing.requests.Type;
 import docSharing.response.FileRes;
 import docSharing.utils.ExceptionMessage;
@@ -32,6 +29,8 @@ public class FolderService implements ServiceInterface {
     UserRepository userRepository;
     @Autowired
     UserDocumentRepository userDocumentRepository;
+    @Autowired
+    DocumentService documentService;
 
     /**
      * @param id - id of folder in database
@@ -75,6 +74,7 @@ public class FolderService implements ServiceInterface {
 
     /**
      * function gets called when parent folder is null, called for basic built in folders.
+     *
      * @param userId - user's relation folders
      * @return list of folders
      */
@@ -92,20 +92,20 @@ public class FolderService implements ServiceInterface {
     /**
      * function get an item of kind folder and uses the logics to create and save a new folder to database.
      *
-     * @param generalItem - create item
+     * @param parentFolder - parent folder of the folder
+     * @param user         - the owner of the folder
+     * @param name         - name of folder
+     * @param content      - not in use here
      * @return id of the item that was saved to database.
      */
-    public Long create(GeneralItem generalItem) {
-        logger.info("in FolderService -> create, item is:"+generalItem);
-        if (generalItem.getParentFolder() != null) {
-            Optional<Folder> folder = folderRepository.findById(generalItem.getParentFolder().getId());
-            if (!folder.isPresent()) {
-                logger.error("in FolderService -> create --> " + ExceptionMessage.FOLDER_DOES_NOT_EXISTS);
-                throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + generalItem.getParentFolder().getId());
-
-            }
+    public Long create(Folder parentFolder, User user, String name, String content) {
+        logger.info("in FolderService -> create, item :" + name);
+        if (parentFolder == null) {
+            logger.error("in FolderService -> create --> " + ExceptionMessage.FOLDER_DOES_NOT_EXISTS);
+            throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + parentFolder.getId());
         }
-        Folder savedFolder = folderRepository.save((Folder) generalItem);
+        Folder folder = Folder.createFolder(name, parentFolder, user);
+        Folder savedFolder = folderRepository.save(folder);
         if (savedFolder.getParentFolder() != null) {
             savedFolder.getParentFolder().addFolder(savedFolder);
         }
@@ -116,16 +116,21 @@ public class FolderService implements ServiceInterface {
     /**
      * getPath called every time a new file is opened in the client and return the path to the current file
      */
-    public List<FileRes> getPath(GeneralItem generalItem) {
-        logger.info("in FolderService -> getPath, item is:"+generalItem);
-        List<FileRes> path = new ArrayList<>();
-        Folder parentFolder = generalItem.getParentFolder();
-        path.add(0, new FileRes(generalItem.getName(), generalItem.getId(), Type.FOLDER, Permission.ADMIN, generalItem.getUser().getEmail()));
-        while (parentFolder != null) {
-            path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, generalItem.getUser().getEmail()));
-            parentFolder = parentFolder.getParentFolder();
+    public List<FileRes> getPath(Long folderId) {
+        logger.info("in FolderService -> getPath, item id is:" + folderId);
+        try {
+            Folder folder = findById(folderId);
+            List<FileRes> path = new ArrayList<>();
+            Folder parentFolder = folder.getParentFolder();
+            path.add(0, new FileRes(folder.getName(), folder.getId(), Type.FOLDER, Permission.ADMIN, folder.getUser().getEmail()));
+            while (parentFolder != null) {
+                path.add(0, new FileRes(parentFolder.getName(), parentFolder.getId(), Type.FOLDER, Permission.ADMIN, folder.getUser().getEmail()));
+                parentFolder = parentFolder.getParentFolder();
+            }
+            return path;
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
         }
-        return path;
     }
 
     /**
@@ -160,7 +165,7 @@ public class FolderService implements ServiceInterface {
 
         Optional<Folder> folder = folderRepository.findById(id);
         if (!folder.isPresent()) {
-            logger.error("in FolderService -> relocate --> " + ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS);
+            logger.error("in FolderService -> relocate --> " + ExceptionMessage.FOLDER_DOES_NOT_EXISTS);
             throw new FileNotFoundException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
         }
 
@@ -216,8 +221,11 @@ public class FolderService implements ServiceInterface {
             throw new FileNotFoundException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
 
         folder.get().getDocuments().forEach(document -> {
-            userDocumentRepository.deleteDocument(document);
-            documentRepository.delete(document);
+            try {
+                documentService.delete(document.getId());
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
         });
 
         for (Folder f : folder.get().getFolders()) {

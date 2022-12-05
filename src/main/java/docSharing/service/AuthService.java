@@ -17,7 +17,6 @@ import org.apache.logging.log4j.Logger;
 public class AuthService {
     private static Logger logger = LogManager.getLogger(AuthService.class.getName());
 
-
     @Autowired
     private UserRepository userRepository;
 

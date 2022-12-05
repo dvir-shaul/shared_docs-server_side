@@ -1,21 +1,23 @@
 package docSharing.controller;
 
 import docSharing.entity.Document;
-import docSharing.entity.GeneralItem;
 import docSharing.entity.Folder;
 import docSharing.entity.Permission;
+import docSharing.entity.User;
 import docSharing.requests.Type;
 import docSharing.response.ExportDoc;
 import docSharing.response.FileRes;
 import docSharing.response.Response;
-import docSharing.service.*;
+import docSharing.service.DocumentService;
+import docSharing.service.FolderService;
+import docSharing.service.ServiceInterface;
+import docSharing.service.UserService;
 import docSharing.utils.Regex;
 import docSharing.utils.Validations;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import javax.security.auth.login.AccountNotFoundException;
@@ -24,13 +26,68 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-public class FacadeController {
-    private static Logger logger = LogManager.getLogger(FacadeController.class.getName());
+public class FacadeFileController {
+    private static Logger logger = LogManager.getLogger(FacadeFileController.class.getName());
 
     @Autowired
-    DocumentService documentService;
+    private FolderService folderService;
     @Autowired
-    FolderService folderService;
+    private DocumentService documentService;
+    @Autowired
+    private UserService userService;
+
+    /**
+     * create is a request from the client to create a new file in a specific folder location.
+     *
+     * @param item - item of kind folder or document.
+     * @param c    - the class of the item, need to know to what service sends the request.
+     * @return - ResponseEntity.
+     */
+    public Response create(Long parentFolderId, String name, String content, Long userId, Class c) {
+        logger.info("in FacadeController -> create, item of Class:"+c);
+        try {
+            Validations.validate(Regex.FILE_NAME.getRegex(), name);
+//            Validations.validate(Regex.ID.getRegex(), item.getParentFolderId().toString());
+            Folder parentFolder = null;
+            if (parentFolderId != null)
+                parentFolder = folderService.findById(parentFolderId);
+            User user = userService.findById(userId);
+            return new Response.Builder()
+                    .status(HttpStatus.OK)
+                    .statusCode(200)
+                    .data(convertFromClassToService(c).create(parentFolder, user, name, content))
+                    .message("item created successfully")
+                    .build();
+
+        } catch (NullPointerException | IllegalArgumentException | FileNotFoundException | AccountNotFoundException e) {
+            logger.error("in FacadeController -> create -> " +e.getMessage());
+            return new Response.Builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .statusCode(400)
+                    .message(e.getMessage())
+                    .build();
+        }
+
+    }
+
+    /**
+     *
+     * @param item
+     * @param c
+     * @return
+     */
+    public Response getPath(GeneralItem item, Class c) {
+        logger.info("in FacadeController -> getPath, item:"+item+"of Class:"+c);
+
+        return new Response.Builder()
+                .status(HttpStatus.OK)
+                .statusCode(200)
+                .message("Successfully managed to retrieve path")
+                .data(convertFromClassToService(c).getPath(itemId))
+                .build();
+    }
+
+
     /**
      * getAll function called from the client when we enter a new folder, and it should send the client a list with all
      * the folders & documents to present the client.
@@ -68,64 +125,6 @@ public class FacadeController {
                     .statusCode(400)
                     .build();
         }
-    }
-
-//    public ResponseEntity<Response> get(Long id, Class c) {
-//        if (id == null)
-//            return ResponseEntity.badRequest().body(new Response.Builder()
-//                    .status(HttpStatus.BAD_REQUEST)
-//                    .message("In order to relocate, an ID must be provided!")
-//                    .build());
-//
-//        return ResponseEntity.ok().body(convertFromClassToService(c).get(id));
-//    }
-    /**
-     * create is a request from the client to create a new file in a specific folder location.
-     *
-     * @param item - item of kind folder or document.
-     * @param c    - the class of the item, need to know to what service sends the request.
-     * @return - ResponseEntity.
-     */
-    public Response create(GeneralItem item, Class c) {
-        logger.info("in FacadeController -> create, item:"+item+"of Class:"+c);
-
-        // make sure we got all the data from the client
-        try {
-            Validations.validate(Regex.FILE_NAME.getRegex(), item.getName());
-//            Validations.validate(Regex.ID.getRegex(), item.getParentFolderId().toString());
-            return new Response.Builder()
-                    .status(HttpStatus.OK)
-                    .statusCode(200)
-                    .data(convertFromClassToService(c).create(item))
-                    .message("item created successfully")
-                    .build();
-
-        } catch (NullPointerException | IllegalArgumentException e) {
-            logger.error("in FacadeController -> create -> " +e.getMessage());
-
-            return new Response.Builder()
-                    .status(HttpStatus.BAD_REQUEST)
-                    .statusCode(400)
-                    .message(e.getMessage())
-                    .build();
-        }
-    }
-
-    /**
-     *
-     * @param item
-     * @param c
-     * @return
-     */
-    public Response getPath(GeneralItem item, Class c) {
-        logger.info("in FacadeController -> getPath, item:"+item+"of Class:"+c);
-
-        return new Response.Builder()
-                .status(HttpStatus.OK)
-                .statusCode(200)
-                .message("Successfully managed to retrieve path")
-                .data(convertFromClassToService(c).getPath(item))
-                .build();
     }
     /**
      * rename a file, called from the fileController with a request to change name.
@@ -286,6 +285,35 @@ public class FacadeController {
                 .build();
     }
 
+    public Response getContent(Long documentId) {
+        return new Response.Builder()
+                .status(HttpStatus.OK)
+                .message("Successfully managed to retrieve the document's content")
+                .statusCode(200)
+                .data(documentService.getContent(documentId))
+                .build();
+    }
+
+    public Response getDocumentName(Long documentId) {
+        Document document = null;
+        try {
+            document = documentService.findById(documentId);
+            FileRes fileResponse = new FileRes(document.getName(), document.getId(), Type.DOCUMENT, Permission.ADMIN, document.getUser().getEmail());
+            return new Response.Builder()
+                    .statusCode(200)
+                    .status(HttpStatus.OK)
+                    .data(fileResponse)
+                    .message("Managed to get file name properly")
+                    .build();
+        } catch (FileNotFoundException e) {
+            return new Response.Builder()
+                    .message("Couldn't find such a file " + e)
+                    .status(HttpStatus.NOT_FOUND)
+                    .statusCode(401)
+                    .build();
+        }
+
+    }
 
     /**
      * This function gets an item as a parameter and extracts its class in order to return the correct service.
@@ -293,6 +321,7 @@ public class FacadeController {
      * @param c - class of folder/document
      * @return the service we need to use according to what file it is.
      */
+
     private ServiceInterface convertFromClassToService(Class c) {
         logger.info("in FacadeController -> convertFromClassToService");
 

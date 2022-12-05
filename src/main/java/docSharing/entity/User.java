@@ -18,13 +18,13 @@ public class User {
     private String email;
     private String password;
     private Boolean isActivated;
-    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Document> documents = new HashSet<>();
-    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Folder> folders = new HashSet<>();
 
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Log> logs;
+    private Set<Log> logs = new HashSet<>();
 
     public void addDocument(Document document) {
         this.documents.add(document);
@@ -101,9 +101,6 @@ public class User {
     }
 
     public void setName(String name) {
-        if (name == null || name.length() == 0) {
-            throw new IllegalArgumentException("name can not be null or empty");
-        }
         this.name = name;
     }
 
@@ -112,9 +109,6 @@ public class User {
     }
 
     public void setEmail(String email) {
-        if (email == null || email.length() == 0) {
-            throw new IllegalArgumentException("email can not be null or empty");
-        }
         this.email = email;
     }
 
@@ -123,9 +117,6 @@ public class User {
     }
 
     public void setPassword(String password) {
-        if (password == null || password.length() == 0) {
-            throw new IllegalArgumentException("password can not be null or empty");
-        }
         this.password = password;
     }
 
@@ -151,25 +142,5 @@ public class User {
         return result;
     }
 
-//    @Override
-//    public int hashCode() {
-//        final int prime = 31;
-//        int result = 1;
-//        result = prime * result
-//                + ((importantField == null) ? 0 : importantField.hashCode());
-//        return result;
-//    }
 
-//    @Override
-//    public String toString() {
-//        return "User{" +
-//                "id=" + id +
-//                ", name='" + name + '\'' +
-//                ", email='" + email + '\'' +
-//                ", password='" + password + '\'' +
-//                ", isActivated=" + isActivated +
-//                ", documents=" + documents +
-//                ", folders=" + folders +
-//                '}';
-//    }
 }
