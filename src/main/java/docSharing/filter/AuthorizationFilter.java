@@ -25,13 +25,7 @@ public class AuthorizationFilter extends GenericFilterBean {
         System.out.println(url);
         HttpServletRequest httpRequest = (HttpServletRequest) request;
 
-//         Authorization
         if (!url.contains("auth") && !url.contains("ws") && !url.contains("error") && !httpRequest.getMethod().equals(HttpMethod.OPTIONS.toString())) {
-
-//            if ((httpRequest.getHeader("access-control-request-headers") != null)) {
-//                if (!httpRequest.getHeader("access-control-request-headers").equals("authorization"))
-//                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "A request must include authorization field");
-//            } else if (httpRequest.getHeader("authorization") != null) {
 
             if (httpRequest.getHeader("authorization") != null) {
                 String token = httpRequest.getHeader("authorization");

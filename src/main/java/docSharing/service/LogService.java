@@ -198,7 +198,7 @@ public class LogService {
 
         int diff = Math.max(newLog.getOffset() - currentLog.getOffset(), 0);
         newLog.setOffset(diff);
-        if (currentLog.getData() == null) currentLog.setData(""); // CONSULT: shouldn't happen, so why did I write it?
+        if (currentLog.getData() == null) currentLog.setData("");
         return DocumentService.concatenateStrings(currentLog.getData(), newLog);
     }
 

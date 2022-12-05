@@ -46,15 +46,15 @@ public class FacadeAuthController {
                     .statusCode(400)
                     .build();
         }
-//        Validations.validate(Regex.NAME.getRegex(), name);
-        Validations.validate(Regex.EMAIL.getRegex(), email);
-        Validations.validate(Regex.PASSWORD.getRegex(), password);
-        User emailUser = authService.register(email, password, name);
-        folderService.createRootFolders(emailUser);
-        String token = ConfirmationToken.createJWT(Long.toString(emailUser.getId()), "docs-app", "activation email", 5 * 1000 * 60);
-        String link = Activation.buildLink(token);
-        String mail = Activation.buildEmail(emailUser.getName(), link);
         try {
+            Validations.validate(Regex.NAME.getRegex(), name);
+            Validations.validate(Regex.EMAIL.getRegex(), email);
+            Validations.validate(Regex.PASSWORD.getRegex(), password);
+            User emailUser = authService.register(email, password, name);
+            folderService.createRootFolders(emailUser);
+            String token = ConfirmationToken.createJWT(Long.toString(emailUser.getId()), "docs-app", "activation email", 5 * 1000 * 60);
+            String link = Activation.buildLink(token);
+            String mail = Activation.buildEmail(emailUser.getName(), link);
             EmailUtil.send(emailUser.getEmail(), mail, "activate account");
             return new Response.Builder()
                     .message("Account has been successfully registered and created!")
@@ -63,7 +63,7 @@ public class FacadeAuthController {
                     .status(HttpStatus.CREATED)
                     .build();
         } catch (MessagingException | IOException e) {
-            logger.error("in AuthController -> register -> "+e.getMessage());
+            logger.error("in AuthController -> register -> " + e.getMessage());
             return new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
                     .data(false)
@@ -94,14 +94,14 @@ public class FacadeAuthController {
                     .status(HttpStatus.OK)
                     .build();
         } catch (IllegalArgumentException | NullPointerException e) {
-            logger.error("in AuthController -> login -> "+e.getMessage());
+            logger.error("in AuthController -> login -> " + e.getMessage());
             return new Response.Builder()
                     .message("You must include all and exact parameters for such an action: email, name, password")
                     .status(HttpStatus.FORBIDDEN)
                     .statusCode(400)
                     .build();
         } catch (AccountNotFoundException e) {
-            logger.error("in AuthController -> login -> "+e.getMessage());
+            logger.error("in AuthController -> login -> " + e.getMessage());
             return new Response.Builder()
                     .message("You must include all and exact parameters for such an action: email, name, password")
                     .status(HttpStatus.UNAUTHORIZED)
@@ -140,7 +140,7 @@ public class FacadeAuthController {
                         .status(HttpStatus.GONE)
                         .build();
             } catch (AccountNotFoundException ex) {
-                logger.error("in AuthController -> activate -> "+e.getMessage());
+                logger.error("in AuthController -> activate -> " + e.getMessage());
                 return new Response.Builder()
                         .message("activation link expired, failed to send new link")
                         .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -149,14 +149,14 @@ public class FacadeAuthController {
             }
 
         } catch (UnsupportedEncodingException e) {
-            logger.error("in AuthController -> activate -> "+e.getMessage());
+            logger.error("in AuthController -> activate -> " + e.getMessage());
             return new Response.Builder()
                     .message("failed to activate account")
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .statusCode(500)
                     .build();
         } catch (AccountNotFoundException e) {
-            logger.error("in AuthController -> activate -> "+e.getMessage());
+            logger.error("in AuthController -> activate -> " + e.getMessage());
             return new Response.Builder()
                     .message("invalid token")
                     .status(HttpStatus.BAD_REQUEST)
