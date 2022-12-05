@@ -21,6 +21,7 @@ import static org.mockito.Mockito.*;
 
 import javax.security.auth.login.AccountNotFoundException;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,8 +72,8 @@ public class FacadeUserControllerTest {
     }
 
     @Test
-    void givePermission_wrongDocumentId_BAD_REQUEST() throws AccountNotFoundException {
-        doThrow(new AccountNotFoundException("Could not find such an Id in the database")).when(documentService).getAllUsersInDocument(1L, 1L, Method.GET);
+    void givePermission_wrongDocumentId_BAD_REQUEST() {
+        doThrow(IllegalArgumentException.class).when(documentService).getAllUsersInDocument(1L, 1L, Method.GET);
         assertEquals(400, facadeUserController.givePermission(1L, 1L, Permission.UNAUTHORIZED).getStatusCode(), "change permission to non-existing document did not return responseCode 400");
     }
 
@@ -100,24 +101,24 @@ public class FacadeUserControllerTest {
 //    }
 
     @Test
-    void getDocumentsForUser_whenUserExists_successful(){
+    void getDocumentsForUser_whenUserExists_successful() {
         assertEquals(200, facadeUserController.getDocuments(1L).getStatusCode());
     }
 
 
     @Test
-    void getDocumentsForUser_whenUserDoesntExist_BAD_REQUEST(){
+    void getDocumentsForUser_whenUserDoesntExist_BAD_REQUEST() {
         given(userService.documentsOfUser(1L)).willThrow(IllegalArgumentException.class);
         assertEquals(400, facadeUserController.getDocuments(1L).getStatusCode());
     }
 
     @Test
-    void getUser_whenUserExists_successful(){
+    void getUser_whenUserExists_successful() {
         assertEquals(200, facadeUserController.getUser(1L).getStatusCode());
     }
 
     @Test
-    void getUser_whenUserDoesntExist_BAD_REQUEST(){
+    void getUser_whenUserDoesntExist_BAD_REQUEST() {
         given(userService.getUser(1L)).willThrow(IllegalArgumentException.class);
         assertEquals(400, facadeUserController.getUser(1L).getStatusCode());
     }
@@ -135,8 +136,8 @@ public class FacadeUserControllerTest {
     }
 
     @Test
-    void getUserPermissionForDocument_whenDocumentDoesntExist_fail() throws AccountNotFoundException {
-        given(documentService.getUserPermissionInDocument(1L, 1L)).willThrow(AccountNotFoundException.class);
+    void getUserPermissionForDocument_whenDocumentDoesntExist_fail() throws FileNotFoundException {
+        given(documentService.getUserPermissionInDocument(1L, 1L)).willThrow(FileNotFoundException.class);
         assertEquals(400, facadeUserController.getUserPermissionForSpecificDocument(1L, 1L).getStatusCode());
     }
 }
