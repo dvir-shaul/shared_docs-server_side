@@ -109,7 +109,7 @@ public class FolderService implements ServiceInterface {
         logger.info("in FolderService -> create, item :" + name);
         if (parentFolder == null) {
             logger.error("in FolderService -> create --> " + ExceptionMessage.FOLDER_DOES_NOT_EXISTS);
-            throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString() + parentFolder.getId());
+            throw new IllegalArgumentException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
         }
         Folder folder = Folder.createFolder(name, parentFolder, user);
         Folder savedFolder = folderRepository.save(folder);
@@ -251,6 +251,8 @@ public class FolderService implements ServiceInterface {
     public Boolean doesExist(long id) {
         return folderRepository.findById(id).isPresent();
     }
+
+
 
     /**
      * createRootFolders is a function that called when a user is signed in,
