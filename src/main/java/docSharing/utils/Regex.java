@@ -1,7 +1,8 @@
 package docSharing.utils;
 
 public enum Regex {
-    NAME("/^[\\p{L} ,.'-]+$/u"),
+    NAME("([A-ZÀ-ÿ][-,a-z. ']+[ ]*)+"),
+
     PHONE_NUMBER("/^05\\d([-]{0,1})\\d{7}$/"),
     EMAIL("^(?=.{1,64}@)[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*@[^-][A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*(\\.[A-Za-z]{2,})$"),
     PASSWORD("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$"),

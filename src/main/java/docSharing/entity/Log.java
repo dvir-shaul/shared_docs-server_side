@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import docSharing.repository.DocumentRepository;
 import docSharing.repository.UserRepository;
 import docSharing.utils.ExceptionMessage;
+import docSharing.utils.logAction;
 import lombok.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -29,7 +30,7 @@ public class Log {
     @Column(name = "edited_on", nullable = false)
     private LocalDateTime lastEditDate;
     private Integer offset;
-    private String action;
+    private logAction action;
     private String data;
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
@@ -39,7 +40,7 @@ public class Log {
     private Document document;
 
 
-    public Log(User user, Document document, int offset, String data, String action, LocalDateTime lastEditDate) throws AccountNotFoundException {
+    public Log(User user, Document document, int offset, String data, logAction action, LocalDateTime lastEditDate) throws AccountNotFoundException {
         this.user = user;
         this.document = document;
         this.offset = offset;

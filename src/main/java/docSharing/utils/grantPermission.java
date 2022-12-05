@@ -23,5 +23,6 @@ public class grantPermission {
         list.add("export");
         list.add("isExists");
         list.add("auth");
+        list.add("share");
     }
 }
