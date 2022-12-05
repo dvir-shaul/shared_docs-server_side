@@ -10,9 +10,9 @@ import java.util.List;
 
 public interface ServiceInterface {
     Long create(Folder parentFolder, User user, String name, String content);
-    int rename(Long id, String name);
-    int relocate(Folder folderId, Long id) throws FileNotFoundException;
-    void delete(Long id) throws FileNotFoundException;
-    Boolean doesExist(Long id);
-    List<FileRes> getPath(Long itemId) throws FileNotFoundException;
+    int rename(long id, String name);
+    int relocate(Folder folderId, long id) throws FileNotFoundException;
+    void delete(long id) throws FileNotFoundException;
+    Boolean doesExist(long id);
+    List<FileRes> getPath(long itemId) throws FileNotFoundException;
 }

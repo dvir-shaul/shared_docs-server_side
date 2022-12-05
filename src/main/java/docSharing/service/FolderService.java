@@ -147,7 +147,7 @@ public class FolderService implements ServiceInterface {
      * @param name - new name of the document.
      * @return rows affected in mysql.
      */
-    public int rename(Long id, String name) {
+    public int rename(long id, String name) {
         logger.info("in FolderService -> rename, id:" + id + " name:" + name);
         if (folderRepository.findById(id).isPresent()) {
             return folderRepository.updateName(name, id);
@@ -167,7 +167,7 @@ public class FolderService implements ServiceInterface {
      * @param id              - document id.
      * @return rows affected in mysql.
      */
-    public int relocate(Folder newParentFolder, Long id) throws FileNotFoundException {
+    public int relocate(Folder newParentFolder, long id) throws FileNotFoundException {
         logger.info("in FolderService -> relocate");
         if (newParentFolder != null && !folderRepository.findById(newParentFolder.getId()).isPresent()) {
             logger.error("in FolderService -> relocate --> " + ExceptionMessage.FOLDER_DOES_NOT_EXISTS);
@@ -226,16 +226,16 @@ public class FolderService implements ServiceInterface {
      *
      * @param folderId - folder to delete.
      */
-    public void delete(Long folderId) throws FileNotFoundException {
+    public void delete(long folderId) throws FileNotFoundException {
         logger.info("in FolderService -> delete");
         Optional<Folder> folder = folderRepository.findById(folderId);
         if (!folder.isPresent()) {
             logger.error("in FolderService -> relocate --> folderId:" + folderId + "->" + ExceptionMessage.FOLDER_DOES_NOT_EXISTS);
             throw new FileNotFoundException(ExceptionMessage.FOLDER_DOES_NOT_EXISTS.toString());
         }
-        folder.get().getDocuments().forEach(document -> {
-                documentService.delete(document.getId());
-        });
+        for (Document document : folder.get().getDocuments()) {
+            documentService.delete(document.getId());
+        }
         for (Folder f : folder.get().getFolders()) {
             delete(f.getId());
         }
@@ -248,7 +248,7 @@ public class FolderService implements ServiceInterface {
      * @param id - of document
      * @return - true if documentRepository.findById(id).isPresent()
      */
-    public Boolean doesExist(Long id) {
+    public Boolean doesExist(long id) {
         return folderRepository.findById(id).isPresent();
     }
 

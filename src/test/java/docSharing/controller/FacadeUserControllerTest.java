@@ -1,13 +1,15 @@
 package docSharing.controller;
 
+import com.google.api.services.gmail.Gmail;
+import docSharing.entity.Document;
+import docSharing.entity.Folder;
 import docSharing.entity.Permission;
 import docSharing.entity.User;
-import docSharing.repository.DocumentRepository;
-import docSharing.repository.UserRepository;
 import docSharing.requests.Method;
 import docSharing.response.UsersInDocRes;
 import docSharing.service.DocumentService;
 import docSharing.service.UserService;
+import docSharing.utils.EmailUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,23 +37,25 @@ public class FacadeUserControllerTest {
     @Mock
     private DocumentService documentService;
     @Mock
-    private UserRepository userRepository;
-    @Mock
-    private DocumentRepository documentRepository;
+    private static Gmail service;
     @InjectMocks
     private FacadeUserController facadeUserController;
+    @InjectMocks
+    private EmailUtil emailUtil;
     @Spy
     private List<UsersInDocRes> usersInDoc = new ArrayList<>();
 
     private User goodUser;
-    private User badEmailUser;
-    private User badPasswordUser;
-    private User badNameUser;
+    private Document document;
+    private Folder folder;
+
 
     @BeforeEach
     void setUp() {
         goodUser = User.createUser("asaf396@gmai.com", "dvir1234", "dvir");
         goodUser.setId(1L);
+        folder = new Folder();
+        document = Document.createDocument(goodUser, "hello", folder, "over");
     }
 
     @Test
@@ -72,7 +76,7 @@ public class FacadeUserControllerTest {
     }
 
     @Test
-    void givePermission_wrongDocumentId_BAD_REQUEST() {
+    void givePermission_wrongDocumentId_BAD_REQUEST() throws AccountNotFoundException {
         doThrow(IllegalArgumentException.class).when(documentService).getAllUsersInDocument(1L, 1L, Method.GET);
         assertEquals(400, facadeUserController.givePermission(1L, 1L, Permission.UNAUTHORIZED).getStatusCode(), "change permission to non-existing document did not return responseCode 400");
     }
@@ -84,21 +88,20 @@ public class FacadeUserControllerTest {
     }
 
     @Test
-    void givePermissionToAll_wrongEmailsOrUnregistered_BAD_REQUEST() throws AccountNotFoundException {
+    void givePermissionToAll_wrongEmailsOrUnregistered_BAD_REQUEST() {
         List<String> emails = new ArrayList<>();
-//        given(userService.findByEmail("shalom")).willThrow(AccountNotFoundException.class);
         assertEquals(200, facadeUserController.givePermissionToAll(emails, 1L).getStatusCode());
     }
 
-//    @Test
-//    void givePermissionToAll_unauthorizedUser_BAD_REQUEST() throws AccountNotFoundException {
-//        List<String> emails = new ArrayList<>();
-//        emails.add("ziv@gmail.com");
-//        given(userService.findByEmail("email")).willReturn(goodUser);
-////        given(userService.findByEmail("shalom")).willThrow(AccountNotFoundException.class);
-//        given(documentService.getUserPermissionInDocument(1L, 1L)).willReturn(Permission.UNAUTHORIZED);
-//        assertEquals(200, facadeUserController.givePermissionToAll(emails, 1L).getStatusCode());
-//    }
+    @Test
+    void givePermissionToAll_unauthorizedUser_BAD_REQUEST() throws AccountNotFoundException, FileNotFoundException {
+        List<String> emails = new ArrayList<>();
+        emails.add("ziv@gmail.com");
+        given(userService.findByEmail("ziv@gmail.com")).willReturn(goodUser);
+        given(documentService.getUserPermissionInDocument(1L, 1L)).willReturn(Permission.UNAUTHORIZED);
+        given(documentService.findById(1L)).willReturn(document);
+        assertEquals(200, facadeUserController.givePermissionToAll(emails, 1L).getStatusCode());
+    }
 
     @Test
     void getDocumentsForUser_whenUserExists_successful() {
@@ -107,8 +110,8 @@ public class FacadeUserControllerTest {
 
 
     @Test
-    void getDocumentsForUser_whenUserDoesntExist_BAD_REQUEST() {
-        given(userService.documentsOfUser(1L)).willThrow(IllegalArgumentException.class);
+    void getDocumentsForUser_whenUserDoesntExist_BAD_REQUEST() throws AccountNotFoundException {
+        given(userService.documentsOfUser(1L)).willThrow(AccountNotFoundException.class);
         assertEquals(400, facadeUserController.getDocuments(1L).getStatusCode());
     }
 
@@ -118,8 +121,8 @@ public class FacadeUserControllerTest {
     }
 
     @Test
-    void getUser_whenUserDoesntExist_BAD_REQUEST() {
-        given(userService.getUser(1L)).willThrow(IllegalArgumentException.class);
+    void getUser_whenUserDoesntExist_BAD_REQUEST() throws AccountNotFoundException {
+        given(userService.getUser(1L)).willThrow(AccountNotFoundException.class);
         assertEquals(400, facadeUserController.getUser(1L).getStatusCode());
     }
 
@@ -136,7 +139,7 @@ public class FacadeUserControllerTest {
     }
 
     @Test
-    void getUserPermissionForDocument_whenDocumentDoesntExist_fail() throws FileNotFoundException {
+    void getUserPermissionForDocument_whenDocumentDoesntExist_fail() throws FileNotFoundException, AccountNotFoundException {
         given(documentService.getUserPermissionInDocument(1L, 1L)).willThrow(FileNotFoundException.class);
         assertEquals(400, facadeUserController.getUserPermissionForSpecificDocument(1L, 1L).getStatusCode());
     }

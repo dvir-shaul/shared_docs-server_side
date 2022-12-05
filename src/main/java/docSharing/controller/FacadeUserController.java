@@ -63,7 +63,7 @@ public class FacadeUserController {
                     .statusCode(200)
                     .message("Successfully changed permission to user id:" + userId)
                     .build();
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | AccountNotFoundException |FileNotFoundException e) {
             logger.error("in FacadeUserController -> givePermission -> " + e.getMessage());
             return new Response.Builder()
                     .message("failed to update a permission")
@@ -113,7 +113,7 @@ public class FacadeUserController {
                     .status(HttpStatus.OK)
                     .data(documentService.getAllUsersInDocument(null, documentId, Method.GET))
                     .build();
-        } catch (MessagingException | IOException | IllegalArgumentException e) {
+        } catch (MessagingException | IOException | IllegalArgumentException | AccountNotFoundException e) {
             logger.error("in FacadeUserController -> givePermissionToAll -> " + e.getMessage());
             return new Response.Builder()
                     .message(e.getMessage())
@@ -141,7 +141,7 @@ public class FacadeUserController {
                     .statusCode(200)
                     .status(HttpStatus.OK)
                     .build();
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | AccountNotFoundException e) {
             logger.error("in FacadeUserController -> givePermissionToAll -> IllegalArgumentException->" + e.getMessage());
             return new Response.Builder()
                     .message(e.getMessage())
@@ -168,7 +168,7 @@ public class FacadeUserController {
                     .statusCode(200)
                     .message("Successfully managed to get the user from the database.")
                     .build();
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | AccountNotFoundException e) {
             logger.error("in FacadeUserController -> getUser -> IllegalArgumentException->" + e.getMessage());
             return new Response.Builder()
                     .message(e.getMessage())
