@@ -11,6 +11,8 @@ import docSharing.requests.Type;
 import docSharing.response.FileRes;
 import docSharing.response.UserRes;
 import docSharing.utils.ExceptionMessage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +24,7 @@ import java.util.Optional;
 
 @Service
 public class UserService {
+    private static Logger logger = LogManager.getLogger(UserService.class.getName());
 
     @Autowired
     private UserRepository userRepository;
@@ -35,6 +38,8 @@ public class UserService {
      * @return entity of user that found in database.
      */
     public User findById(Long id) throws AccountNotFoundException {
+        logger.info("in UserService -> findById");
+
         if (!userRepository.findById(id).isPresent())
             throw new AccountNotFoundException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
         return userRepository.findById(id).get();
@@ -45,9 +50,14 @@ public class UserService {
      * @return entity of user that found in database.
      */
     public User findByEmail(String email) throws AccountNotFoundException {
-        if (!userRepository.findByEmail(email).isPresent())
+        logger.info("in UserService -> findByEmail");
+
+        if (!userRepository.findByEmail(email).isPresent()){
+            logger.error("in UserService -> findByEmail --> "+ExceptionMessage.NO_ACCOUNT_IN_DATABASE + email);
+
             throw new AccountNotFoundException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE + email);
 
+        }
         return userRepository.findByEmail(email).get();
     }
 
@@ -60,12 +70,15 @@ public class UserService {
      * @param permission - the new Permission
      */
     public void updatePermission(Long docId, Long userId, Permission permission) {
+        logger.info("in UserService -> updatePermission");
         Optional<Document> document = documentRepository.findById(docId);
         if (!document.isPresent()) {
+            logger.error("in UserService -> updatePermission --> "+ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS );
             throw new IllegalArgumentException(ExceptionMessage.DOCUMENT_DOES_NOT_EXISTS.toString());
         }
         Optional<User> user = userRepository.findById(userId);
         if (!user.isPresent()) {
+            logger.error("in UserService -> updatePermission --> "+ExceptionMessage.NO_ACCOUNT_IN_DATABASE );
             throw new IllegalArgumentException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
         }
         if (permission.equals(Permission.UNAUTHORIZED)) {
@@ -84,28 +97,39 @@ public class UserService {
     }
 
     /**
-     * function get called by controller from GET method to get all UserDocument.
-     *
+     * function get called by controller from GET method sharedDocuments path,
+     * to get all files that connected to user's specific id.
      * @param userId - user's id
-     * @return list of UserDocument
+     * @return list of FileRes
      */
     public List<FileRes> documentsOfUser(Long userId) {
+        logger.info("in UserService -> documentsOfUser");
         if (!userRepository.findById(userId).isPresent()) {
+            logger.error("in UserService -> documentsOfUser --> "+ExceptionMessage.NO_ACCOUNT_IN_DATABASE );
             throw new IllegalArgumentException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
         }
-        List<UserDocument> ud = userDocumentRepository.findByUser(userRepository.findById(userId).get());
+        List<UserDocument> userDocuments = userDocumentRepository.findByUser(userRepository.findById(userId).get());
         List<FileRes> userDocumentResList = new ArrayList<>();
-        for (UserDocument userDocument :
-                ud) {
-            if (userDocument.getPermission() != Permission.ADMIN)
+        for (UserDocument userDocument : userDocuments) {
+            if (userDocument.getPermission() != Permission.ADMIN) {
                 userDocumentResList.add(new FileRes(userDocument.getDocument().getName(), userDocument.getDocument().getId(), Type.DOCUMENT, userDocument.getPermission(), userDocument.getDocument().getUser().getEmail()));
+            }
         }
         return userDocumentResList;
     }
 
+    /**
+     *  getUser called from userController to send back to client an UserRes which is a response
+     *  with name mail and id.
+     * @param userId - user id in database.
+     * @return - entity of UserRes that's contain name,email and id.
+     */
     public UserRes getUser(Long userId) {
+        logger.info("in UserService -> getUser");
+
         Optional<User> user = userRepository.findById(userId);
         if (!user.isPresent()) {
+            logger.error("in UserService -> getUser --> "+ExceptionMessage.NO_ACCOUNT_IN_DATABASE );
             throw new IllegalArgumentException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE.toString());
         }
         return new UserRes(user.get().getName(), user.get().getEmail(), user.get().getId());

@@ -4,14 +4,18 @@ import docSharing.entity.User;
 import docSharing.utils.ExceptionMessage;
 import docSharing.repository.UserRepository;
 import docSharing.utils.ConfirmationToken;
+import docSharing.utils.Validations;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import javax.security.auth.login.AccountNotFoundException;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 @Service
 @AllArgsConstructor
 public class AuthService {
+    private static Logger logger = LogManager.getLogger(AuthService.class.getName());
 
     @Autowired
     private UserRepository userRepository;
@@ -23,8 +27,11 @@ public class AuthService {
      * @param name     - name of user
      */
     public User register(String email, String password, String name) {
-        if (userRepository.findByEmail(email).isPresent())
+        logger.info("in AuthService -> register");
+        if (userRepository.findByEmail(email).isPresent()) {
+            logger.error("in AuthService -> register -> fail: " + ExceptionMessage.ACCOUNT_EXISTS + email);
             throw new IllegalArgumentException(ExceptionMessage.ACCOUNT_EXISTS + email);
+        }
         return userRepository.save(User.createUser(email, password, name));
     }
 
@@ -35,12 +42,16 @@ public class AuthService {
      * @return token for user to be unique on app
      */
     public String login(String email, String password) throws AccountNotFoundException {
-        if (!userRepository.findByEmail(email).isPresent())
+        logger.info("in AuthService -> login");
+        if (! userRepository.findByEmail(email).isPresent()) {
+            logger.error("in AuthService -> login -> fail: " + ExceptionMessage.NO_ACCOUNT_IN_DATABASE + email);
             throw new AccountNotFoundException(ExceptionMessage.NO_ACCOUNT_IN_DATABASE + email);
+        }
         User user = userRepository.findByEmail(email).get();
         if (userRepository.findByEmail(email).get().getPassword().equals(password)) {
             return generateToken(user);
         }
+        logger.error("in AuthService -> login -> fail: " + ExceptionMessage.NOT_MATCH);
         throw new IllegalArgumentException(ExceptionMessage.NOT_MATCH.toString());
     }
 
@@ -51,7 +62,7 @@ public class AuthService {
      * @param id - user email
      */
     public int activate(Long id) {
-        // check if id exists
+        logger.info("in AuthService -> activate");
         return userRepository.updateIsActivated(true, id);
     }
 
@@ -61,6 +72,19 @@ public class AuthService {
      */
     private String generateToken(User user) {
         return ConfirmationToken.createJWT(String.valueOf(user.getId()), "docs app", "login", 0);
+    }
+
+    /**
+     * called by permimssion filter to check if the token is a valid user token
+     * @return - id of user
+     */
+    public Long isValid(String token) throws AccountNotFoundException {
+        logger.info("in AuthService -> isValid");
+        long id =  Validations.validateToken(token);
+        if(userRepository.existsById(id))
+            return id;
+        throw new AccountNotFoundException(ExceptionMessage.NO_USER_IN_DATABASE.toString());
+
     }
 
 }
