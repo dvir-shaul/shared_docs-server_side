@@ -13,6 +13,8 @@ import docSharing.service.UserService;
 import docSharing.utils.EmailUtil;
 import docSharing.utils.Invite;
 import docSharing.utils.Share;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -29,10 +31,12 @@ public class FacadeUserController {
     DocumentService documentService;
     @Autowired
     UserService userService;
+    private static Logger logger = LogManager.getLogger(FacadeUserController.class.getName());
 
     public Response givePermission(Long documentId, Long userId, Permission permission) {
         // FIXME: use Valdidations.validate for it.
         if (documentId == null || userId == null || permission == null) {
+            logger.error("in UserController -> givePermission -> on of documentId,uid,permission is null");
             return new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
                     .statusCode(400)
@@ -86,6 +90,7 @@ public class FacadeUserController {
                     .data(documentService.getAllUsersInDocument(null, documentId, Method.GET))
                     .build();
         } catch (MessagingException | IOException | AccountNotFoundException e) {
+            logger.error("in UserController -> givePermissionToAll -> " +e.getMessage());
             return new Response.Builder()
                     .message(e.getMessage())
                     .statusCode(400)

@@ -3,6 +3,8 @@ package docSharing.controller;
 import docSharing.entity.User;
 import docSharing.response.Response;
 import lombok.AllArgsConstructor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -16,6 +18,8 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin
 public class AuthController {
 
+    private static Logger logger = LogManager.getLogger(AuthController.class.getName());
+
     @Autowired
     FacadeAuthController facadeAuthController;
 
@@ -27,6 +31,7 @@ public class AuthController {
      */
     @RequestMapping(value = "register", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<Response> register(@RequestBody User user) {
+        logger.info("in AuthController -> register");
         Response response = facadeAuthController.register(user);
         return new ResponseEntity<>(response, response.getStatus());
     }
@@ -37,11 +42,12 @@ public class AuthController {
      * If the credentials match to the database's information, it will allow the user to use its functionalities.
      * A token will be returned in a successful request.
      *
-     * @param user
+     * @param user - user's details with email and password to check if correct
      * @return token
      */
     @RequestMapping(value = "login", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<Response> login(@RequestBody User user) {
+        logger.info("in AuthController -> login");
         Response response = facadeAuthController.login(user);
         return new ResponseEntity<>(response, response.getStatus());
     }
@@ -56,6 +62,9 @@ public class AuthController {
      */
     @RequestMapping(value = "activate", method = RequestMethod.POST)
     public ResponseEntity<Response> activate(@RequestParam String token) {
+        logger.info("in AuthController -> activate");
+
+
         Response response = facadeAuthController.activate(token);
         return new ResponseEntity<>(response, response.getStatus());
     }
