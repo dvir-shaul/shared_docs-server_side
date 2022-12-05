@@ -9,7 +9,6 @@ import docSharing.response.FileRes;
 import docSharing.response.UserStatus;
 import docSharing.response.UsersInDocRes;
 import docSharing.utils.ExceptionMessage;
-import docSharing.utils.debounce.Debouncer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -425,7 +424,7 @@ public class DocumentService implements ServiceInterface {
      * @return - list of UserDocument entity that contain all users and their permissions on that document.
      * @throws IllegalArgumentException - no user in database
      */
-    public List<UsersInDocRes> getAllUsersInDocument(Long userId, Long documentId, Method method) throws IllegalArgumentException {
+    public List<UsersInDocRes> getAllUsersInDocument(Long userId, long documentId, Method method) throws IllegalArgumentException {
         logger.info("in DocumentService -> getAllUsersInDocument");
 
         Optional<Document> optDocument = documentRepository.findById(documentId);
@@ -458,7 +457,7 @@ public class DocumentService implements ServiceInterface {
      * @return - the permission that the specific user's id have in the document id.
      * @throws AccountNotFoundException -
      */
-    public Permission getUserPermissionInDocument(Long userId, Long documentId) throws FileNotFoundException,IllegalArgumentException {
+    public Permission getUserPermissionInDocument(long userId, long documentId) throws FileNotFoundException {
         logger.info("in DocumentService -> getUserPermissionInDocument, current userId: " + userId + ", documentId: " + documentId);
         Optional<Document> optDocument = documentRepository.findById(documentId);
         if (!optDocument.isPresent()) {

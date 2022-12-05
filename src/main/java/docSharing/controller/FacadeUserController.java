@@ -44,7 +44,7 @@ public class FacadeUserController {
      * @param permission - new permission from: VIEWER, EDITOR, MODERATOR,ADMIN,UNAUTHORIZED
      * @return - Response with status code, and send back all the live users of a document.
      */
-    public Response givePermission(Long documentId, Long userId, Permission permission) {
+    public Response givePermission(long documentId, long userId, Permission permission) {
         logger.info("in FacadeUserController -> givePermission in documentId:"
                 + documentId + ", userId:" + userId + ", permission:" + permission);
         if (Validations.validateWrongPermissionChange(permission)) {
@@ -82,7 +82,7 @@ public class FacadeUserController {
      * @param documentId - document id in the database.
      * @return - Response with status code, and send back all the live users of a document.
      */
-    public Response givePermissionToAll(List<String> emails, Long documentId) {
+    public Response givePermissionToAll(List<String> emails, long documentId) {
         logger.info("in FacadeUserController -> givePermissionToAll in documentId:" + documentId);
         try {
             List<String> unregisteredUsers = new ArrayList<>();
@@ -104,6 +104,7 @@ public class FacadeUserController {
                 }
             }
             for (String unregisteredEmail : unregisteredUsers) {
+                // make sure that in the correct email format -> otherwise skip.
                 String inviteUserString = Invite.emailBody;
                 EmailUtil.send(unregisteredEmail, inviteUserString, "Personal invitation");
             }
@@ -130,7 +131,7 @@ public class FacadeUserController {
      * @param userId - user id in the database.
      * @return - Response with status code, and the data is the docsOfUser.
      */
-    public Response getDocuments(Long userId) {
+    public Response getDocuments(long userId) {
         logger.info("in FacadeUserController -> getDocuments for userId:" + userId);
         try {
             List<FileRes> docsOfUser = userService.documentsOfUser(userId);
@@ -143,7 +144,6 @@ public class FacadeUserController {
         } catch (IllegalArgumentException e) {
             logger.error("in FacadeUserController -> givePermissionToAll -> IllegalArgumentException->" + e.getMessage());
             return new Response.Builder()
-                    .data("")
                     .message(e.getMessage())
                     .statusCode(400)
                     .status(HttpStatus.BAD_REQUEST)
@@ -158,7 +158,7 @@ public class FacadeUserController {
      * @param userId - user id in the database.
      * @return - Response with status code, and the data is entity of UserRes that's contain name,email and id.
      */
-    public Response getUser(Long userId) {
+    public Response getUser(long userId) {
         logger.info("in FacadeUserController -> getUser");
         try {
             UserRes userRes = userService.getUser(userId);
@@ -170,9 +170,7 @@ public class FacadeUserController {
                     .build();
         } catch (IllegalArgumentException e) {
             logger.error("in FacadeUserController -> getUser -> IllegalArgumentException->" + e.getMessage());
-
             return new Response.Builder()
-                    .data("")
                     .message(e.getMessage())
                     .statusCode(400)
                     .status(HttpStatus.BAD_REQUEST)
@@ -188,7 +186,7 @@ public class FacadeUserController {
      * @param userId     - user id in the database.
      * @return -  Response with status code, and the data is JoinRes entity that contain the name, permission and id of a user.
      */
-    public Response getUserPermissionForSpecificDocument(Long documentId, Long userId) {
+    public Response getUserPermissionForSpecificDocument(long documentId, long userId) {
         logger.info("in FacadeUserController -> getUserPermissionForSpecificDocument");
         try {
             User user = userService.findById(userId);

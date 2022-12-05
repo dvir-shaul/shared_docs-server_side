@@ -54,6 +54,7 @@ public class ConfirmationToken {
         Claims claims = Jwts.parser()
                 .setSigningKey(DatatypeConverter.parseBase64Binary(SECRET_KEY))
                 .parseClaimsJws(jwt).getBody();
+
         return claims;
     }
 }

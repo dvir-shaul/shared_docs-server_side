@@ -6,8 +6,7 @@ import docSharing.service.AuthService;
 import docSharing.service.FolderService;
 import docSharing.service.UserService;
 import docSharing.utils.*;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,9 +53,11 @@ public class FacadeAuthController {
             String email = user.getEmail();
             String name = user.getName();
             String password = user.getPassword();
+
             Validations.validate(Regex.NAME.getRegex(), name);
             Validations.validate(Regex.EMAIL.getRegex(), email);
             Validations.validate(Regex.PASSWORD.getRegex(), password);
+
             User emailUser = authService.register(email, password, name);
             folderService.createRootFolders(emailUser);
             String token = ConfirmationToken.createJWT(Long.toString(emailUser.getId()), "docs-app", "activation email", 5 * 1000 * 60);
@@ -69,7 +70,7 @@ public class FacadeAuthController {
                     .data(true)
                     .status(HttpStatus.CREATED)
                     .build();
-        } catch (MessagingException | IOException e) {
+        } catch (MessagingException | IllegalArgumentException | NullPointerException | IOException e) {
             logger.error("in FacadeAuthController -> register -> " + e.getMessage());
             return new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
@@ -124,7 +125,7 @@ public class FacadeAuthController {
             return new Response.Builder()
                     .message("You must include all and exact parameters for such an action: email, name, password")
                     .status(HttpStatus.UNAUTHORIZED)
-                    .statusCode(400)
+                    .statusCode(401)
                     .build();
         }
     }
@@ -176,19 +177,20 @@ public class FacadeAuthController {
                         .build();
             }
 
-        } catch (UnsupportedEncodingException e) {
-            logger.error("in FacadeAuthController -> activate -> UnsupportedEncodingException-> " + e.getMessage());
+        } catch (UnsupportedEncodingException | UnsupportedJwtException | MalformedJwtException | SignatureException |
+                 IllegalArgumentException e) {
+            logger.error("in FacadeAuthController -> activate -> " + e.getMessage());
             return new Response.Builder()
                     .message("failed to activate account")
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .statusCode(500)
-                    .build();
-        } catch (AccountNotFoundException e) {
-            logger.error("in AuthController -> activate -> AccountNotFoundException ->" + e.getMessage());
-            return new Response.Builder()
-                    .message("invalid token")
                     .status(HttpStatus.BAD_REQUEST)
                     .statusCode(400)
+                    .build();
+        } catch (AccountNotFoundException e) {
+            logger.error("in FacadeAuthController -> activate -> AccountNotFoundException ->" + e.getMessage());
+            return new Response.Builder()
+                    .message("invalid token")
+                    .status(HttpStatus.FORBIDDEN)
+                    .statusCode(403)
                     .build();
         }
     }
