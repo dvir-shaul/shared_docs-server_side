@@ -18,7 +18,4 @@ public class ChangeList {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
-
-    // CONSULT: is it one to many, or many to one?
-//    private Set<Log> logsList;
 }

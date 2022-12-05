@@ -113,6 +113,7 @@ public class PermissionFilter extends GenericFilterBean {
                     }
                     flag = true;
                 }
+
                 // FIXME: What to do on text edit with logs/getContent/onlineUsers?
                 if (!flag && httpRequest.getMethod().equals(HttpMethod.POST.toString())) {// text edit controller
                     if (userDocument.getPermission().equals(Permission.VIEWER)) {//viewer can't add logs on a document
@@ -123,7 +124,7 @@ public class PermissionFilter extends GenericFilterBean {
             }
         }
 
-        if (!flag && list.contains("permission")) {//in permissions
+        if (!flag && list.contains("permission")) {
             Long docId = Long.valueOf(request.getParameter(Params.DOCUMENT_ID.toString()));
             Long userId = Validations.validateToken(token);
             UserDocument userDocument = getUserDocument(docId, userId);
@@ -161,55 +162,3 @@ public class PermissionFilter extends GenericFilterBean {
         return optUser.get();
     }
 }
-
-
-/**
- * user1
- * eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIxIiwiaWF0IjoxNjY5NzQxMDkxLCJzdWIiOiJsb2dpbiIsImlzcyI6ImRvY3MgYXBwIn0.Uz6NzXGJLu62GHhFBQC36GNB5cAhXCVMGrnzUyzlBVo
- * user2
- * eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIyIiwiaWF0IjoxNjY5NjM4MzYyLCJzdWIiOiJsb2dpbiIsImlzcyI6ImRvY3MgYXBwIn0.QQtT3liScCSUqleIBVbTNw232MNExjK4b196i9w09ak
- */
-//public static String getBody(ServletRequest request) throws IOException {
-//        System.out.println("getbody");
-//        StringBuilder stringBuilder = new StringBuilder();
-//        BufferedReader bufferedReader = null;
-////        String body = request.getReader().lines()
-////                .reduce("", (accumulator, actual) -> accumulator + actual);
-//        String test = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
-////        try {
-////            InputStream inputStream = request.getInputStream();
-////            if (inputStream != null) {
-////                bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-////                char[] charBuffer = new char[128];
-////                int bytesRead = -1;
-////                while ((bytesRead = bufferedReader.read(charBuffer)) > 0) {
-////                    stringBuilder.append(charBuffer, 0, bytesRead);
-////                }
-////            } else {
-////                stringBuilder.append("");
-////            }
-////        } finally {
-////            if (bufferedReader != null) {
-////                bufferedReader.close();
-////            }
-////        }
-//
-////        body = stringBuilder.toString();
-//        System.out.println(test);
-//        return test;
-//    }
-//
-//
-//    public Long getId(ServletRequest request) throws IOException {
-//        Long id = null;
-//        String payloadRequest = getBody(request);
-//        List<String> list1 = List.of(payloadRequest.split(","));
-//        for (String s : list1) {
-//            if (s.contains("Id") || s.contains("id")) {
-//                String tempId = s.split(":")[1].split("}")[0].trim();
-//                id = Long.parseLong(tempId);
-//            }
-//        }
-//        System.out.println(id);
-//        return id;
-//    }

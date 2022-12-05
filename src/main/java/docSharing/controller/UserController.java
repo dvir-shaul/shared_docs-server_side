@@ -44,9 +44,6 @@ public class UserController {
      * @param userId - the user that sends this request
      * @return ResponseEntity with a message.
      */
-    // FIXME: Move to a different place. Too much logics for a controller!
-    //  maybe even take it out to a private separate function...
-
     @RequestMapping(value = "/share", method = RequestMethod.POST, consumes = "application/json")
     public ResponseEntity<Response> givePermissionToAll(@RequestBody List<String> emails, @RequestParam Long documentId, @RequestAttribute Long userId) {
         logger.info("in UserController -> givePermissionToAll");
