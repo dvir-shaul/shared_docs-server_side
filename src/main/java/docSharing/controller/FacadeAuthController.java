@@ -46,7 +46,7 @@ public class FacadeAuthController {
             String password = user.getPassword();
 
             // FIXME: FIX THIS ALREADY!
-//            Validations.validate(Regex.NAME.getRegex(), name);
+            Validations.validate(Regex.NAME.getRegex(), name);
             Validations.validate(Regex.EMAIL.getRegex(), email);
             Validations.validate(Regex.PASSWORD.getRegex(), password);
 
