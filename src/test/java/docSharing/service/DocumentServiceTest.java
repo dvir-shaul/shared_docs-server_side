@@ -196,7 +196,7 @@ class DocumentServiceTest {
     }
 
     @Test
-    @DisplayName("Make sure document is being returned when calling findById with valid id")
+    @DisplayName("Make sure list of documents is being returned when calling get with valid parameters")
     public void get_validParameters_returnsListOfDocuments() throws AccountNotFoundException, FileNotFoundException {
         List<Document> documentList = new ArrayList<>();
         given(folderRepository.findById(folder.getId())).willReturn(Optional.of(folder));
@@ -206,88 +206,97 @@ class DocumentServiceTest {
     }
 
     @Test
+    @DisplayName("Make sure an exception is being thrown when calling get with invalid parameters")
     public void get_folderNotExist_throwsFileNotFoundException() {
         given(folderRepository.findById(folder.getId())).willReturn(Optional.empty());
         assertThrows(FileNotFoundException.class, () -> documentService.get(folder.getId(), user.getId()));
     }
 
     @Test
+    @DisplayName("Make sure an exception is being thrown when calling get with invalid parameters")
     public void get_userNotExist_throwsAccountNotFoundException() {
         given(folderRepository.findById(folder.getId())).willReturn(Optional.of(folder));
         given(userRepository.findById(user.getId())).willReturn(Optional.empty());
         assertThrows(AccountNotFoundException.class, () -> documentService.get(folder.getId(), user.getId()));
     }
 
-//    @Test
-//    public void create_validParameters_returnsId() throws FileNotFoundException {
-//        Document spy = spy(Document.createDocument(document.getUser(), document.getName(), document.getParentFolder(), document.getContent()));
-//        given(documentRepository.save(document)).willReturn(document);
-//        given(userDocumentRepository.save(userDocument)).willReturn(userDocument);
-//        assertEquals(document.getId(), documentService.create(folder, user, "test", "test"));
-//    }
 
     @Test
+    @DisplayName("Make sure an exception is being thrown when calling create with parent folder that does not exist")
     public void create_parentFolderNotExists_throwsFileNotFound() {
         given(folderRepository.findById(folder.getId())).willReturn(Optional.empty());
         assertThrows(FileNotFoundException.class, () -> documentService.create(folder, user, "test", "test"));
     }
 
     @Test
+    @DisplayName("Make sure an exception is being thrown when calling create with null parent folder")
     public void create_parentFolderNull_throwsIllegalArgument() {
         assertThrows(IllegalArgumentException.class, () -> documentService.create(null, user, "test", "test"));
     }
 
     @Test
+    @DisplayName("Make sure 1 is returned when calling rename with valid parameters")
     public void rename_validParameters_returns1() throws FileNotFoundException {
         given(documentRepository.findById(document.getId())).willReturn(Optional.of(document));
         given(documentRepository.updateName("newName", document.getId())).willReturn(1);
         assertEquals(1, documentService.rename(document.getId(), "newName"));
     }
     @Test
+    @DisplayName("Make sure an exception is thrown when calling rename with invalid parameters")
     public void rename_documentNotExist_throwsFileNotFoundException() {
         given(documentRepository.findById(document.getId())).willReturn(Optional.empty());
         assertThrows(FileNotFoundException.class, ()->documentService.rename(document.getId(),"newName"));
     }
     @Test
+    @DisplayName("Make sure content is returned when calling getContent with valid parameters")
     public void getContent_validId_returnContent() {
         given(documentRepository.findById(document.getId())).willReturn(Optional.of(document));
         assertDoesNotThrow(()->documentService.getContent(document.getId()));
     }
     @Test
+    @DisplayName("Make an exception is thrown when calling getContent with invalid parameters")
     public void getContent_invalidId_throwFileNotFound() {
         given(documentRepository.findById(document.getId())).willReturn(Optional.empty());
         assertThrows(FileNotFoundException.class,()->documentService.getContent(document.getId()));
     }
     @Test
+    @DisplayName("Make sure nothing is thrown when calling concatenateStrings with valid parameters")
     public void concatenateStrings_validArguments_success() {
         assertDoesNotThrow(()->DocumentService.concatenateStrings("hello", log));
     }
     @Test
+    @DisplayName("Make an exception is thrown when calling concatenateStrings with invalid parameters")
     public void concatenateStrings_nullTextArguments_throwsNullPointerException() {
         assertThrows(NullPointerException.class, ()->DocumentService.concatenateStrings(null, log));
     }
     @Test
+    @DisplayName("Make an exception is thrown when calling concatenateStrings with null")
     public void concatenateStrings_nullLogArguments_throwsNullPointerException() {
         assertThrows(NullPointerException.class, ()->DocumentService.concatenateStrings("hello", null));
     }
     @Test
+    @DisplayName("Make nothing is thrown when calling truncateString with valid parameters")
     public void truncateString_validArguments_success() {
         assertDoesNotThrow(()->DocumentService.truncateString("hello", log));
     }
     @Test
+    @DisplayName("Make an exception is thrown when calling truncateString with null string")
     public void truncateString_nullTextArguments_throwsNullPointerException() {
         assertThrows(NullPointerException.class, ()->DocumentService.truncateString(null, log));
     }
     @Test
+    @DisplayName("Make an exception is thrown when calling truncateString with null log")
     public void truncateString_nullLogArguments_throwsNullPointerException() {
         assertThrows(NullPointerException.class, ()->DocumentService.truncateString("hello", null));
     }
     @Test
+    @DisplayName("Make true is returned when calling doesExist with existing document id")
     public void doesExist_documentExist_returnsTrue() {
         given(documentRepository.findById(document.getId())).willReturn(Optional.of(document));
         assertTrue(documentService.doesExist(document.getId()));
     }
     @Test
+    @DisplayName("Make false is returned when calling doesExist with non-existing document id")
     public void doesExist_folderDoesNotExist_returnsFalse() {
         given(documentRepository.findById(document.getId())).willReturn(Optional.empty());
         assertFalse(documentService.doesExist(document.getId()));
