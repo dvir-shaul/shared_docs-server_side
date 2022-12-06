@@ -169,29 +169,34 @@ class DocumentServiceTest {
     }
 
     @Test
+    @DisplayName("Make sure an exception is being thrown when calling updateContent with invalid log")
     public void updateContent_invalidLog_throwFileNotFoundException() {
         given(documentRepository.findById(log.getDocument().getId())).willReturn(Optional.empty());
         assertThrows(FileNotFoundException.class, () -> documentService.updateContent(log));
     }
 
     @Test
+    @DisplayName("Make sure an exception is being thrown when calling updateContent with null")
     public void updateContent_null_throwNullPointerException() {
         assertThrows(NullPointerException.class, () -> documentService.updateContent(null));
     }
 
     @Test
+    @DisplayName("Make sure document is being returned when calling findById with valid id")
     public void findById_validId_returnsDocument() throws FileNotFoundException {
         given(documentRepository.findById(document.getId())).willReturn(Optional.of(document));
         assertEquals(document, documentService.findById(document.getId()));
     }
 
     @Test
+    @DisplayName("Make an exception is being thrown when calling findById with invalid id")
     public void findById_invalidId_throwsFileNotFoundException() throws FileNotFoundException {
         given(documentRepository.findById(document.getId())).willReturn(Optional.empty());
         assertThrows(FileNotFoundException.class, () -> documentService.findById(document.getId()));
     }
 
     @Test
+    @DisplayName("Make sure document is being returned when calling findById with valid id")
     public void get_validParameters_returnsListOfDocuments() throws AccountNotFoundException, FileNotFoundException {
         List<Document> documentList = new ArrayList<>();
         given(folderRepository.findById(folder.getId())).willReturn(Optional.of(folder));
