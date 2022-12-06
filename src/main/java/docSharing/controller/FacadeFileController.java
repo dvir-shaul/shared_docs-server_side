@@ -164,7 +164,8 @@ public class FacadeFileController {
                     .message("Successfully renamed to: " + convertFromClassToService(c).rename(id, name))
                     .build();
 
-        } catch (FileNotFoundException e) {
+        } catch (IllegalArgumentException | FileNotFoundException e) {
+            logger.error("in FacadeController -> rename -> name is not valid");
             return new Response.Builder()
                     .status(HttpStatus.BAD_REQUEST)
                     .statusCode(400)
