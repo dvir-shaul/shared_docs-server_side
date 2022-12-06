@@ -47,7 +47,7 @@ public class AuthServiceTest {
 
 
     @Test
-    @DisplayName("??")
+    @DisplayName("Make sure an exception is being thrown when registering with an existing email")
     public void givenExistingEmail_whenRegisterUser_thenThrowsException() {
         given(userRepository.findByEmail(user.getEmail())).willReturn(Optional.of(user));
         assertThrows(IllegalArgumentException.class, () -> {

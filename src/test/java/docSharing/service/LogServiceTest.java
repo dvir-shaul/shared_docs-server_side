@@ -10,6 +10,7 @@ import docSharing.repository.LogRepository;
 import docSharing.repository.UserRepository;
 import docSharing.utils.logAction;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -62,6 +63,7 @@ class LogServiceTest {
     }
 
     @Test
+    @DisplayName("Make log is being updated when calling updateLogs with valid log")
     public void givenLogInDB_whenInsertNewLog_thenOk() {
         given(folderRepository.findById(folder.getId())).willReturn(null);
         Folder folder2 = Folder.createFolder("test", folder, user);
@@ -72,6 +74,7 @@ class LogServiceTest {
         assertEquals(LogService.chainedLogs.get(document.getId()).size(),1);
     }
     @Test
+    @DisplayName("Make sure an exception is thrown when calling updateLogs with null action")
     public void givenLogInDB_newLogActionNull_assertThrow() {
         given(folderRepository.findById(folder.getId())).willReturn(null);
         Folder folder2 = Folder.createFolder("test", folder, user);
@@ -84,7 +87,8 @@ class LogServiceTest {
                 ()->logService.updateLogs(log));
     }
     @Test
-    public void givenLogInDB_newLogEditDatNull_assertDoesNotThrow() {
+    @DisplayName("Make sure an exception is thrown when calling updateLogs with lastEditDate of null")
+    public void givenLogInDB_newLogEditDateNull_assertDoesNotThrow() {
         given(folderRepository.findById(folder.getId())).willReturn(null);
         Folder folder2 = Folder.createFolder("test", folder, user);
         given(folderRepository.save(folder2)).willReturn(folder);
@@ -95,6 +99,7 @@ class LogServiceTest {
         assertDoesNotThrow(()->logService.updateLogs(log));
     }
     @Test
+    @DisplayName("Make sure an exception is thrown when calling updateLogs with offset of null")
     public void givenLogInDB_newLogOffsetNull_assertThrow() {
         given(folderRepository.findById(folder.getId())).willReturn(null);
         Folder folder2 = Folder.createFolder("test", folder, user);
@@ -107,6 +112,7 @@ class LogServiceTest {
                 ()->logService.updateLogs(log));
     }
     @Test
+    @DisplayName("Make sure an exception is thrown when calling updateLogs with document of null")
     public void givenLogInDB_newLogDocumentNull_assertThrow() {
         given(folderRepository.findById(folder.getId())).willReturn(null);
         Folder folder2 = Folder.createFolder("test", folder, user);
@@ -119,6 +125,7 @@ class LogServiceTest {
                 ()->logService.updateLogs(log));
     }
     @Test
+    @DisplayName("Make sure an exception is thrown when calling updateLogs with user of null")
     public void givenLogInDB_newLogUserNull_assertThrow() {
         given(folderRepository.findById(folder.getId())).willReturn(null);
         Folder folder2 = Folder.createFolder("test", folder, user);
@@ -133,6 +140,7 @@ class LogServiceTest {
 
 
     @Test
+    @DisplayName("Make sure an offset is updated when calling updateLogs with valid offset")
     public void givenLogInDB_whenInsertNewLog_updateOffset() {
         given(folderRepository.findById(folder.getId())).willReturn(null);
         Folder folder2 = Folder.createFolder("test", folder, user);
@@ -145,6 +153,7 @@ class LogServiceTest {
 
     }
     @Test
+    @DisplayName("Make sure logs are being concatenated when calling updateLogs with 2 valid logs")
     public void givenLogInDB_whenInsertNewLog_concatenateLogs() {
         given(folderRepository.findById(folder.getId())).willReturn(null);
         Folder folder2 = Folder.createFolder("test", folder, user);
@@ -159,6 +168,7 @@ class LogServiceTest {
 
     }
     @Test
+    @DisplayName("Make sure logs are being truncated when calling updateLogs with 2 valid logs")
     public void givenLogInDB_whenInsertNewLog_truncateLogs() throws InterruptedException {
         given(folderRepository.findById(folder.getId())).willReturn(null);
         Folder folder2 = Folder.createFolder("test", folder, user);
@@ -173,6 +183,7 @@ class LogServiceTest {
         assertEquals(LogService.chainedLogs.size(),1);
     }
     @Test
+    @DisplayName("Make sure logs are chained when calling updateLogs with 2 non-sequel logs")
     public void givenLogInDB_whenInsertNewLog_chainNoSequel() throws InterruptedException {
         given(folderRepository.findById(folder.getId())).willReturn(null);
         Folder folder2 = Folder.createFolder("test", folder, user);
@@ -186,6 +197,7 @@ class LogServiceTest {
         assertEquals(LogService.chainedLogs.get(document.getId()).size(),1);
     }
     @Test
+    @DisplayName("Make logs are chained when calling updateLogs with 2 logs that one is in the middle of the second")
     public void givenLogInDB_whenInsertNewLog_logInMiddle() throws InterruptedException {
         given(folderRepository.findById(folder.getId())).willReturn(null);
         Folder folder2 = Folder.createFolder("test", folder, user);
@@ -203,6 +215,7 @@ class LogServiceTest {
         logService.updateLogs(newLog);
     }
     @Test
+    @DisplayName("Make sure new log is being created when calling updateLogs with different users")
     public void givenLogInDB_whenInsertNewLog_differentUser() throws InterruptedException {
         given(folderRepository.findById(folder.getId())).willReturn(null);
         Folder folder2 = Folder.createFolder("test", folder, user);
@@ -224,6 +237,7 @@ class LogServiceTest {
     }
 
     @Test
+    @DisplayName("Make logs are chained when calling updateLogs with 2 different users and different actions")
     public void givenLogInDB_whenInsertNewLog_deleteFromDifferentUserThenInsert() throws InterruptedException {
         given(folderRepository.findById(folder.getId())).willReturn(null);
         Folder folder2 = Folder.createFolder("test", folder, user);
@@ -239,6 +253,7 @@ class LogServiceTest {
     }
 
     @Test
+    @DisplayName("Make log is being inserted to map when calling updateLogs with 2 logs")
     public void givenLogInDB_whenInsertNewLog_checkMap() throws InterruptedException {
         given(folderRepository.findById(folder.getId())).willReturn(null);
         Folder folder2 = Folder.createFolder("test", folder, user);
